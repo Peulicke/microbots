@@ -1,4 +1,5 @@
 import update from "immutability-helper";
+import { pipe } from "ts-pipe-compose";
 import {
     matrix,
     Matrix,
@@ -100,6 +101,17 @@ export const compliance = (world: World): Matrix => {
     const ft = transpose(f);
     const kInv = inv(k);
     return multiply(multiply(ft, kInv), f);
+};
+
+const mult = (b: Matrix) => (a: Matrix) => multiply(a, b);
+
+export const complianceDerivative = (bot: Bot) => (dim: number) => (world: World): Matrix => {
+    const f = forceMatrix(world);
+    const dk = stiffnessMatrixDerivative(bot)(dim)(world);
+    const k = stiffnessMatrix(world);
+    const ft = transpose(f);
+    const kInv = inv(k);
+    return multiply(pipe(ft, mult(kInv), mult(dk), mult(kInv), mult(f)), -1);
 };
 
 export const optimize = (world: World): World => {

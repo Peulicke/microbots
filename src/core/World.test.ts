@@ -10,6 +10,7 @@ import {
     stiffnessMatrix,
     stiffnessMatrixDerivative,
     compliance,
+    complianceDerivative,
     removeFixedFromVector,
     removeFixedFromMatrix
 } from "./World";
@@ -144,4 +145,14 @@ it("computes compliance", () => {
     const bots = [bot1, bot2, bot3, bot4];
     const world = pipe(newWorld(), setBots(bots), initEdges);
     expect(compliance(world)).toBeCloseTo(1);
+});
+
+it("computes compliance derivative", () => {
+    const bot1 = setFixed(true)(newBot());
+    const bot2 = setFixed(true)(setPos(matrix([1, 0, 0]))(newBot()));
+    const bot3 = setFixed(true)(setPos(matrix([0, 0, 1]))(newBot()));
+    const bot4 = setPos(matrix([0, 1, 0]))(newBot());
+    const bots = [bot1, bot2, bot3, bot4];
+    const world = pipe(newWorld(), setBots(bots), initEdges);
+    expect(complianceDerivative(bot4)(0)(world)).toBeCloseTo(-2);
 });
