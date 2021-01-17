@@ -18,18 +18,39 @@ export const initEdges = (world: World): World => {
 export const outerProduct = (a: Matrix, b: Matrix): Matrix =>
     multiply(transpose(matrix([a.toArray() as number[]])), matrix([b.toArray() as number[]]));
 
-export const stiffness = (a: Bot, b: Bot, edge: number): Matrix => {
-    const d = subtract(b.pos, a.pos) as Matrix;
-    return multiply(divide(outerProduct(d, d), dot(d, d)) as Matrix, -edge);
+export const stiffness = (d: Matrix): Matrix => divide(outerProduct(d, d), -dot(d, d)) as Matrix;
+
+export const stiffnessDerivative = (dim: number) => (d: Matrix): Matrix => {
+    const dir = [0, 0, 0];
+    dir[dim] = 1;
+    const e = transpose(matrix([dir]));
+    const de = multiply(e, matrix([d.toArray() as number[]]));
+    const k = stiffness(d);
+    return divide(add(add(de, transpose(de)), multiply(k, 2 * d.get([dim]))), -dot(d, d)) as Matrix;
 };
 
-export const stiffnessMatrix = (world: World): Matrix => {
+export const stiffnessPair = (a: Bot, b: Bot, edge: number): Matrix =>
+    multiply(stiffness(subtract(b.pos, a.pos) as Matrix), edge);
+
+export const stiffnessPairDerivative = (bot: Bot) => (dim: number) => (a: Bot, b: Bot, edge: number): Matrix => {
+    if (a !== bot && b !== bot)
+        return matrix([
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0]
+        ]);
+    const derivative = multiply(stiffnessDerivative(dim)(subtract(b.pos, a.pos) as Matrix), edge);
+    if (a === bot) return multiply(derivative, -1);
+    return derivative;
+};
+
+export const assembleMatrix = (world: World, fun: (a: Bot, b: Bot, edge: number) => Matrix): Matrix => {
     const size = 3 * world.edges.size()[0];
     let result = matrix(zeros(size, size));
     (world.edges.toArray() as number[][]).forEach((row, i) => {
         row.forEach((edge, j) => {
             if (i === j) return;
-            const s = stiffness(world.bots[i], world.bots[j], edge);
+            const s = fun(world.bots[i], world.bots[j], edge);
             const ri = range(3 * i, 3 * i + 3);
             const rj = range(3 * j, 3 * j + 3);
             const ii = index(ri, ri);
@@ -40,6 +61,11 @@ export const stiffnessMatrix = (world: World): Matrix => {
     });
     return result;
 };
+
+export const stiffnessMatrix = (world: World): Matrix => assembleMatrix(world, stiffnessPair);
+
+export const stiffnessMatrixDerivative = (bot: Bot) => (dim: number) => (world: World): Matrix =>
+    assembleMatrix(world, stiffnessPairDerivative(bot)(dim));
 
 export const forceMatrix = (world: World): Matrix => matrix(world.bots.map(bot => [0, -bot.weight, 0]).flat());
 
