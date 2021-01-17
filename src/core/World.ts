@@ -15,7 +15,7 @@ import {
     add,
     inv
 } from "mathjs";
-import { Bot } from "./Bot";
+import { Bot, setPos } from "./Bot";
 
 export type World = { readonly bots: Bot[]; readonly edges: Matrix };
 
@@ -105,15 +105,29 @@ export const compliance = (world: World): Matrix => {
 
 const mult = (b: Matrix) => (a: Matrix) => multiply(a, b);
 
-export const complianceDerivative = (bot: Bot) => (dim: number) => (world: World): Matrix => {
+export const complianceDerivative = (bot: Bot) => (dim: number) => (world: World): number => {
     const f = forceMatrix(world);
     const dk = stiffnessMatrixDerivative(bot)(dim)(world);
     const k = stiffnessMatrix(world);
     const ft = transpose(f);
     const kInv = inv(k);
-    return multiply(pipe(ft, mult(kInv), mult(dk), mult(kInv), mult(f)), -1);
+    return -((pipe(ft, mult(kInv), mult(dk), mult(kInv), mult(f)) as unknown) as number);
+};
+
+export const optimizeStep = (stepSize: number) => (world: World): World => {
+    const newBots = world.bots.map(bot => {
+        if (bot.fixed) return bot;
+        const d = [0, 1, 2].map(dim => complianceDerivative(bot)(dim)(world));
+        return setPos(subtract(bot.pos, multiply(matrix(d), stepSize)) as Matrix)(bot);
+    });
+    return setBots(newBots)(world);
 };
 
 export const optimize = (world: World): World => {
-    return world;
+    let result = world;
+    for (let i = 0; i < 100; ++i) {
+        result = optimizeStep(0.1)(result);
+        console.log(result.bots[3].pos.toArray());
+    }
+    return result;
 };
