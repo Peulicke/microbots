@@ -1,6 +1,6 @@
 import { pipe } from "ts-pipe-compose";
 import { matrix, subtract, dot } from "mathjs";
-import { newBot, setPos } from "./Bot";
+import { newBot, setPos, setFixed } from "./Bot";
 import {
     newWorld,
     setBots,
@@ -8,7 +8,10 @@ import {
     stiffnessPair,
     stiffnessPairDerivative,
     stiffnessMatrix,
-    stiffnessMatrixDerivative
+    stiffnessMatrixDerivative,
+    compliance,
+    removeFixedFromVector,
+    removeFixedFromMatrix
 } from "./World";
 
 it("creates a new world", () => {
@@ -33,6 +36,41 @@ it("inits edges", () => {
             [1, 1, 1]
         ])
     });
+});
+
+it("removes fixed from vector", () => {
+    const bot = newBot();
+    const bots = [bot, setFixed(true)(bot), bot];
+    const world = pipe(newWorld(), setBots(bots), initEdges);
+    const vector = matrix([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(removeFixedFromVector(world)(vector)).toStrictEqual(matrix([1, 2, 3, 7, 8, 9]));
+});
+
+it("removes fixed from matrix", () => {
+    const bot = newBot();
+    const bots = [bot, setFixed(true)(bot), bot];
+    const world = pipe(newWorld(), setBots(bots), initEdges);
+    const mat = matrix([
+        [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        [2, 2, 3, 4, 5, 6, 7, 8, 9],
+        [3, 2, 3, 4, 5, 6, 7, 8, 9],
+        [4, 2, 3, 4, 5, 6, 7, 8, 9],
+        [5, 2, 3, 4, 5, 6, 7, 8, 9],
+        [6, 2, 3, 4, 5, 6, 7, 8, 9],
+        [7, 2, 3, 4, 5, 6, 7, 8, 9],
+        [8, 2, 3, 4, 5, 6, 7, 8, 9],
+        [9, 2, 3, 4, 5, 6, 7, 8, 9]
+    ]);
+    expect(removeFixedFromMatrix(world)(mat)).toStrictEqual(
+        matrix([
+            [1, 2, 3, 7, 8, 9],
+            [2, 2, 3, 7, 8, 9],
+            [3, 2, 3, 7, 8, 9],
+            [7, 2, 3, 7, 8, 9],
+            [8, 2, 3, 7, 8, 9],
+            [9, 2, 3, 7, 8, 9]
+        ])
+    );
 });
 
 it("computes stiffness pair", () => {
@@ -96,4 +134,14 @@ it("computes stiffness matrix derivative", () => {
     ]);
     const d = matrix(subtract(stiffnessMatrixDerivative(bot2)(1)(world), expected).toArray().flat());
     expect(dot(d, d)).toBeCloseTo(0);
+});
+
+it("computes compliance", () => {
+    const bot1 = setFixed(true)(newBot());
+    const bot2 = setFixed(true)(setPos(matrix([1, 0, 0]))(newBot()));
+    const bot3 = setFixed(true)(setPos(matrix([0, 0, 1]))(newBot()));
+    const bot4 = setPos(matrix([0, 1, 0]))(newBot());
+    const bots = [bot1, bot2, bot3, bot4];
+    const world = pipe(newWorld(), setBots(bots), initEdges);
+    expect(compliance(world)).toBeCloseTo(1);
 });

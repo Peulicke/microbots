@@ -1,5 +1,19 @@
 import update from "immutability-helper";
-import { matrix, Matrix, transpose, subtract, dot, multiply, divide, subset, index, zeros, range, add } from "mathjs";
+import {
+    matrix,
+    Matrix,
+    transpose,
+    subtract,
+    dot,
+    multiply,
+    divide,
+    subset,
+    index,
+    zeros,
+    range,
+    add,
+    inv
+} from "mathjs";
 import { Bot } from "./Bot";
 
 export type World = { readonly bots: Bot[]; readonly edges: Matrix };
@@ -44,6 +58,16 @@ export const stiffnessPairDerivative = (bot: Bot) => (dim: number) => (a: Bot, b
     return derivative;
 };
 
+export const removeFixedFromVector = (world: World) => (vector: Matrix): Matrix =>
+    matrix((vector.toArray() as number[]).filter((_, i) => !world.bots[Math.floor(i / 3)].fixed));
+
+export const removeFixedFromMatrix = (world: World) => (mat: Matrix): Matrix =>
+    matrix(
+        (mat.toArray() as number[][])
+            .filter((_, i) => !world.bots[Math.floor(i / 3)].fixed)
+            .map(vector => removeFixedFromVector(world)(matrix(vector)).toArray() as number[])
+    );
+
 export const assembleMatrix = (world: World, fun: (a: Bot, b: Bot, edge: number) => Matrix): Matrix => {
     const size = 3 * world.edges.size()[0];
     let result = matrix(zeros(size, size));
@@ -59,7 +83,7 @@ export const assembleMatrix = (world: World, fun: (a: Bot, b: Bot, edge: number)
             result = subset(result, ij, add(subset(result, ij), s));
         });
     });
-    return result;
+    return removeFixedFromMatrix(world)(result);
 };
 
 export const stiffnessMatrix = (world: World): Matrix => assembleMatrix(world, stiffnessPair);
@@ -67,7 +91,16 @@ export const stiffnessMatrix = (world: World): Matrix => assembleMatrix(world, s
 export const stiffnessMatrixDerivative = (bot: Bot) => (dim: number) => (world: World): Matrix =>
     assembleMatrix(world, stiffnessPairDerivative(bot)(dim));
 
-export const forceMatrix = (world: World): Matrix => matrix(world.bots.map(bot => [0, -bot.weight, 0]).flat());
+export const forceMatrix = (world: World): Matrix =>
+    removeFixedFromVector(world)(matrix(world.bots.map(bot => [0, -bot.weight, 0]).flat()));
+
+export const compliance = (world: World): Matrix => {
+    const f = forceMatrix(world);
+    const k = stiffnessMatrix(world);
+    const ft = transpose(f);
+    const kInv = inv(k);
+    return multiply(multiply(ft, kInv), f);
+};
 
 export const optimize = (world: World): World => {
     return world;
