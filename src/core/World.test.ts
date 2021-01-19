@@ -12,7 +12,10 @@ import {
     compliance,
     complianceDerivative,
     removeFixedFromVector,
-    removeFixedFromMatrix
+    removeFixedFromMatrix,
+    distancePenalty,
+    distancePenaltyPair,
+    distancePenaltyTotal
 } from "./World";
 
 it("creates a new world", () => {
@@ -135,6 +138,29 @@ it("computes stiffness matrix derivative", () => {
     ]);
     const d = matrix(subtract(stiffnessMatrixDerivative(bot2)(1)(world), expected).toArray().flat());
     expect(dot(d, d)).toBeCloseTo(0);
+});
+
+it("computes distance penalty", () => {
+    expect(distancePenalty(matrix([1, 0, 0]))).toBeCloseTo(0);
+});
+
+it("computes distance penalty pair", () => {
+    const bot1 = newBot();
+    const bot2 = setPos(matrix([1, 0, 0]))(newBot());
+    const bot3 = setPos(matrix([2, 0, 0]))(newBot());
+    expect(distancePenaltyPair(bot1, bot2, 1)).toBeCloseTo(0);
+    expect(distancePenaltyPair(bot2, bot3, 1)).toBeCloseTo(0);
+    expect(distancePenaltyPair(bot1, bot3, 1)).toBeCloseTo(9);
+    expect(distancePenaltyPair(bot1, bot3, 2)).toBeCloseTo(18);
+});
+
+it("computes distance penalty total", () => {
+    const bot1 = newBot();
+    const bot2 = setPos(matrix([1, 0, 0]))(newBot());
+    const bot3 = setPos(matrix([0, 1, 0]))(newBot());
+    const bots = [bot1, bot2, bot3];
+    const world = pipe(newWorld(), setBots(bots), initEdges);
+    expect(distancePenaltyTotal(world)).toBeCloseTo(1);
 });
 
 it("computes compliance", () => {

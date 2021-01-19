@@ -114,6 +114,22 @@ export const complianceDerivative = (bot: Bot) => (dim: number) => (world: World
     return -((pipe(ft, mult(kInv), mult(dk), mult(kInv), mult(f)) as unknown) as number);
 };
 
+export const distancePenalty = (d: Matrix): number => (dot(d, d) - 1) ** 2;
+
+export const distancePenaltyPair = (a: Bot, b: Bot, edge: number): number =>
+    multiply(distancePenalty(subtract(b.pos, a.pos) as Matrix), edge);
+
+export const distancePenaltyTotal = (world: World): number => {
+    let sum = 0;
+    (world.edges.toArray() as number[][]).forEach((row, i) => {
+        row.forEach((edge, j) => {
+            if (i >= j) return;
+            sum += distancePenaltyPair(world.bots[i], world.bots[j], edge);
+        });
+    });
+    return sum;
+};
+
 export const optimizeStep = (stepSize: number) => (world: World): World => {
     const newBots = world.bots.map(bot => {
         if (bot.fixed) return bot;
