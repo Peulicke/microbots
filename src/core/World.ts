@@ -95,12 +95,12 @@ export const stiffnessMatrixDerivative = (bot: Bot) => (dim: number) => (world: 
 export const forceMatrix = (world: World): Matrix =>
     removeFixedFromVector(world)(matrix(world.bots.map(bot => [0, -bot.weight, 0]).flat()));
 
-export const compliance = (world: World): Matrix => {
+export const compliance = (world: World): number => {
     const f = forceMatrix(world);
     const k = stiffnessMatrix(world);
     const ft = transpose(f);
     const kInv = inv(k);
-    return multiply(multiply(ft, kInv), f);
+    return (multiply(multiply(ft, kInv), f) as unknown) as number;
 };
 
 const mult = (b: Matrix) => (a: Matrix) => multiply(a, b);
@@ -146,6 +146,8 @@ export const distancePenaltyTotalDerivative = (bot: Bot) => (dim: number) => (wo
     return sum;
 };
 
+export const objective = (world: World): number => compliance(world) + distancePenaltyTotal(world);
+
 export const objectiveDerivative = (bot: Bot) => (dim: number) => (world: World): number =>
     complianceDerivative(bot)(dim)(world) + distancePenaltyTotalDerivative(bot)(dim)(world);
 
@@ -163,6 +165,7 @@ export const optimize = (world: World): World => {
     for (let i = 0; i < 100; ++i) {
         result = optimizeStep(0.01)(result);
         console.log(result.bots[3].pos.toArray());
+        console.log(objective(result));
     }
     return result;
 };

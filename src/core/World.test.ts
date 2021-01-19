@@ -19,6 +19,7 @@ import {
     distancePenaltyPairDerivative,
     distancePenaltyTotal,
     distancePenaltyTotalDerivative,
+    objective,
     objectiveDerivative
 } from "./World";
 
@@ -209,6 +210,16 @@ it("computes distance penalty total derivative", () => {
     const bots = [bot1, bot2, bot3];
     const world = pipe(newWorld(), setBots(bots), initEdges);
     expect(distancePenaltyTotalDerivative(bot2)(0)(world)).toBeCloseTo(4);
+});
+
+it("computes objective", () => {
+    const bot1 = setFixed(true)(newBot());
+    const bot2 = setFixed(true)(setPos(matrix([1, 0, 0]))(newBot()));
+    const bot3 = setFixed(true)(setPos(matrix([0, 0, 1]))(newBot()));
+    const bot4 = setPos(matrix([0, 1, 0]))(newBot());
+    const bots = [bot1, bot2, bot3, bot4];
+    const world = pipe(newWorld(), setBots(bots), initEdges);
+    expect(objective(world)).toBeCloseTo(4);
 });
 
 it("computes objective derivative", () => {
