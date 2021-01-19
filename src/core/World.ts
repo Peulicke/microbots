@@ -116,8 +116,13 @@ export const complianceDerivative = (bot: Bot) => (dim: number) => (world: World
 
 export const distancePenalty = (d: Matrix): number => (dot(d, d) - 1) ** 2;
 
+export const distancePenaltyDerivative = (dim: number) => (d: Matrix): number => 4 * (dot(d, d) - 1) * d.get([dim]);
+
 export const distancePenaltyPair = (a: Bot, b: Bot, edge: number): number =>
     multiply(distancePenalty(subtract(b.pos, a.pos) as Matrix), edge);
+
+export const distancePenaltyPairDerivative = (dim: number) => (a: Bot, b: Bot, edge: number): number =>
+    multiply(distancePenaltyDerivative(dim)(subtract(b.pos, a.pos) as Matrix), edge);
 
 export const distancePenaltyTotal = (world: World): number => {
     let sum = 0;
@@ -130,10 +135,24 @@ export const distancePenaltyTotal = (world: World): number => {
     return sum;
 };
 
+export const distancePenaltyTotalDerivative = (bot: Bot) => (dim: number) => (world: World): number => {
+    let sum = 0;
+    (world.edges.toArray() as number[][]).forEach((row, i) => {
+        row.forEach((edge, j) => {
+            if (world.bots[j] !== bot) return;
+            sum += distancePenaltyPairDerivative(dim)(world.bots[i], world.bots[j], edge);
+        });
+    });
+    return sum;
+};
+
+export const objectiveDerivative = (bot: Bot) => (dim: number) => (world: World): number =>
+    complianceDerivative(bot)(dim)(world) + distancePenaltyTotalDerivative(bot)(dim)(world);
+
 export const optimizeStep = (stepSize: number) => (world: World): World => {
     const newBots = world.bots.map(bot => {
         if (bot.fixed) return bot;
-        const d = [0, 1, 2].map(dim => complianceDerivative(bot)(dim)(world));
+        const d = [0, 1, 2].map(dim => objectiveDerivative(bot)(dim)(world));
         return setPos(subtract(bot.pos, multiply(matrix(d), stepSize)) as Matrix)(bot);
     });
     return setBots(newBots)(world);
@@ -142,7 +161,7 @@ export const optimizeStep = (stepSize: number) => (world: World): World => {
 export const optimize = (world: World): World => {
     let result = world;
     for (let i = 0; i < 100; ++i) {
-        result = optimizeStep(0.1)(result);
+        result = optimizeStep(0.01)(result);
         console.log(result.bots[3].pos.toArray());
     }
     return result;
