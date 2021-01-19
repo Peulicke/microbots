@@ -42,9 +42,9 @@ it("inits edges", () => {
     expect(world).toStrictEqual({
         bots: bots,
         edges: matrix([
-            [1, 1, 1],
-            [1, 1, 1],
-            [1, 1, 1]
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0]
         ])
     });
 });
