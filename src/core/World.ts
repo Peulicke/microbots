@@ -25,8 +25,9 @@ export const setBots = (bots: Bot[]) => (world: World): World => update(world, {
 
 export const initEdges = (world: World): World => {
     const list = [...Array(world.bots.length)].map(() => 1);
+    const array = list.map((_, i) => list.map((_, j) => (i === j ? 0 : 1)));
     return update(world, {
-        edges: { $set: matrix(list.map(() => list)) }
+        edges: { $set: matrix(array) }
     });
 };
 
@@ -89,8 +90,18 @@ export const assembleMatrix = (world: World, fun: (a: Bot, b: Bot, edge: number)
 
 export const stiffnessMatrix = (world: World): Matrix => assembleMatrix(world, stiffnessPair);
 
-export const stiffnessMatrixDerivative = (bot: Bot) => (dim: number) => (world: World): Matrix =>
+export const stiffnessMatrixDerivativeBot = (bot: Bot) => (dim: number) => (world: World): Matrix =>
     assembleMatrix(world, stiffnessPairDerivative(bot)(dim));
+
+export const stiffnessMatrixDerivativeEdge = (i: number, j: number) => (world: World): Matrix => {
+    const list = [...Array(world.bots.length)].map(() => 0);
+    const edges = list.map(() => list);
+    edges[i][j] = edges[j][i] = 1;
+    const w = update(world, {
+        edges: { $set: matrix(edges) }
+    });
+    return stiffnessMatrix(w);
+};
 
 export const forceMatrix = (world: World): Matrix =>
     removeFixedFromVector(world)(matrix(world.bots.map(bot => [0, -bot.weight, 0]).flat()));
@@ -105,14 +116,20 @@ export const compliance = (world: World): number => {
 
 const mult = (b: Matrix) => (a: Matrix) => multiply(a, b);
 
-export const complianceDerivative = (bot: Bot) => (dim: number) => (world: World): number => {
+export const complianceDerivative = (func: (world: World) => Matrix) => (world: World): number => {
     const f = forceMatrix(world);
-    const dk = stiffnessMatrixDerivative(bot)(dim)(world);
+    const dk = func(world);
     const k = stiffnessMatrix(world);
     const ft = transpose(f);
     const kInv = inv(k);
     return -((pipe(ft, mult(kInv), mult(dk), mult(kInv), mult(f)) as unknown) as number);
 };
+
+export const complianceDerivativeBot = (bot: Bot) => (dim: number) => (world: World): number =>
+    complianceDerivative(stiffnessMatrixDerivativeBot(bot)(dim))(world);
+
+export const complianceDerivativeEdge = (i: number, j: number) => (world: World): number =>
+    complianceDerivative(stiffnessMatrixDerivativeEdge(i, j))(world);
 
 export const distancePenalty = (d: Matrix): number => (dot(d, d) - 1) ** 2;
 
@@ -135,7 +152,7 @@ export const distancePenaltyTotal = (world: World): number => {
     return sum;
 };
 
-export const distancePenaltyTotalDerivative = (bot: Bot) => (dim: number) => (world: World): number => {
+export const distancePenaltyTotalDerivativeBot = (bot: Bot) => (dim: number) => (world: World): number => {
     let sum = 0;
     (world.edges.toArray() as number[][]).forEach((row, i) => {
         row.forEach((edge, j) => {
@@ -146,26 +163,49 @@ export const distancePenaltyTotalDerivative = (bot: Bot) => (dim: number) => (wo
     return sum;
 };
 
+export const distancePenaltyTotalDerivativeEdge = (i: number, j: number) => (world: World): number =>
+    distancePenaltyPair(world.bots[i], world.bots[j], 1);
+
 export const objective = (world: World): number => compliance(world) + distancePenaltyTotal(world);
 
-export const objectiveDerivative = (bot: Bot) => (dim: number) => (world: World): number =>
-    complianceDerivative(bot)(dim)(world) + distancePenaltyTotalDerivative(bot)(dim)(world);
+export const objectiveDerivativeBot = (bot: Bot) => (dim: number) => (world: World): number =>
+    complianceDerivativeBot(bot)(dim)(world) + distancePenaltyTotalDerivativeBot(bot)(dim)(world);
 
-export const optimizeStep = (stepSize: number) => (world: World): World => {
+export const objectiveDerivativeEdge = (i: number, j: number) => (world: World): number =>
+    complianceDerivativeEdge(i, j)(world) + distancePenaltyTotalDerivativeEdge(i, j)(world);
+
+export const optimizeStepBots = (stepSize: number) => (world: World): World => {
     const newBots = world.bots.map(bot => {
         if (bot.fixed) return bot;
-        const d = [0, 1, 2].map(dim => objectiveDerivative(bot)(dim)(world));
+        const d = [0, 1, 2].map(dim => objectiveDerivativeBot(bot)(dim)(world));
         return setPos(subtract(bot.pos, multiply(matrix(d), stepSize)) as Matrix)(bot);
     });
     return setBots(newBots)(world);
 };
 
+export const optimizeStepEdges = (stepSize: number) => (world: World): World => {
+    const newEdges = world.edges.toArray() as number[][];
+    for (let i = 0; i < world.bots.length; ++i) {
+        for (let j = 0; j < world.bots.length; ++j) {
+            if (i === j) continue;
+            const d = objectiveDerivativeEdge(i, j)(world);
+            newEdges[i][j] = world.edges.get([i, j]) - d * stepSize;
+            newEdges[i][j] = Math.max(newEdges[i][j], 0);
+            newEdges[i][j] = Math.min(newEdges[i][j], 1);
+        }
+    }
+    return update(world, {
+        edges: { $set: matrix(newEdges) }
+    });
+};
+
 export const optimize = (world: World): World => {
     let result = world;
     for (let i = 0; i < 100; ++i) {
-        result = optimizeStep(0.01)(result);
+        result = optimizeStepBots(0.01)(result);
+        result = optimizeStepEdges(0.01)(result);
         console.log(result.bots[3].pos.toArray());
-        console.log(objective(result));
+        console.log(result.edges.toArray());
     }
     return result;
 };
