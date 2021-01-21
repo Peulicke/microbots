@@ -1,7 +1,7 @@
-import { matrix } from "mathjs";
+import { Vector3 } from "three";
 import { newBot, setPos, setWeight, setFixed } from "./Bot";
 
-const defaultPos = matrix([0, 0, 0]);
+const defaultPos = new Vector3(0, 0, 0);
 
 it("creates a new bot", () => {
     expect(newBot()).toStrictEqual({ pos: defaultPos, weight: 1, fixed: false });
@@ -9,7 +9,7 @@ it("creates a new bot", () => {
 
 it("sets pos", () => {
     const bot = newBot();
-    const pos = matrix([1, 2, 3]);
+    const pos = new Vector3(1, 2, 3);
     expect(setPos(pos)(bot)).toStrictEqual({ pos: pos, weight: 1, fixed: false });
 });
 

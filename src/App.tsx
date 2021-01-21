@@ -1,10 +1,9 @@
 import React, { FC, useEffect, useRef, useState } from "react";
-import { PerspectiveCamera, WebGLRenderer, Scene } from "three";
+import { Vector3, PerspectiveCamera, WebGLRenderer, Scene, Color } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
 import { pipe } from "ts-pipe-compose";
-import { matrix } from "mathjs";
 import { Bot, World } from "./core";
 import { newScene, addSphere } from "./draw";
 
@@ -15,12 +14,24 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-const randomBot = () => Bot.setPos(matrix([Math.random(), Math.random(), Math.random()].map(x => x * 3)))(Bot.newBot());
+const randomBot = () =>
+    Bot.setPos(new Vector3(...[Math.random(), Math.random(), Math.random()].map(x => x * 3)))(Bot.newBot());
 
 const bot1 = Bot.setFixed(true)(Bot.newBot());
-const bot2 = Bot.setFixed(true)(Bot.setPos(matrix([2, 0, 0]))(Bot.newBot()));
-const bot3 = Bot.setFixed(true)(Bot.setPos(matrix([0, 0, 2]))(Bot.newBot()));
-const bots = [bot1, bot2, bot3, randomBot(), randomBot(), randomBot(), randomBot()];
+const bot2 = Bot.setFixed(true)(Bot.setPos(new Vector3(5, 0, 0))(Bot.newBot()));
+const bot3 = Bot.setFixed(true)(Bot.setPos(new Vector3(0, 0, 2))(Bot.newBot()));
+const bots = [
+    bot1,
+    bot2,
+    bot3,
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot()
+];
 let world = pipe(World.newWorld(), World.setBots(bots), World.initEdges);
 
 const App: FC = () => {
@@ -35,6 +46,7 @@ const App: FC = () => {
     const [camera, setCamera] = useState<PerspectiveCamera>();
     const [renderer, setRenderer] = useState<WebGLRenderer>();
     const [frame, setFrame] = useState(0);
+    const [iterations, setIterations] = useState(0);
 
     useEffect(() => {
         const mc = mount.current;
@@ -66,8 +78,13 @@ const App: FC = () => {
     useEffect(() => {
         if (controls) controls.update();
         if (renderer && scene && camera) renderer.render(scene, camera);
-        if (Math.random() < 0.9) return;
-        setScene(world.bots.map(bot => addSphere(bot.pos)).reduce((x, fn) => fn(x), newScene()));
+        if (iterations >= 100) return;
+        setIterations(iterations + 1);
+        setScene(
+            world.bots
+                .map(bot => addSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)))
+                .reduce((x, fn) => fn(x), newScene())
+        );
         world = World.optimizeStep(0.1)(0.9)(world);
     }, [controls, renderer, scene, camera, frame]);
 
@@ -84,6 +101,10 @@ const App: FC = () => {
                                 <List>
                                     <ListItem>
                                         <b>Microbots</b>
+                                    </ListItem>
+                                    <ListItem>
+                                        <b>iterations: </b>
+                                        {iterations}
                                     </ListItem>
                                 </List>
                             </Paper>

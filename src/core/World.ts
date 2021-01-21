@@ -1,114 +1,97 @@
 import update from "immutability-helper";
 import { pipe } from "ts-pipe-compose";
+import { matrix, Matrix, transpose, multiply, inv } from "mathjs";
+import { Vector3, Matrix3 } from "three";
 import {
-    matrix,
-    Matrix,
-    transpose,
-    subtract,
-    dot,
-    multiply,
-    divide,
-    subset,
-    index,
-    zeros,
-    range,
-    add,
-    inv
-} from "mathjs";
+    outerProduct,
+    addMatrix3,
+    subMatrix3,
+    numberArrayFromVector3Array,
+    numberArrayFromMatrix3Array,
+    numberArrayToMatrix3Array
+} from "./utils";
 import { Bot, setPos } from "./Bot";
 
-export type World = { readonly bots: Bot[]; readonly edges: Matrix };
+export type World = { bots: Bot[]; edges: number[][] };
 
-export const newWorld = (): World => ({ bots: [], edges: matrix([]) });
+export const newWorld = (): World => ({ bots: [], edges: [] });
 
-export const setBots = (bots: Bot[]) => (world: World): World => update(world, { bots: { $set: bots } });
+export const setBots = (bots: Bot[]) => (world: World): World => {
+    world.bots = bots;
+    return world;
+};
 
 export const initEdges = (world: World): World => {
     const list = [...Array(world.bots.length)].map(() => 1);
     const array = list.map((_, i) => list.map((_, j) => (i === j ? 0 : 1)));
-    return update(world, {
-        edges: { $set: matrix(array) }
-    });
+    world.edges = array;
+    return world;
 };
 
-export const outerProduct = (a: Matrix, b: Matrix): Matrix =>
-    multiply(transpose(matrix([a.toArray() as number[]])), matrix([b.toArray() as number[]]));
+export const stiffness = (d: Vector3): Matrix3 => outerProduct(d, d).multiplyScalar(-1 / d.dot(d));
 
-export const stiffness = (d: Matrix): Matrix => divide(outerProduct(d, d), -dot(d, d)) as Matrix;
-
-export const stiffnessDerivative = (dim: number) => (d: Matrix): Matrix => {
-    const dir = [0, 0, 0];
-    dir[dim] = 1;
-    const e = transpose(matrix([dir]));
-    const de = multiply(e, matrix([d.toArray() as number[]]));
+export const stiffnessDerivative = (dim: number) => (d: Vector3): Matrix3 => {
+    const e = new Vector3(0, 0, 0).setComponent(dim, 1);
+    const de = outerProduct(e, d);
     const k = stiffness(d);
-    return divide(add(add(de, transpose(de)), multiply(k, 2 * d.get([dim]))), -dot(d, d)) as Matrix;
+    return addMatrix3(addMatrix3(de, de.clone().transpose()), k.multiplyScalar(2 * d.getComponent(dim))).multiplyScalar(
+        -1 / d.dot(d)
+    );
 };
 
-export const stiffnessPair = (a: Bot, b: Bot, edge: number): Matrix =>
-    multiply(stiffness(subtract(b.pos, a.pos) as Matrix), edge);
+export const stiffnessPair = (a: Bot, b: Bot, edge: number): Matrix3 =>
+    stiffness(b.pos.clone().sub(a.pos)).multiplyScalar(edge);
 
-export const stiffnessPairDerivative = (bot: Bot) => (dim: number) => (a: Bot, b: Bot, edge: number): Matrix => {
-    if (a !== bot && b !== bot)
-        return matrix([
-            [0, 0, 0],
-            [0, 0, 0],
-            [0, 0, 0]
-        ]);
-    const derivative = multiply(stiffnessDerivative(dim)(subtract(b.pos, a.pos) as Matrix), edge);
-    if (a === bot) return multiply(derivative, -1);
+export const stiffnessPairDerivative = (bot: Bot) => (dim: number) => (a: Bot, b: Bot, edge: number): Matrix3 => {
+    if (a !== bot && b !== bot) return new Matrix3().set(0, 0, 0, 0, 0, 0, 0, 0, 0);
+    const derivative = stiffnessDerivative(dim)(b.pos.clone().sub(a.pos)).multiplyScalar(edge);
+    if (a === bot) return derivative.multiplyScalar(-1);
     return derivative;
 };
 
-export const removeFixedFromVector = (world: World) => (vector: Matrix): Matrix =>
-    matrix((vector.toArray() as number[]).filter((_, i) => !world.bots[Math.floor(i / 3)].fixed));
+export const removeFixedFromVector = (world: World) => (vector: Vector3[]): Vector3[] =>
+    vector.filter((_, i) => !world.bots[i].fixed);
 
-export const removeFixedFromMatrix = (world: World) => (mat: Matrix): Matrix =>
-    matrix(
-        (mat.toArray() as number[][])
-            .filter((_, i) => !world.bots[Math.floor(i / 3)].fixed)
-            .map(vector => removeFixedFromVector(world)(matrix(vector)).toArray() as number[])
-    );
+export const removeFixedFromMatrix = (world: World) => (mat: Matrix3[][]): Matrix3[][] =>
+    mat.filter((_, i) => !world.bots[i].fixed).map(vector => vector.filter((_, j) => !world.bots[j].fixed));
 
-export const assembleMatrix = (world: World, fun: (a: Bot, b: Bot, edge: number) => Matrix): Matrix => {
-    const size = 3 * world.edges.size()[0];
-    let result = matrix(zeros(size, size));
-    (world.edges.toArray() as number[][]).forEach((row, i) => {
+export const assembleMatrix = (world: World, fun: (a: Bot, b: Bot, edge: number) => Matrix3): Matrix3[][] => {
+    const result = world.edges.map(() => world.edges.map(() => new Matrix3().multiplyScalar(0)));
+    result.forEach((row, i) => {
         row.forEach((edge, j) => {
             if (i === j) return;
-            const s = fun(world.bots[i], world.bots[j], edge);
-            const ri = range(3 * i, 3 * i + 3);
-            const rj = range(3 * j, 3 * j + 3);
-            const ii = index(ri, ri);
-            const ij = index(ri, rj);
-            result = subset(result, ii, subtract(subset(result, ii), s));
-            result = subset(result, ij, add(subset(result, ij), s));
+            const s = fun(world.bots[i], world.bots[j], world.edges[i][j]);
+            result[i][i] = subMatrix3(result[i][i], s);
+            result[i][j] = addMatrix3(result[i][j], s);
         });
     });
     return removeFixedFromMatrix(world)(result);
 };
 
-export const stiffnessMatrix = (world: World): Matrix => assembleMatrix(world, stiffnessPair);
+export const stiffnessMatrix = (world: World): Matrix3[][] => assembleMatrix(world, stiffnessPair);
 
-export const stiffnessMatrixDerivativeBot = (bot: Bot) => (dim: number) => (world: World): Matrix =>
+export const stiffnessMatrixDerivativeBot = (bot: Bot) => (dim: number) => (world: World): Matrix3[][] =>
     assembleMatrix(world, stiffnessPairDerivative(bot)(dim));
 
-export const stiffnessMatrixDerivativeEdge = (i: number, j: number) => (world: World): Matrix => {
+export const stiffnessMatrixDerivativeEdge = (i: number, j: number) => (world: World): Matrix3[][] => {
     const list = [...Array(world.bots.length)].map(() => 0);
     const edges = list.map(() => list);
     edges[i][j] = edges[j][i] = 1;
     const w = update(world, {
-        edges: { $set: matrix(edges) }
+        edges: { $set: edges }
     });
     return stiffnessMatrix(w);
 };
 
-export const forceMatrix = (world: World): Matrix =>
-    removeFixedFromVector(world)(matrix(world.bots.map(bot => [0, -bot.weight, 0]).flat()));
+export const forceMatrix = (world: World): Vector3[] =>
+    removeFixedFromVector(world)(world.bots.map(bot => new Vector3(0, -bot.weight, 0)));
+
+export const inverse = (mat: Matrix3[][]): Matrix3[][] =>
+    numberArrayToMatrix3Array(inv(matrix(numberArrayFromMatrix3Array(mat))).toArray() as number[][]);
 
 export const compliance = (world: World): number => {
-    const f = forceMatrix(world);
-    const k = stiffnessMatrix(world);
+    const f = matrix(numberArrayFromVector3Array(forceMatrix(world)));
+    const k = matrix(numberArrayFromMatrix3Array(stiffnessMatrix(world)));
     const ft = transpose(f);
     const kInv = inv(k);
     return (multiply(multiply(ft, kInv), f) as unknown) as number;
@@ -116,10 +99,10 @@ export const compliance = (world: World): number => {
 
 const mult = (b: Matrix) => (a: Matrix) => multiply(a, b);
 
-export const complianceDerivative = (func: (world: World) => Matrix) => (world: World): number => {
-    const f = forceMatrix(world);
-    const dk = func(world);
-    const k = stiffnessMatrix(world);
+export const complianceDerivative = (func: (world: World) => Matrix3[][]) => (world: World): number => {
+    const f = matrix(numberArrayFromVector3Array(forceMatrix(world)));
+    const dk = matrix(numberArrayFromMatrix3Array(func(world)));
+    const k = matrix(numberArrayFromMatrix3Array(stiffnessMatrix(world)));
     const ft = transpose(f);
     const kInv = inv(k);
     return -((pipe(ft, mult(kInv), mult(dk), mult(kInv), mult(f)) as unknown) as number);
@@ -131,19 +114,20 @@ export const complianceDerivativeBot = (bot: Bot) => (dim: number) => (world: Wo
 export const complianceDerivativeEdge = (i: number, j: number) => (world: World): number =>
     complianceDerivative(stiffnessMatrixDerivativeEdge(i, j))(world);
 
-export const distancePenalty = (d: Matrix): number => (dot(d, d) - 1) ** 2;
+export const distancePenalty = (d: Vector3): number => (d.dot(d) - 1) ** 2;
 
-export const distancePenaltyDerivative = (dim: number) => (d: Matrix): number => 4 * (dot(d, d) - 1) * d.get([dim]);
+export const distancePenaltyDerivative = (dim: number) => (d: Vector3): number =>
+    4 * ((d.dot(d) - 1) * d.getComponent(dim));
 
 export const distancePenaltyPair = (a: Bot, b: Bot, edge: number): number =>
-    multiply(distancePenalty(subtract(b.pos, a.pos) as Matrix), edge);
+    distancePenalty(b.pos.clone().sub(a.pos)) * edge;
 
 export const distancePenaltyPairDerivative = (dim: number) => (a: Bot, b: Bot, edge: number): number =>
-    multiply(distancePenaltyDerivative(dim)(subtract(b.pos, a.pos) as Matrix), edge);
+    distancePenaltyDerivative(dim)(b.pos.clone().sub(a.pos)) * edge;
 
 export const distancePenaltyTotal = (world: World): number => {
     let sum = 0;
-    (world.edges.toArray() as number[][]).forEach((row, i) => {
+    world.edges.forEach((row, i) => {
         row.forEach((edge, j) => {
             if (i >= j) return;
             sum += distancePenaltyPair(world.bots[i], world.bots[j], edge);
@@ -154,7 +138,7 @@ export const distancePenaltyTotal = (world: World): number => {
 
 export const distancePenaltyTotalDerivativeBot = (bot: Bot) => (dim: number) => (world: World): number => {
     let sum = 0;
-    (world.edges.toArray() as number[][]).forEach((row, i) => {
+    world.edges.forEach((row, i) => {
         row.forEach((edge, j) => {
             if (world.bots[j] !== bot) return;
             sum += distancePenaltyPairDerivative(dim)(world.bots[i], world.bots[j], edge);
@@ -178,28 +162,29 @@ export const optimizeStepBots = (stepSize: number) => (w: number) => (world: Wor
     const maxDist = 0.3;
     const newBots = world.bots.map(bot => {
         if (bot.fixed) return bot;
-        const d = [0, 1, 2].map(dim => objectiveDerivativeBot(w)(bot)(dim)(world));
-        let move = multiply(matrix(d), stepSize);
-        const moveDist = Math.sqrt(dot(move, move));
-        if (moveDist > maxDist) move = multiply(move, maxDist / moveDist);
-        return setPos(subtract(bot.pos, move) as Matrix)(bot);
+        const d = new Vector3();
+        [0, 1, 2].map(dim => d.setComponent(dim, objectiveDerivativeBot(w)(bot)(dim)(world)));
+        let move = d.multiplyScalar(stepSize);
+        const moveDist = move.length();
+        if (moveDist > maxDist) move = move.multiplyScalar(maxDist / moveDist);
+        return setPos(bot.pos.clone().sub(move))(bot);
     });
     return setBots(newBots)(world);
 };
 
 export const optimizeStepEdges = (stepSize: number) => (w: number) => (world: World): World => {
-    const newEdges = world.edges.toArray() as number[][];
+    const newEdges = world.edges;
     for (let i = 0; i < world.bots.length; ++i) {
         for (let j = 0; j < world.bots.length; ++j) {
             if (i === j) continue;
             const d = objectiveDerivativeEdge(w)(i, j)(world);
-            newEdges[i][j] = world.edges.get([i, j]) - d * stepSize;
+            newEdges[i][j] = world.edges[i][j] - d * stepSize;
             newEdges[i][j] = Math.max(newEdges[i][j], 0.001);
             newEdges[i][j] = Math.min(newEdges[i][j], 1);
         }
     }
     return update(world, {
-        edges: { $set: matrix(newEdges) }
+        edges: { $set: newEdges }
     });
 };
 
@@ -208,14 +193,12 @@ export const resolveCollisionStep = (world: World): World => {
         for (let j = i + 1; j < world.bots.length; ++j) {
             if (world.bots[i].fixed && world.bots[j].fixed) continue;
             const oneFixed = world.bots[i].fixed || world.bots[j].fixed;
-            const d = subtract(world.bots[j].pos, world.bots[i].pos) as Matrix;
-            const dist = Math.sqrt(dot(d, d));
+            const d = world.bots[j].pos.clone().sub(world.bots[i].pos);
+            const dist = d.length();
             if (dist > 1) continue;
-            const n = multiply(divide(d, dist), (1 - dist) / (oneFixed ? 1 : 2));
-            if (!world.bots[i].fixed)
-                world.bots[i] = update(world.bots[i], { pos: { $set: subtract(world.bots[i].pos, n) as Matrix } });
-            if (!world.bots[j].fixed)
-                world.bots[j] = update(world.bots[j], { pos: { $set: add(world.bots[j].pos, n) as Matrix } });
+            const n = d.multiplyScalar((1 - dist) / (oneFixed ? 1 : 2) / dist);
+            if (!world.bots[i].fixed) world.bots[i].pos = world.bots[i].pos.clone().sub(n);
+            if (!world.bots[j].fixed) world.bots[j].pos = world.bots[j].pos.clone().add(n);
         }
     }
     return world;
@@ -236,7 +219,7 @@ export const optimize = (world: World): World => {
     for (let i = 0; i < 100; ++i) {
         result = optimizeStep(0.01)(0.5)(result);
         console.log(result.bots[3].pos.toArray());
-        console.log(result.edges.toArray());
+        console.log(result.edges);
     }
     return result;
 };
