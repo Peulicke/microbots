@@ -4,6 +4,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
 import { pipe } from "ts-pipe-compose";
+import Prando from "prando";
+const rng = new Prando(123);
 import { Bot, World } from "./core";
 import { newScene, addSphere, addCylinder } from "./draw";
 
@@ -14,8 +16,7 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-const randomBot = () =>
-    Bot.setPos(new Vector3(...[Math.random(), Math.random(), Math.random()].map(x => x * 10)))(Bot.newBot());
+const randomBot = () => Bot.setPos(new Vector3(...[rng.next(), rng.next(), rng.next()].map(x => x * 10)))(Bot.newBot());
 
 const bot1 = Bot.setFixed(true)(Bot.newBot());
 const bot2 = Bot.setFixed(true)(Bot.setPos(new Vector3(3, 0, 0))(Bot.newBot()));
