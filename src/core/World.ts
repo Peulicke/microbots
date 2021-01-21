@@ -168,29 +168,33 @@ export const distancePenaltyTotalDerivativeEdge = (i: number, j: number) => (wor
 
 export const objective = (world: World): number => compliance(world) + distancePenaltyTotal(world);
 
-export const objectiveDerivativeBot = (bot: Bot) => (dim: number) => (world: World): number =>
-    complianceDerivativeBot(bot)(dim)(world) + distancePenaltyTotalDerivativeBot(bot)(dim)(world);
+export const objectiveDerivativeBot = (w: number) => (bot: Bot) => (dim: number) => (world: World): number =>
+    complianceDerivativeBot(bot)(dim)(world) * (1 - w) + distancePenaltyTotalDerivativeBot(bot)(dim)(world) * w;
 
-export const objectiveDerivativeEdge = (i: number, j: number) => (world: World): number =>
-    complianceDerivativeEdge(i, j)(world) + distancePenaltyTotalDerivativeEdge(i, j)(world);
+export const objectiveDerivativeEdge = (w: number) => (i: number, j: number) => (world: World): number =>
+    complianceDerivativeEdge(i, j)(world) * (1 - w) + distancePenaltyTotalDerivativeEdge(i, j)(world) * w;
 
-export const optimizeStepBots = (stepSize: number) => (world: World): World => {
+export const optimizeStepBots = (stepSize: number) => (w: number) => (world: World): World => {
+    const maxDist = 0.3;
     const newBots = world.bots.map(bot => {
         if (bot.fixed) return bot;
-        const d = [0, 1, 2].map(dim => objectiveDerivativeBot(bot)(dim)(world));
-        return setPos(subtract(bot.pos, multiply(matrix(d), stepSize)) as Matrix)(bot);
+        const d = [0, 1, 2].map(dim => objectiveDerivativeBot(w)(bot)(dim)(world));
+        let move = multiply(matrix(d), stepSize);
+        const moveDist = Math.sqrt(dot(move, move));
+        if (moveDist > maxDist) move = multiply(move, maxDist / moveDist);
+        return setPos(subtract(bot.pos, move) as Matrix)(bot);
     });
     return setBots(newBots)(world);
 };
 
-export const optimizeStepEdges = (stepSize: number) => (world: World): World => {
+export const optimizeStepEdges = (stepSize: number) => (w: number) => (world: World): World => {
     const newEdges = world.edges.toArray() as number[][];
     for (let i = 0; i < world.bots.length; ++i) {
         for (let j = 0; j < world.bots.length; ++j) {
             if (i === j) continue;
-            const d = objectiveDerivativeEdge(i, j)(world);
+            const d = objectiveDerivativeEdge(w)(i, j)(world);
             newEdges[i][j] = world.edges.get([i, j]) - d * stepSize;
-            newEdges[i][j] = Math.max(newEdges[i][j], 0);
+            newEdges[i][j] = Math.max(newEdges[i][j], 0.001);
             newEdges[i][j] = Math.min(newEdges[i][j], 1);
         }
     }
@@ -199,11 +203,38 @@ export const optimizeStepEdges = (stepSize: number) => (world: World): World => 
     });
 };
 
+export const resolveCollisionStep = (world: World): World => {
+    for (let i = 0; i < world.bots.length; ++i) {
+        for (let j = i + 1; j < world.bots.length; ++j) {
+            if (world.bots[i].fixed && world.bots[j].fixed) continue;
+            const oneFixed = world.bots[i].fixed || world.bots[j].fixed;
+            const d = subtract(world.bots[j].pos, world.bots[i].pos) as Matrix;
+            const dist = Math.sqrt(dot(d, d));
+            if (dist > 1) continue;
+            const n = multiply(divide(d, dist), (1 - dist) / (oneFixed ? 1 : 2));
+            if (!world.bots[i].fixed)
+                world.bots[i] = update(world.bots[i], { pos: { $set: subtract(world.bots[i].pos, n) as Matrix } });
+            if (!world.bots[j].fixed)
+                world.bots[j] = update(world.bots[j], { pos: { $set: add(world.bots[j].pos, n) as Matrix } });
+        }
+    }
+    return world;
+};
+
+export const resolveCollision = (world: World): World => {
+    let result = world;
+    for (let i = 0; i < 10; ++i) result = resolveCollisionStep(result);
+    return result;
+};
+
+export const optimizeStep = (stepSize: number) => (w: number) => (world: World): World => {
+    return pipe(world, optimizeStepBots(stepSize)(w), optimizeStepEdges(stepSize)(w), resolveCollision);
+};
+
 export const optimize = (world: World): World => {
     let result = world;
     for (let i = 0; i < 100; ++i) {
-        result = optimizeStepBots(0.01)(result);
-        result = optimizeStepEdges(0.01)(result);
+        result = optimizeStep(0.01)(0.5)(result);
         console.log(result.bots[3].pos.toArray());
         console.log(result.edges.toArray());
     }

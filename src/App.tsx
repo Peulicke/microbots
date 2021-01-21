@@ -1,24 +1,12 @@
 import React, { FC, useEffect, useRef, useState } from "react";
-import {
-    Vector3,
-    PerspectiveCamera,
-    WebGLRenderer,
-    Scene,
-    AmbientLight,
-    DirectionalLight,
-    Matrix4,
-    SphereGeometry,
-    Color,
-    BufferGeometry,
-    Mesh,
-    MeshToonMaterial
-} from "three";
+import { PerspectiveCamera, WebGLRenderer, Scene } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
 import { pipe } from "ts-pipe-compose";
 import { matrix } from "mathjs";
 import { Bot, World } from "./core";
+import { newScene, addSphere } from "./draw";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -27,14 +15,13 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-const bot1 = Bot.setFixed(true)(Bot.newBot());
-const bot2 = Bot.setFixed(true)(Bot.setPos(matrix([1, 0, 0]))(Bot.newBot()));
-const bot3 = Bot.setFixed(true)(Bot.setPos(matrix([0, 0, 1]))(Bot.newBot()));
-const bot4 = Bot.setPos(matrix([0, 1, 0]))(Bot.newBot());
-const bots = [bot1, bot2, bot3, bot4];
-const world = pipe(World.newWorld(), World.setBots(bots), World.initEdges);
+const randomBot = () => Bot.setPos(matrix([Math.random(), Math.random(), Math.random()].map(x => x * 3)))(Bot.newBot());
 
-World.optimize(world);
+const bot1 = Bot.setFixed(true)(Bot.newBot());
+const bot2 = Bot.setFixed(true)(Bot.setPos(matrix([2, 0, 0]))(Bot.newBot()));
+const bot3 = Bot.setFixed(true)(Bot.setPos(matrix([0, 0, 2]))(Bot.newBot()));
+const bots = [bot1, bot2, bot3, randomBot(), randomBot(), randomBot(), randomBot()];
+let world = pipe(World.newWorld(), World.setBots(bots), World.initEdges);
 
 const App: FC = () => {
     const [windowWidth, windowHeight] = useWindowSize();
@@ -54,7 +41,7 @@ const App: FC = () => {
         if (!mc) return;
         // Camera
         const cam = new PerspectiveCamera(fov, width / height, 0.1, 1000);
-        cam.position.set(50, 50, 50);
+        cam.position.set(10, 10, 10);
         cam.lookAt(0, 0, 0);
         setCamera(cam);
         // Renderer
@@ -68,28 +55,6 @@ const App: FC = () => {
         ctrls.enableDamping = true;
         ctrls.dampingFactor = 0.5;
         setControls(ctrls);
-
-        const scn = new Scene();
-        scn.add(new AmbientLight(0xffffff, 0.4));
-        const light = new DirectionalLight(0xffffff, 0.4);
-        light.position.set(0, 1, 0);
-        scn.add(light);
-
-        const mat = new Matrix4().setPosition(new Vector3(0, 0, 0));
-        const geom = new SphereGeometry(1, 16, 16).applyMatrix4(mat);
-        geom.computeVertexNormals();
-        const color = new Color(0, 1, 0);
-        geom.faces.forEach(face => (face.vertexColors = new Array(3).fill(true).map(() => color)));
-        const bg = new BufferGeometry().fromGeometry(geom);
-        delete bg.attributes.uv;
-        const mesh = new Mesh(bg, new MeshToonMaterial({ color: color }));
-        mesh.geometry = bg;
-        mesh.matrixAutoUpdate = false;
-        mesh.matrix = mat;
-        mesh.updateMatrix();
-        scn.add(mesh);
-        setScene(scn);
-
         // Animate
         const t = window.setInterval(() => setFrame(frame => frame + 1), 1000 / 30);
         return () => {
@@ -101,6 +66,9 @@ const App: FC = () => {
     useEffect(() => {
         if (controls) controls.update();
         if (renderer && scene && camera) renderer.render(scene, camera);
+        if (Math.random() < 0.9) return;
+        setScene(world.bots.map(bot => addSphere(bot.pos)).reduce((x, fn) => fn(x), newScene()));
+        world = World.optimizeStep(0.1)(0.9)(world);
     }, [controls, renderer, scene, camera, frame]);
 
     return (

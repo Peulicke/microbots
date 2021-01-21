@@ -251,5 +251,5 @@ it("computes objective derivative", () => {
     const bot4 = setPos(matrix([0, 1, 0]))(newBot());
     const bots = [bot1, bot2, bot3, bot4];
     const world = pipe(newWorld(), setBots(bots), initEdges);
-    expect(objectiveDerivativeBot(bot4)(0)(world)).toBeCloseTo(-6);
+    expect(objectiveDerivativeBot(0.5)(bot4)(0)(world)).toBeCloseTo(-3);
 });
