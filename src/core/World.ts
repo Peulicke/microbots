@@ -214,6 +214,60 @@ export const optimizeStep = (stepSize: number) => (w: number) => (world: World):
     return pipe(world, optimizeStepBots(stepSize)(w), optimizeStepEdges(stepSize)(w), resolveCollision);
 };
 
+let qwe = 5;
+export const optimizeStepNumericalBotDim = (stepSize: number) => (world: World) => (bot: Bot) => (
+    dim: number
+): World => {
+    const epsilon = 0.001;
+    const val = bot.pos.getComponent(dim);
+    bot.pos.setComponent(dim, val + epsilon);
+    for (let i = 0; i < world.bots.length; ++i) {
+        for (let j = 0; j < world.bots.length; ++j) {
+            if (i === j) continue;
+            const d = world.bots[j].pos.clone().sub(world.bots[i].pos).length();
+            world.edges[i][j] = 1 / (1 + Math.exp(4 * (d - qwe))) + 0.001;
+        }
+    }
+    const plus = compliance(world);
+    bot.pos.setComponent(dim, val - epsilon);
+    for (let i = 0; i < world.bots.length; ++i) {
+        for (let j = 0; j < world.bots.length; ++j) {
+            if (i === j) continue;
+            const d = world.bots[j].pos.clone().sub(world.bots[i].pos).length();
+            world.edges[i][j] = 1 / (1 + Math.exp(4 * (d - qwe))) + 0.001;
+        }
+    }
+    const minus = compliance(world);
+    bot.pos.setComponent(dim, val);
+    let move = -(plus - minus) * stepSize;
+    const maxMove = 0.5;
+    if (Math.abs(move) > maxMove) move = maxMove * Math.sign(move);
+    bot.pos.setComponent(dim, val + move);
+    for (let i = 0; i < world.bots.length; ++i) {
+        for (let j = 0; j < world.bots.length; ++j) {
+            if (i === j) continue;
+            const d = world.bots[j].pos.clone().sub(world.bots[i].pos).length();
+            world.edges[i][j] = 1 / (1 + Math.exp(4 * (d - qwe))) + 0.001;
+        }
+    }
+    return world;
+};
+
+export const optimizeStepNumericalBot = (stepSize: number) => (world: World) => (bot: Bot): World => {
+    if (bot.fixed) return world;
+    const fun = optimizeStepNumericalBotDim(stepSize)(world)(bot);
+    [0, 1, 2].map(dim => fun(dim));
+    return world;
+};
+
+export const optimizeStepNumerical = (stepSize: number) => (world: World): World => {
+    qwe = 1 + (qwe - 1) * 0.99;
+    console.log(qwe);
+    const fun = optimizeStepNumericalBot(stepSize)(world);
+    world.bots.map(bot => fun(bot));
+    return resolveCollision(world);
+};
+
 export const optimize = (world: World): World => {
     let result = world;
     for (let i = 0; i < 100; ++i) {

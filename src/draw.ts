@@ -8,7 +8,9 @@ import {
     Color,
     BufferGeometry,
     Mesh,
-    MeshPhongMaterial
+    MeshPhongMaterial,
+    CylinderGeometry,
+    Object3D
 } from "three";
 
 export const newScene = (): Scene => {
@@ -33,5 +35,20 @@ export const addSphere = (pos: Vector3, color: Color) => (scene: Scene): Scene =
     mesh.matrix = mat;
     mesh.updateMatrix();
     scene.add(mesh);
+    return scene;
+};
+
+export const addCylinder = (from: Vector3, to: Vector3, radius: number, color: Color) => (scene: Scene): Scene => {
+    const direction = new Vector3().subVectors(to, from);
+    const orientation = new Matrix4();
+    orientation.lookAt(from, to, new Object3D().up);
+    orientation.multiply(new Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1));
+    const edgeGeometry = new CylinderGeometry(radius, radius, direction.length(), 8, 1);
+    const edge = new Mesh(edgeGeometry, new MeshPhongMaterial({ color: color }));
+    edge.applyMatrix4(orientation);
+    edge.position.x = (to.x + from.x) / 2;
+    edge.position.y = (to.y + from.y) / 2;
+    edge.position.z = (to.z + from.z) / 2;
+    scene.add(edge);
     return scene;
 };

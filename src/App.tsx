@@ -5,7 +5,7 @@ import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
 import { pipe } from "ts-pipe-compose";
 import { Bot, World } from "./core";
-import { newScene, addSphere } from "./draw";
+import { newScene, addSphere, addCylinder } from "./draw";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -15,10 +15,10 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const randomBot = () =>
-    Bot.setPos(new Vector3(...[Math.random(), Math.random(), Math.random()].map(x => x * 3)))(Bot.newBot());
+    Bot.setPos(new Vector3(...[Math.random(), Math.random(), Math.random()].map(x => x * 10)))(Bot.newBot());
 
 const bot1 = Bot.setFixed(true)(Bot.newBot());
-const bot2 = Bot.setFixed(true)(Bot.setPos(new Vector3(5, 0, 0))(Bot.newBot()));
+const bot2 = Bot.setFixed(true)(Bot.setPos(new Vector3(3, 0, 0))(Bot.newBot()));
 const bot3 = Bot.setFixed(true)(Bot.setPos(new Vector3(0, 0, 2))(Bot.newBot()));
 const bots = [
     bot1,
@@ -78,15 +78,33 @@ const App: FC = () => {
     useEffect(() => {
         if (controls) controls.update();
         if (renderer && scene && camera) renderer.render(scene, camera);
-        if (iterations >= 100) return;
-        setIterations(iterations + 1);
-        setScene(
-            world.bots
-                .map(bot => addSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)))
-                .reduce((x, fn) => fn(x), newScene())
-        );
-        world = World.optimizeStep(0.1)(0.9)(world);
     }, [controls, renderer, scene, camera, frame]);
+
+    useEffect(() => {
+        if (iterations >= 300) return;
+        const t = setTimeout(() => {
+            setIterations(iterations + 1);
+            if (iterations % 4 === 0) {
+                let scn = world.bots
+                    .map(bot => addSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)))
+                    .reduce((x, fn) => fn(x), newScene());
+                world.bots.map((from, i) =>
+                    world.bots.map((to, j) => {
+                        if (i >= j) return;
+                        scn = addCylinder(
+                            from.pos,
+                            to.pos,
+                            Math.sqrt(world.edges[i][j]) * 0.3,
+                            new Color(1, 0, 0)
+                        )(scn);
+                    })
+                );
+                setScene(scn);
+            }
+            world = World.optimizeStepNumerical(1)(world);
+        }, 10);
+        return () => clearTimeout(t);
+    }, [controls, renderer, scene, camera, iterations]);
 
     return (
         <>
