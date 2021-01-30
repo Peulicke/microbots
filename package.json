@@ -17,7 +17,6 @@
         "i": "^0.3.6",
         "immutability-helper": "^3.1.1",
         "linear-solve": "^1.2.1",
-        "mathjs": "^9.0.0",
         "npm": "^6.14.11",
         "prando": "^5.1.2",
         "react": "^17.0.1",

@@ -1,5 +1,3 @@
-import { pipe } from "ts-pipe-compose";
-import { matrix, Matrix, transpose, multiply, inv } from "mathjs";
 import { Vector3, Matrix3 } from "three";
 import {
     dot,
@@ -98,17 +96,6 @@ export const compliance = (world: World): number => {
     const f = numberArrayFromVector3Array(forceMatrix(world));
     const u = displacement(world);
     return dot(f, u);
-};
-
-const mult = (b: Matrix) => (a: Matrix) => multiply(a, b);
-
-export const complianceDerivative = (func: (world: World) => Matrix3[][]) => (world: World): number => {
-    const f = matrix(numberArrayFromVector3Array(forceMatrix(world)));
-    const dk = matrix(numberArrayFromMatrix3Array(func(world)));
-    const k = matrix(numberArrayFromMatrix3Array(stiffnessMatrix(world)));
-    const ft = transpose(f);
-    const kInv = inv(k);
-    return -((pipe(ft, mult(kInv), mult(dk), mult(kInv), mult(f)) as unknown) as number);
 };
 
 export const objective = (world: World): number => compliance(world);
