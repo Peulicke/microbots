@@ -35,6 +35,22 @@ edgeMeshes.map((row, i) =>
     })
 );
 
+const updateWorld = () => {
+    world = World.optimizeStepNumerical(0.5)(world);
+    world.bots.map((bot, i) => {
+        botMeshes[i].position.set(...bot.pos.toArray());
+    });
+    world.bots.map((from, i) =>
+        world.bots.map((to, j) => {
+            if (i >= j) return;
+            scene.remove(edgeMeshes[i][j]);
+            if (world.edges[i][j] < 0.01) return;
+            scene.add(edgeMeshes[i][j]);
+            updateCylinder(from.pos, to.pos, Math.sqrt(world.edges[i][j]) * 0.3)(edgeMeshes[i][j]);
+        })
+    );
+};
+
 const App: FC = () => {
     const [windowWidth, windowHeight] = useWindowSize();
     const width = windowWidth * 0.55;
@@ -82,21 +98,12 @@ const App: FC = () => {
 
     useEffect(() => {
         if (iterations >= 50) return;
-        setIterations(iterations + 1);
-        world.bots.map((bot, i) => {
-            botMeshes[i].position.set(...bot.pos.toArray());
-        });
-        world.bots.map((from, i) =>
-            world.bots.map((to, j) => {
-                if (i >= j) return;
-                scene.remove(edgeMeshes[i][j]);
-                if (world.edges[i][j] < 0.01) return;
-                scene.add(edgeMeshes[i][j]);
-                updateCylinder(from.pos, to.pos, Math.sqrt(world.edges[i][j]) * 0.3)(edgeMeshes[i][j]);
-            })
-        );
-        world = World.optimizeStepNumerical(0.5)(world);
-    }, [controls, renderer, camera, iterations]);
+        const t = setTimeout(() => {
+            updateWorld();
+            setIterations(iterations + 1);
+        }, 10);
+        return () => clearTimeout(t);
+    }, [iterations]);
 
     return (
         <>
