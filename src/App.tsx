@@ -21,38 +21,7 @@ const randomBot = () => Bot.setPos(new Vector3(...[rng.next(), rng.next(), rng.n
 const bot1 = Bot.setFixed(true)(Bot.newBot());
 const bot2 = Bot.setFixed(true)(Bot.setPos(new Vector3(3, 0, 0))(Bot.newBot()));
 const bot3 = Bot.setFixed(true)(Bot.setPos(new Vector3(0, 0, 2))(Bot.newBot()));
-const bots = [
-    bot1,
-    bot2,
-    bot3,
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot(),
-    randomBot()
-];
+const bots = [bot1, bot2, bot3, ...[...Array(97)].map(randomBot)];
 let world = pipe(World.newWorld(), World.setBots(bots), World.initEdges);
 
 const App: FC = () => {
@@ -102,7 +71,7 @@ const App: FC = () => {
     }, [controls, renderer, scene, camera, frame]);
 
     useEffect(() => {
-        if (iterations >= 50) return;
+        if (iterations >= 30) return;
         const t = setTimeout(() => {
             setIterations(iterations + 1);
             let scn = world.bots
@@ -111,6 +80,7 @@ const App: FC = () => {
             world.bots.map((from, i) =>
                 world.bots.map((to, j) => {
                     if (i >= j) return;
+                    if (world.edges[i][j] < 0.01) return;
                     scn = addCylinder(from.pos, to.pos, Math.sqrt(world.edges[i][j]) * 0.3, new Color(1, 0, 0))(scn);
                 })
             );
