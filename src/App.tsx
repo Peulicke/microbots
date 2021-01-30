@@ -41,6 +41,16 @@ const bots = [
     randomBot(),
     randomBot(),
     randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
+    randomBot(),
     randomBot()
 ];
 let world = pipe(World.newWorld(), World.setBots(bots), World.initEdges);

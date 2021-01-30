@@ -131,7 +131,7 @@ it("computes stiffness matrix derivative", () => {
         [m10, m11, m12],
         [m20, m21, m22]
     ];
-    stiffnessMatrixDerivative((d: number) => 1)(bot)(1)(world).map((row, i) =>
+    stiffnessMatrixDerivative((d: number) => 1)(1)(1)(world).map((row, i) =>
         row.map((m, j) => subMatrix3(m, expected[i][j]).elements.map(element => expect(element).toBeCloseTo(0)))
     );
 });
