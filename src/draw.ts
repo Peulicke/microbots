@@ -22,33 +22,32 @@ export const newScene = (): Scene => {
     return scene;
 };
 
-export const addSphere = (pos: Vector3, color: Color) => (scene: Scene): Scene => {
-    const mat = new Matrix4().setPosition(pos).scale(new Vector3(0.5, 0.5, 0.5));
-    const geom = new SphereGeometry(1, 16, 16).applyMatrix4(mat);
+export const newSphere = (pos: Vector3, color: Color): Mesh => {
+    const geom = new SphereGeometry(1, 16, 16);
     geom.computeVertexNormals();
     geom.faces.forEach(face => (face.vertexColors = new Array(3).fill(true).map(() => color)));
     const bg = new BufferGeometry().fromGeometry(geom);
     delete bg.attributes.uv;
     const mesh = new Mesh(bg, new MeshPhongMaterial({ color: color }));
     mesh.geometry = bg;
-    mesh.matrixAutoUpdate = false;
-    mesh.matrix = mat;
-    mesh.updateMatrix();
-    scene.add(mesh);
-    return scene;
+    mesh.position.set(...(pos.toArray() as [number, number, number]));
+    mesh.scale.set(0.5, 0.5, 0.5);
+    return mesh;
 };
 
-export const addCylinder = (from: Vector3, to: Vector3, radius: number, color: Color) => (scene: Scene): Scene => {
+export const updateCylinder = (from: Vector3, to: Vector3, radius: number) => (cylinder: Mesh): Mesh => {
     const direction = new Vector3().subVectors(to, from);
     const orientation = new Matrix4();
     orientation.lookAt(from, to, new Object3D().up);
     orientation.multiply(new Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1));
-    const edgeGeometry = new CylinderGeometry(radius, radius, direction.length(), 8, 1);
-    const edge = new Mesh(edgeGeometry, new MeshPhongMaterial({ color: color }));
-    edge.applyMatrix4(orientation);
-    edge.position.x = (to.x + from.x) / 2;
-    edge.position.y = (to.y + from.y) / 2;
-    edge.position.z = (to.z + from.z) / 2;
-    scene.add(edge);
-    return scene;
+    cylinder.setRotationFromMatrix(orientation);
+    cylinder.scale.set(radius, direction.length(), radius);
+    cylinder.position.set(...from.clone().add(to).divideScalar(2).toArray());
+    return cylinder;
+};
+
+export const newCylinder = (from: Vector3, to: Vector3, radius: number, color: Color): Mesh => {
+    const edgeGeometry = new CylinderGeometry(1, 1, 1, 8, 1);
+    const cylinder = new Mesh(edgeGeometry, new MeshPhongMaterial({ color: color }));
+    return updateCylinder(from, to, radius)(cylinder);
 };

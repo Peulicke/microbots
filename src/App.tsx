@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useRef, useState } from "react";
-import { Vector3, PerspectiveCamera, WebGLRenderer, Scene, Color } from "three";
+import { Vector3, PerspectiveCamera, WebGLRenderer, Color } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
@@ -7,7 +7,7 @@ import { pipe } from "ts-pipe-compose";
 import Prando from "prando";
 const rng = new Prando(123);
 import { Bot, World } from "./core";
-import { newScene, addSphere, addCylinder } from "./draw";
+import { newScene, newSphere, newCylinder, updateCylinder } from "./draw";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -21,8 +21,19 @@ const randomBot = () => Bot.setPos(new Vector3(...[rng.next(), rng.next(), rng.n
 const bot1 = Bot.setFixed(true)(Bot.newBot());
 const bot2 = Bot.setFixed(true)(Bot.setPos(new Vector3(3, 0, 0))(Bot.newBot()));
 const bot3 = Bot.setFixed(true)(Bot.setPos(new Vector3(0, 0, 2))(Bot.newBot()));
-const bots = [bot1, bot2, bot3, ...[...Array(97)].map(randomBot)];
+const bots = [bot1, bot2, bot3, ...[...Array(47)].map(randomBot)];
 let world = pipe(World.newWorld(), World.setBots(bots), World.initEdges);
+
+const botMeshes = bots.map(bot => newSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)));
+const edgeMeshes = bots.map(a => bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0))));
+const scene = newScene();
+botMeshes.map(mesh => scene.add(mesh));
+edgeMeshes.map((row, i) =>
+    row.map((mesh, j) => {
+        if (i >= j) return;
+        scene.add(mesh);
+    })
+);
 
 const App: FC = () => {
     const [windowWidth, windowHeight] = useWindowSize();
@@ -32,7 +43,6 @@ const App: FC = () => {
     const classes = useStyles();
     const mount = useRef<HTMLDivElement>(null);
     const [controls, setControls] = useState<OrbitControls>();
-    const [scene, setScene] = useState<Scene>();
     const [camera, setCamera] = useState<PerspectiveCamera>();
     const [renderer, setRenderer] = useState<WebGLRenderer>();
     const [frame, setFrame] = useState(0);
@@ -67,28 +77,29 @@ const App: FC = () => {
 
     useEffect(() => {
         if (controls) controls.update();
-        if (renderer && scene && camera) renderer.render(scene, camera);
-    }, [controls, renderer, scene, camera, frame]);
+        if (renderer && camera) renderer.render(scene, camera);
+    }, [controls, renderer, camera, frame]);
 
     useEffect(() => {
         if (iterations >= 30) return;
         const t = setTimeout(() => {
             setIterations(iterations + 1);
-            let scn = world.bots
-                .map(bot => addSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)))
-                .reduce((x, fn) => fn(x), newScene());
+            world.bots.map((bot, i) => {
+                botMeshes[i].position.set(...bot.pos.toArray());
+            });
             world.bots.map((from, i) =>
                 world.bots.map((to, j) => {
                     if (i >= j) return;
+                    scene.remove(edgeMeshes[i][j]);
                     if (world.edges[i][j] < 0.01) return;
-                    scn = addCylinder(from.pos, to.pos, Math.sqrt(world.edges[i][j]) * 0.3, new Color(1, 0, 0))(scn);
+                    scene.add(edgeMeshes[i][j]);
+                    updateCylinder(from.pos, to.pos, Math.sqrt(world.edges[i][j]) * 0.3)(edgeMeshes[i][j]);
                 })
             );
-            setScene(scn);
             world = World.optimizeStepNumerical(0.5)(world);
         }, 10);
         return () => clearTimeout(t);
-    }, [controls, renderer, scene, camera, iterations]);
+    }, [controls, renderer, camera, iterations]);
 
     return (
         <>
