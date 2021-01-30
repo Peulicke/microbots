@@ -82,10 +82,10 @@ const App: FC = () => {
     }, [controls, renderer, scene, camera, frame]);
 
     useEffect(() => {
-        if (iterations >= 300) return;
+        if (iterations >= 50) return;
         const t = setTimeout(() => {
             setIterations(iterations + 1);
-            if (iterations % 4 === 0) {
+            if (iterations % 1 === 0) {
                 let scn = world.bots
                     .map(bot => addSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)))
                     .reduce((x, fn) => fn(x), newScene());

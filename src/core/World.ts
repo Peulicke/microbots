@@ -1,4 +1,3 @@
-import update from "immutability-helper";
 import { pipe } from "ts-pipe-compose";
 import { matrix, Matrix, transpose, multiply, inv } from "mathjs";
 import { Vector3, Matrix3 } from "three";
@@ -10,7 +9,7 @@ import {
     numberArrayFromMatrix3Array,
     numberArrayToMatrix3Array
 } from "./utils";
-import { Bot, setPos } from "./Bot";
+import { Bot } from "./Bot";
 
 export type World = { bots: Bot[]; edges: number[][] };
 
@@ -73,16 +72,6 @@ export const stiffnessMatrix = (world: World): Matrix3[][] => assembleMatrix(wor
 export const stiffnessMatrixDerivativeBot = (bot: Bot) => (dim: number) => (world: World): Matrix3[][] =>
     assembleMatrix(world, stiffnessPairDerivative(bot)(dim));
 
-export const stiffnessMatrixDerivativeEdge = (i: number, j: number) => (world: World): Matrix3[][] => {
-    const list = [...Array(world.bots.length)].map(() => 0);
-    const edges = list.map(() => list);
-    edges[i][j] = edges[j][i] = 1;
-    const w = update(world, {
-        edges: { $set: edges }
-    });
-    return stiffnessMatrix(w);
-};
-
 export const forceMatrix = (world: World): Vector3[] =>
     removeFixedFromVector(world)(world.bots.map(bot => new Vector3(0, -bot.weight, 0)));
 
@@ -111,82 +100,7 @@ export const complianceDerivative = (func: (world: World) => Matrix3[][]) => (wo
 export const complianceDerivativeBot = (bot: Bot) => (dim: number) => (world: World): number =>
     complianceDerivative(stiffnessMatrixDerivativeBot(bot)(dim))(world);
 
-export const complianceDerivativeEdge = (i: number, j: number) => (world: World): number =>
-    complianceDerivative(stiffnessMatrixDerivativeEdge(i, j))(world);
-
-export const distancePenalty = (d: Vector3): number => (d.dot(d) - 1) ** 2;
-
-export const distancePenaltyDerivative = (dim: number) => (d: Vector3): number =>
-    4 * ((d.dot(d) - 1) * d.getComponent(dim));
-
-export const distancePenaltyPair = (a: Bot, b: Bot, edge: number): number =>
-    distancePenalty(b.pos.clone().sub(a.pos)) * edge;
-
-export const distancePenaltyPairDerivative = (dim: number) => (a: Bot, b: Bot, edge: number): number =>
-    distancePenaltyDerivative(dim)(b.pos.clone().sub(a.pos)) * edge;
-
-export const distancePenaltyTotal = (world: World): number => {
-    let sum = 0;
-    world.edges.forEach((row, i) => {
-        row.forEach((edge, j) => {
-            if (i >= j) return;
-            sum += distancePenaltyPair(world.bots[i], world.bots[j], edge);
-        });
-    });
-    return sum;
-};
-
-export const distancePenaltyTotalDerivativeBot = (bot: Bot) => (dim: number) => (world: World): number => {
-    let sum = 0;
-    world.edges.forEach((row, i) => {
-        row.forEach((edge, j) => {
-            if (world.bots[j] !== bot) return;
-            sum += distancePenaltyPairDerivative(dim)(world.bots[i], world.bots[j], edge);
-        });
-    });
-    return sum;
-};
-
-export const distancePenaltyTotalDerivativeEdge = (i: number, j: number) => (world: World): number =>
-    distancePenaltyPair(world.bots[i], world.bots[j], 1);
-
-export const objective = (world: World): number => compliance(world) + distancePenaltyTotal(world);
-
-export const objectiveDerivativeBot = (w: number) => (bot: Bot) => (dim: number) => (world: World): number =>
-    complianceDerivativeBot(bot)(dim)(world) * (1 - w) + distancePenaltyTotalDerivativeBot(bot)(dim)(world) * w;
-
-export const objectiveDerivativeEdge = (w: number) => (i: number, j: number) => (world: World): number =>
-    complianceDerivativeEdge(i, j)(world) * (1 - w) + distancePenaltyTotalDerivativeEdge(i, j)(world) * w;
-
-export const optimizeStepBots = (stepSize: number) => (w: number) => (world: World): World => {
-    const maxDist = 0.3;
-    const newBots = world.bots.map(bot => {
-        if (bot.fixed) return bot;
-        const d = new Vector3();
-        [0, 1, 2].map(dim => d.setComponent(dim, objectiveDerivativeBot(w)(bot)(dim)(world)));
-        let move = d.multiplyScalar(stepSize);
-        const moveDist = move.length();
-        if (moveDist > maxDist) move = move.multiplyScalar(maxDist / moveDist);
-        return setPos(bot.pos.clone().sub(move))(bot);
-    });
-    return setBots(newBots)(world);
-};
-
-export const optimizeStepEdges = (stepSize: number) => (w: number) => (world: World): World => {
-    const newEdges = world.edges;
-    for (let i = 0; i < world.bots.length; ++i) {
-        for (let j = 0; j < world.bots.length; ++j) {
-            if (i === j) continue;
-            const d = objectiveDerivativeEdge(w)(i, j)(world);
-            newEdges[i][j] = world.edges[i][j] - d * stepSize;
-            newEdges[i][j] = Math.max(newEdges[i][j], 0.001);
-            newEdges[i][j] = Math.min(newEdges[i][j], 1);
-        }
-    }
-    return update(world, {
-        edges: { $set: newEdges }
-    });
-};
+export const objective = (world: World): number => compliance(world);
 
 export const resolveCollisionStep = (world: World): World => {
     for (let i = 0; i < world.bots.length; ++i) {
@@ -210,46 +124,35 @@ export const resolveCollision = (world: World): World => {
     return result;
 };
 
-export const optimizeStep = (stepSize: number) => (w: number) => (world: World): World => {
-    return pipe(world, optimizeStepBots(stepSize)(w), optimizeStepEdges(stepSize)(w), resolveCollision);
+const slack = 1.5;
+
+const updateEdges = (world: World) => {
+    for (let i = 0; i < world.bots.length; ++i) {
+        for (let j = 0; j < world.bots.length; ++j) {
+            if (i === j) continue;
+            const d = world.bots[j].pos.clone().sub(world.bots[i].pos).length();
+            world.edges[i][j] = 1 / (1 + Math.exp(4 * (d - slack)));
+        }
+    }
 };
 
-let qwe = 5;
 export const optimizeStepNumericalBotDim = (stepSize: number) => (world: World) => (bot: Bot) => (
     dim: number
 ): World => {
     const epsilon = 0.001;
     const val = bot.pos.getComponent(dim);
     bot.pos.setComponent(dim, val + epsilon);
-    for (let i = 0; i < world.bots.length; ++i) {
-        for (let j = 0; j < world.bots.length; ++j) {
-            if (i === j) continue;
-            const d = world.bots[j].pos.clone().sub(world.bots[i].pos).length();
-            world.edges[i][j] = 1 / (1 + Math.exp(4 * (d - qwe))) + 0.001;
-        }
-    }
+    updateEdges(world);
     const plus = compliance(world);
     bot.pos.setComponent(dim, val - epsilon);
-    for (let i = 0; i < world.bots.length; ++i) {
-        for (let j = 0; j < world.bots.length; ++j) {
-            if (i === j) continue;
-            const d = world.bots[j].pos.clone().sub(world.bots[i].pos).length();
-            world.edges[i][j] = 1 / (1 + Math.exp(4 * (d - qwe))) + 0.001;
-        }
-    }
+    updateEdges(world);
     const minus = compliance(world);
     bot.pos.setComponent(dim, val);
     let move = -(plus - minus) * stepSize;
     const maxMove = 0.5;
     if (Math.abs(move) > maxMove) move = maxMove * Math.sign(move);
     bot.pos.setComponent(dim, val + move);
-    for (let i = 0; i < world.bots.length; ++i) {
-        for (let j = 0; j < world.bots.length; ++j) {
-            if (i === j) continue;
-            const d = world.bots[j].pos.clone().sub(world.bots[i].pos).length();
-            world.edges[i][j] = 1 / (1 + Math.exp(4 * (d - qwe))) + 0.001;
-        }
-    }
+    updateEdges(world);
     return world;
 };
 
@@ -261,19 +164,7 @@ export const optimizeStepNumericalBot = (stepSize: number) => (world: World) => 
 };
 
 export const optimizeStepNumerical = (stepSize: number) => (world: World): World => {
-    qwe = 1 + (qwe - 1) * 0.99;
-    console.log(qwe);
     const fun = optimizeStepNumericalBot(stepSize)(world);
     world.bots.map(bot => fun(bot));
     return resolveCollision(world);
-};
-
-export const optimize = (world: World): World => {
-    let result = world;
-    for (let i = 0; i < 100; ++i) {
-        result = optimizeStep(0.01)(0.5)(result);
-        console.log(result.bots[3].pos.toArray());
-        console.log(result.edges);
-    }
-    return result;
 };

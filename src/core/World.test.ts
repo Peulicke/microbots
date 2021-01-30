@@ -18,18 +18,9 @@ import {
     stiffnessMatrixDerivativeBot,
     compliance,
     complianceDerivativeBot,
-    complianceDerivativeEdge,
     removeFixedFromVector,
     removeFixedFromMatrix,
-    distancePenalty,
-    distancePenaltyDerivative,
-    distancePenaltyPair,
-    distancePenaltyPairDerivative,
-    distancePenaltyTotal,
-    distancePenaltyTotalDerivativeBot,
-    distancePenaltyTotalDerivativeEdge,
-    objective,
-    objectiveDerivativeBot
+    objective
 } from "./World";
 
 it("creates a new world", () => {
@@ -208,73 +199,6 @@ it("computes compliance derivative bot", () => {
     expect(complianceDerivativeBot(bot4)(0)(world)).toBeCloseTo(-2);
 });
 
-it("computes compliance derivative edge", () => {
-    const bot1 = setFixed(true)(newBot());
-    const bot2 = setFixed(true)(setPos(new Vector3(1, 0, 0))(newBot()));
-    const bot3 = setFixed(true)(setPos(new Vector3(0, 0, 1))(newBot()));
-    const bot4 = setPos(new Vector3(0, 1, 0))(newBot());
-    const bots = [bot1, bot2, bot3, bot4];
-    const world = pipe(newWorld(), setBots(bots), initEdges);
-    expect(complianceDerivativeEdge(0, 3)(world)).toBeCloseTo(-1);
-});
-
-it("computes distance penalty", () => {
-    expect(distancePenalty(new Vector3(1, 0, 0))).toBeCloseTo(0);
-});
-
-it("computes distance penalty derivative", () => {
-    expect(distancePenaltyDerivative(0)(new Vector3(1, 0, 0))).toBeCloseTo(0);
-    expect(distancePenaltyDerivative(0)(new Vector3(2, 0, 0))).toBeCloseTo(24);
-});
-
-it("computes distance penalty pair", () => {
-    const bot1 = newBot();
-    const bot2 = setPos(new Vector3(1, 0, 0))(newBot());
-    const bot3 = setPos(new Vector3(2, 0, 0))(newBot());
-    expect(distancePenaltyPair(bot1, bot2, 1)).toBeCloseTo(0);
-    expect(distancePenaltyPair(bot2, bot3, 1)).toBeCloseTo(0);
-    expect(distancePenaltyPair(bot1, bot3, 1)).toBeCloseTo(9);
-    expect(distancePenaltyPair(bot1, bot3, 2)).toBeCloseTo(18);
-});
-
-it("computes distance penalty pair derivative", () => {
-    const bot1 = newBot();
-    const bot2 = setPos(new Vector3(1, 0, 0))(newBot());
-    const bot3 = setPos(new Vector3(2, 0, 0))(newBot());
-    expect(distancePenaltyPairDerivative(0)(bot1, bot2, 1)).toBeCloseTo(0);
-    expect(distancePenaltyPairDerivative(0)(bot2, bot3, 1)).toBeCloseTo(0);
-    expect(distancePenaltyPairDerivative(0)(bot1, bot3, 1)).toBeCloseTo(24);
-    expect(distancePenaltyPairDerivative(0)(bot1, bot3, 2)).toBeCloseTo(48);
-});
-
-it("computes distance penalty total", () => {
-    const bot1 = newBot();
-    const bot2 = setPos(new Vector3(1, 0, 0))(newBot());
-    const bot3 = setPos(new Vector3(0, 1, 0))(newBot());
-    const bots = [bot1, bot2, bot3];
-    const world = pipe(newWorld(), setBots(bots), initEdges);
-    expect(distancePenaltyTotal(world)).toBeCloseTo(1);
-});
-
-it("computes distance penalty total derivative", () => {
-    const bot1 = newBot();
-    const bot2 = setPos(new Vector3(1, 0, 0))(newBot());
-    const bot3 = setPos(new Vector3(0, 1, 0))(newBot());
-    const bots = [bot1, bot2, bot3];
-    const world = pipe(newWorld(), setBots(bots), initEdges);
-    expect(distancePenaltyTotalDerivativeBot(bot2)(0)(world)).toBeCloseTo(4);
-});
-
-it("computes distance penalty total derivative edge", () => {
-    const bot1 = newBot();
-    const bot2 = setPos(new Vector3(1, 0, 0))(newBot());
-    const bot3 = setPos(new Vector3(0, 1, 0))(newBot());
-    const bots = [bot1, bot2, bot3];
-    const world = pipe(newWorld(), setBots(bots), initEdges);
-    expect(distancePenaltyTotalDerivativeEdge(0, 1)(world)).toBeCloseTo(0);
-    expect(distancePenaltyTotalDerivativeEdge(1, 2)(world)).toBeCloseTo(1);
-});
-
 it("computes objective", () => {
     const bot1 = setFixed(true)(newBot());
     const bot2 = setFixed(true)(setPos(new Vector3(1, 0, 0))(newBot()));
@@ -282,15 +206,15 @@ it("computes objective", () => {
     const bot4 = setPos(new Vector3(0, 1, 0))(newBot());
     const bots = [bot1, bot2, bot3, bot4];
     const world = pipe(newWorld(), setBots(bots), initEdges);
-    expect(objective(world)).toBeCloseTo(4);
+    expect(objective(world)).toBeCloseTo(1);
 });
-
-it("computes objective derivative", () => {
-    const bot1 = setFixed(true)(newBot());
-    const bot2 = setFixed(true)(setPos(new Vector3(1, 0, 0))(newBot()));
-    const bot3 = setFixed(true)(setPos(new Vector3(0, 0, 1))(newBot()));
-    const bot4 = setPos(new Vector3(0, 1, 0))(newBot());
-    const bots = [bot1, bot2, bot3, bot4];
-    const world = pipe(newWorld(), setBots(bots), initEdges);
-    expect(objectiveDerivativeBot(0.5)(bot4)(0)(world)).toBeCloseTo(-3);
-});
+//
+// it("computes objective derivative", () => {
+//     const bot1 = setFixed(true)(newBot());
+//     const bot2 = setFixed(true)(setPos(new Vector3(1, 0, 0))(newBot()));
+//     const bot3 = setFixed(true)(setPos(new Vector3(0, 0, 1))(newBot()));
+//     const bot4 = setPos(new Vector3(0, 1, 0))(newBot());
+//     const bots = [bot1, bot2, bot3, bot4];
+//     const world = pipe(newWorld(), setBots(bots), initEdges);
+//     expect(objectiveDerivativeBot(bot4)(0)(world)).toBeCloseTo(-6);
+// });
