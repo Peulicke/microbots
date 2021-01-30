@@ -3,6 +3,7 @@ import { matrix, Matrix, transpose, multiply, inv } from "mathjs";
 import { Vector3, Matrix3 } from "three";
 import {
     dot,
+    applyMatrix,
     outerProduct,
     addMatrix3,
     subMatrix3,
@@ -28,23 +29,33 @@ export const initEdges = (world: World): World => {
     return world;
 };
 
+const slack = 1.5;
+
+const edgeStrength = (d: number): number => 1 / (1 + Math.exp(4 * (d - slack)));
+
 export const stiffness = (d: Vector3): Matrix3 => outerProduct(d, d).multiplyScalar(-1 / d.dot(d));
 
-export const stiffnessDerivative = (dim: number) => (d: Vector3): Matrix3 => {
-    const e = new Vector3(0, 0, 0).setComponent(dim, 1);
-    const de = outerProduct(e, d);
-    const k = stiffness(d);
-    return addMatrix3(addMatrix3(de, de.clone().transpose()), k.multiplyScalar(2 * d.getComponent(dim))).multiplyScalar(
-        -1 / d.dot(d)
-    );
+export const stiffnessDerivative = (edgeStrengthFun: (d: number) => number) => (dim: number) => (
+    d: Vector3
+): Matrix3 => {
+    const epsilon = 0.00001;
+    const e = new Vector3();
+    e.setComponent(dim, epsilon);
+    const plus = stiffness(d.clone().add(e)).multiplyScalar(edgeStrengthFun(d.clone().add(e).length()));
+    const minus = stiffness(d.clone().sub(e)).multiplyScalar(edgeStrengthFun(d.clone().sub(e).length()));
+    return subMatrix3(plus, minus).multiplyScalar(1 / (2 * epsilon));
 };
 
 export const stiffnessPair = (a: Bot, b: Bot, edge: number): Matrix3 =>
     stiffness(b.pos.clone().sub(a.pos)).multiplyScalar(edge);
 
-export const stiffnessPairDerivative = (bot: Bot) => (dim: number) => (a: Bot, b: Bot, edge: number): Matrix3 => {
+export const stiffnessPairDerivative = (edgeStrengthFun: (d: number) => number) => (bot: Bot) => (dim: number) => (
+    a: Bot,
+    b: Bot,
+    edge: number
+): Matrix3 => {
     if (a !== bot && b !== bot) return new Matrix3().set(0, 0, 0, 0, 0, 0, 0, 0, 0);
-    const derivative = stiffnessDerivative(dim)(b.pos.clone().sub(a.pos)).multiplyScalar(edge);
+    const derivative = stiffnessDerivative(edgeStrengthFun)(dim)(b.pos.clone().sub(a.pos));
     if (a === bot) return derivative.multiplyScalar(-1);
     return derivative;
 };
@@ -70,16 +81,22 @@ export const assembleMatrix = (world: World, fun: (a: Bot, b: Bot, edge: number)
 
 export const stiffnessMatrix = (world: World): Matrix3[][] => assembleMatrix(world, stiffnessPair);
 
-export const stiffnessMatrixDerivativeBot = (bot: Bot) => (dim: number) => (world: World): Matrix3[][] =>
-    assembleMatrix(world, stiffnessPairDerivative(bot)(dim));
+export const stiffnessMatrixDerivative = (edgeStrengthFun: (d: number) => number) => (bot: Bot) => (dim: number) => (
+    world: World
+): Matrix3[][] => assembleMatrix(world, stiffnessPairDerivative(edgeStrengthFun)(bot)(dim));
 
 export const forceMatrix = (world: World): Vector3[] =>
     removeFixedFromVector(world)(world.bots.map(bot => new Vector3(0, -bot.weight, 0)));
 
-export const compliance = (world: World): number => {
+export const displacement = (world: World): number[] => {
     const f = numberArrayFromVector3Array(forceMatrix(world));
     const k = numberArrayFromMatrix3Array(stiffnessMatrix(world));
-    const u = ldiv(k, f);
+    return ldiv(k, f);
+};
+
+export const compliance = (world: World): number => {
+    const f = numberArrayFromVector3Array(forceMatrix(world));
+    const u = displacement(world);
     return dot(f, u);
 };
 
@@ -93,9 +110,6 @@ export const complianceDerivative = (func: (world: World) => Matrix3[][]) => (wo
     const kInv = inv(k);
     return -((pipe(ft, mult(kInv), mult(dk), mult(kInv), mult(f)) as unknown) as number);
 };
-
-export const complianceDerivativeBot = (bot: Bot) => (dim: number) => (world: World): number =>
-    complianceDerivative(stiffnessMatrixDerivativeBot(bot)(dim))(world);
 
 export const objective = (world: World): number => compliance(world);
 
@@ -121,14 +135,12 @@ export const resolveCollision = (world: World): World => {
     return result;
 };
 
-const slack = 1.5;
-
 const updateEdges = (world: World) => {
     for (let i = 0; i < world.bots.length; ++i) {
         for (let j = 0; j < world.bots.length; ++j) {
             if (i === j) continue;
             const d = world.bots[j].pos.clone().sub(world.bots[i].pos).length();
-            world.edges[i][j] = 1 / (1 + Math.exp(4 * (d - slack)));
+            world.edges[i][j] = edgeStrength(d);
         }
     }
 };
@@ -160,8 +172,24 @@ export const optimizeStepNumericalBot = (stepSize: number) => (world: World) => 
     return world;
 };
 
+export const gradient = (edgeStrengthFun: (d: number) => number) => (world: World): Vector3[] => {
+    const u = displacement(world);
+    return world.bots.map(bot =>
+        new Vector3().fromArray(
+            [0, 1, 2].map(dim => {
+                const dk = numberArrayFromMatrix3Array(stiffnessMatrixDerivative(edgeStrengthFun)(bot)(dim)(world));
+                return -dot(u, applyMatrix(dk, u));
+            })
+        )
+    );
+};
+
 export const optimizeStepNumerical = (stepSize: number) => (world: World): World => {
-    const fun = optimizeStepNumericalBot(stepSize)(world);
-    world.bots.map(bot => fun(bot));
+    updateEdges(world);
+    const g = gradient(edgeStrength)(world).map(v => v.multiplyScalar(-stepSize / (1 + v.length())));
+    world.bots.map((bot, i) => {
+        if (bot.fixed) return;
+        bot.pos.add(g[i]);
+    });
     return resolveCollision(world);
 };

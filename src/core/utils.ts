@@ -6,6 +6,8 @@ export const dot = (a: number[], b: number[]): number => {
     return result;
 };
 
+export const applyMatrix = (A: number[][], b: number[]): number[] => [...Array(A.length)].map((_, i) => dot(A[i], b));
+
 export const outerProduct = (a: Vector3, b: Vector3): Matrix3 =>
     new Matrix3().set(
         a.x * b.x,

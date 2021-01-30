@@ -95,24 +95,17 @@ const App: FC = () => {
         if (iterations >= 50) return;
         const t = setTimeout(() => {
             setIterations(iterations + 1);
-            if (iterations % 1 === 0) {
-                let scn = world.bots
-                    .map(bot => addSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)))
-                    .reduce((x, fn) => fn(x), newScene());
-                world.bots.map((from, i) =>
-                    world.bots.map((to, j) => {
-                        if (i >= j) return;
-                        scn = addCylinder(
-                            from.pos,
-                            to.pos,
-                            Math.sqrt(world.edges[i][j]) * 0.3,
-                            new Color(1, 0, 0)
-                        )(scn);
-                    })
-                );
-                setScene(scn);
-            }
-            world = World.optimizeStepNumerical(1)(world);
+            let scn = world.bots
+                .map(bot => addSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)))
+                .reduce((x, fn) => fn(x), newScene());
+            world.bots.map((from, i) =>
+                world.bots.map((to, j) => {
+                    if (i >= j) return;
+                    scn = addCylinder(from.pos, to.pos, Math.sqrt(world.edges[i][j]) * 0.3, new Color(1, 0, 0))(scn);
+                })
+            );
+            setScene(scn);
+            world = World.optimizeStepNumerical(0.5)(world);
         }, 10);
         return () => clearTimeout(t);
     }, [controls, renderer, scene, camera, iterations]);
