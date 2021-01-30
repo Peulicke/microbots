@@ -87,7 +87,7 @@ it("computes stiffness pair derivative", () => {
     const bot1 = newBot();
     const bot2 = setPos(new Vector3(0, 1, 0))(newBot());
     const expected = new Matrix3().set(...[...[0, -1, 0], ...[-1, 0, 0], ...[0, 0, 0]]);
-    const d = subMatrix3(stiffnessPairDerivative((d: number) => 1)(bot2)(0)(bot1, bot2), expected);
+    const d = subMatrix3(stiffnessPairDerivative(() => 1)(bot2)(0)(bot1, bot2), expected);
     d.elements.map(element => expect(element).toBeCloseTo(0));
 });
 
@@ -131,7 +131,7 @@ it("computes stiffness matrix derivative", () => {
         [m10, m11, m12],
         [m20, m21, m22]
     ];
-    stiffnessMatrixDerivative((d: number) => 1)(1)(1)(world).map((row, i) =>
+    stiffnessMatrixDerivative(() => 1)(1)(1)(world).map((row, i) =>
         row.map((m, j) => subMatrix3(m, expected[i][j]).elements.map(element => expect(element).toBeCloseTo(0)))
     );
 });
@@ -196,7 +196,7 @@ it("computes compliance gradient", () => {
     const bot4 = setPos(new Vector3(0, 1, 0))(newBot());
     const bots = [bot1, bot2, bot3, bot4];
     const world = pipe(newWorld(), setBots(bots), initEdges);
-    expect(gradient((d: number) => 1)(world)[3].x).toBeCloseTo(-2);
+    expect(gradient(() => 1)(world)[3].x).toBeCloseTo(-2);
 });
 
 it("computes objective", () => {

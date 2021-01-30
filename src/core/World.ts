@@ -49,8 +49,7 @@ export const stiffnessPair = (a: Bot, b: Bot, edge: number): Matrix3 =>
 
 export const stiffnessPairDerivative = (edgeStrengthFun: (d: number) => number) => (bot: Bot) => (dim: number) => (
     a: Bot,
-    b: Bot,
-    edge: number
+    b: Bot
 ): Matrix3 => {
     if (a !== bot && b !== bot) return new Matrix3().set(0, 0, 0, 0, 0, 0, 0, 0, 0);
     const derivative = stiffnessDerivative(edgeStrengthFun)(dim)(b.pos.clone().sub(a.pos));
@@ -84,7 +83,7 @@ export const stiffnessMatrixDerivative = (edgeStrengthFun: (d: number) => number
     const bot = world.bots[i];
     world.bots.forEach((b, j) => {
         if (i === j) return;
-        const s = stiffnessPairDerivative(edgeStrengthFun)(bot)(dim)(world.bots[i], world.bots[j], world.edges[i][j]);
+        const s = stiffnessPairDerivative(edgeStrengthFun)(bot)(dim)(world.bots[i], world.bots[j]);
         result[i][i] = subMatrix3(result[i][i], s);
         result[j][j] = subMatrix3(result[j][j], s);
         result[i][j] = addMatrix3(result[i][j], s);
