@@ -2,13 +2,14 @@ import { pipe } from "ts-pipe-compose";
 import { matrix, Matrix, transpose, multiply, inv } from "mathjs";
 import { Vector3, Matrix3 } from "three";
 import {
+    dot,
     outerProduct,
     addMatrix3,
     subMatrix3,
     numberArrayFromVector3Array,
-    numberArrayFromMatrix3Array,
-    numberArrayToMatrix3Array
+    numberArrayFromMatrix3Array
 } from "./utils";
+import { ldiv } from "./matrix";
 import { Bot } from "./Bot";
 
 export type World = { bots: Bot[]; edges: number[][] };
@@ -75,15 +76,11 @@ export const stiffnessMatrixDerivativeBot = (bot: Bot) => (dim: number) => (worl
 export const forceMatrix = (world: World): Vector3[] =>
     removeFixedFromVector(world)(world.bots.map(bot => new Vector3(0, -bot.weight, 0)));
 
-export const inverse = (mat: Matrix3[][]): Matrix3[][] =>
-    numberArrayToMatrix3Array(inv(matrix(numberArrayFromMatrix3Array(mat))).toArray() as number[][]);
-
 export const compliance = (world: World): number => {
-    const f = matrix(numberArrayFromVector3Array(forceMatrix(world)));
-    const k = matrix(numberArrayFromMatrix3Array(stiffnessMatrix(world)));
-    const ft = transpose(f);
-    const kInv = inv(k);
-    return (multiply(multiply(ft, kInv), f) as unknown) as number;
+    const f = numberArrayFromVector3Array(forceMatrix(world));
+    const k = numberArrayFromMatrix3Array(stiffnessMatrix(world));
+    const u = ldiv(k, f);
+    return dot(f, u);
 };
 
 const mult = (b: Matrix) => (a: Matrix) => multiply(a, b);

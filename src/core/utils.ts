@@ -1,5 +1,11 @@
 import { Vector3, Matrix3 } from "three";
 
+export const dot = (a: number[], b: number[]): number => {
+    let result = 0;
+    for (let i = 0; i < a.length; ++i) result += a[i] * b[i];
+    return result;
+};
+
 export const outerProduct = (a: Vector3, b: Vector3): Matrix3 =>
     new Matrix3().set(
         a.x * b.x,
