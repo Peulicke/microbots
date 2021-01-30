@@ -50,12 +50,17 @@ it("removes fixed from vector", () => {
     const bots = [newBot(), setFixed(true)(newBot()), newBot()];
     const world = pipe(newWorld(), setBots(bots), initEdges);
     const vector = [new Vector3(1, 2, 3), new Vector3(4, 5, 6), new Vector3(7, 8, 9)];
-    expect(removeFixedFromVector(world)(vector)).toStrictEqual([new Vector3(1, 2, 3), new Vector3(7, 8, 9)]);
+    expect(removeFixedFromVector(world)(vector)).toStrictEqual([
+        new Vector3(1, 2, 3),
+        new Vector3(0, 0, 0),
+        new Vector3(7, 8, 9)
+    ]);
 });
 
 it("removes fixed from matrix", () => {
     const bots = [newBot(), setFixed(true)(newBot()), newBot()];
     const world = pipe(newWorld(), setBots(bots), initEdges);
+    const mZero = new Matrix3().multiplyScalar(0);
     const m00 = new Matrix3().set(1, 2, 3, 2, 2, 3, 3, 2, 3);
     const m01 = new Matrix3().set(4, 5, 6, 4, 5, 6, 4, 5, 6);
     const m02 = new Matrix3().set(5, 6, 7, 5, 3, 2, 4, 3, 4);
@@ -71,8 +76,9 @@ it("removes fixed from matrix", () => {
         [m20, m21, m22]
     ];
     expect(removeFixedFromMatrix(world)(mat)).toStrictEqual([
-        [m00, m02],
-        [m20, m22]
+        [m00, mZero, m02],
+        [mZero, mZero, mZero],
+        [m20, mZero, m22]
     ]);
 });
 

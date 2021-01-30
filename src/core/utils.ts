@@ -1,15 +1,24 @@
 import { Vector3, Matrix3 } from "three";
 
+const throwError = () => {
+    throw new Error("Vectors need to be the same length");
+};
+
 export const dot = (a: number[], b: number[]): number => {
+    if (a.length !== b.length) throwError();
     let result = 0;
     for (let i = 0; i < a.length; ++i) result += a[i] * b[i];
     return result;
 };
 
-export const applyMatrix = (A: number[][], b: number[]): number[] => [...Array(A.length)].map((_, i) => dot(A[i], b));
+export const applyMatrix = (A: number[][], b: number[]): number[] => {
+    if (A[0].length !== b.length) throwError();
+    return [...Array(A.length)].map((_, i) => dot(A[i], b));
+};
 
-export const outerProduct = (a: Vector3, b: Vector3): Matrix3 =>
-    new Matrix3().set(
+export const outerProduct = (a: Vector3, b: Vector3): Matrix3 => {
+    if (a.length !== b.length) throwError();
+    return new Matrix3().set(
         a.x * b.x,
         a.x * b.y,
         a.x * b.z,
@@ -20,6 +29,7 @@ export const outerProduct = (a: Vector3, b: Vector3): Matrix3 =>
         a.z * b.y,
         a.z * b.z
     );
+};
 
 export const addMatrix3 = (a: Matrix3, b: Matrix3): Matrix3 => {
     const result = new Matrix3();

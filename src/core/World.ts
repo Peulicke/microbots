@@ -1,7 +1,6 @@
 import { Vector3, Matrix3 } from "three";
 import {
     dot,
-    applyMatrix,
     outerProduct,
     addMatrix3,
     subMatrix3,
@@ -58,10 +57,12 @@ export const stiffnessPairDerivative = (edgeStrengthFun: (d: number) => number) 
 };
 
 export const removeFixedFromVector = (world: World) => (vector: Vector3[]): Vector3[] =>
-    vector.filter((_, i) => !world.bots[i].fixed);
+    vector.map((v, i) => (world.bots[i].fixed ? new Vector3(0, 0, 0) : v));
 
 export const removeFixedFromMatrix = (world: World) => (mat: Matrix3[][]): Matrix3[][] =>
-    mat.filter((_, i) => !world.bots[i].fixed).map(vector => vector.filter((_, j) => !world.bots[j].fixed));
+    mat.map((vector, i) =>
+        vector.map((v, j) => (world.bots[i].fixed || world.bots[j].fixed ? new Matrix3().multiplyScalar(0) : v))
+    );
 
 export const stiffnessMatrix = (world: World): Matrix3[][] => {
     const result = world.edges.map(() => world.edges.map(() => new Matrix3().multiplyScalar(0)));
@@ -173,8 +174,18 @@ export const gradient = (edgeStrengthFun: (d: number) => number) => (world: Worl
     return world.bots.map((bot, i) =>
         new Vector3().fromArray(
             [0, 1, 2].map(dim => {
-                const dk = numberArrayFromMatrix3Array(stiffnessMatrixDerivative(edgeStrengthFun)(i)(dim)(world));
-                return -dot(u, applyMatrix(dk, u));
+                const res = world.bots.map(() => new Vector3(0, 0, 0));
+                const bot = world.bots[i];
+                world.bots.forEach((b, j) => {
+                    if (i === j) return;
+                    const s = stiffnessPairDerivative(edgeStrengthFun)(bot)(dim)(world.bots[i], world.bots[j]);
+                    res[i].sub(new Vector3(...u.slice(3 * i, 3 * (i + 1))).applyMatrix3(s));
+                    res[j].sub(new Vector3(...u.slice(3 * j, 3 * (j + 1))).applyMatrix3(s));
+                    res[i].add(new Vector3(...u.slice(3 * j, 3 * (j + 1))).applyMatrix3(s));
+                    res[j].add(new Vector3(...u.slice(3 * i, 3 * (i + 1))).applyMatrix3(s));
+                });
+                const dku = numberArrayFromVector3Array(removeFixedFromVector(world)(res));
+                return -dot(u, dku);
             })
         )
     );
