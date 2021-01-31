@@ -171,24 +171,27 @@ export const optimizeStepNumericalBot = (stepSize: number) => (world: World) => 
 
 export const gradient = (edgeStrengthFun: (d: number) => number) => (world: World): Vector3[] => {
     const u = displacement(world);
-    return world.bots.map((bot, i) =>
-        new Vector3().fromArray(
-            [0, 1, 2].map(dim => {
-                const res = world.bots.map(() => new Vector3(0, 0, 0));
-                const bot = world.bots[i];
-                world.bots.forEach((b, j) => {
-                    if (i === j) return;
-                    const s = stiffnessPairDerivative(edgeStrengthFun)(bot)(dim)(world.bots[i], world.bots[j]);
-                    res[i].sub(new Vector3(...u.slice(3 * i, 3 * (i + 1))).applyMatrix3(s));
-                    res[j].sub(new Vector3(...u.slice(3 * j, 3 * (j + 1))).applyMatrix3(s));
-                    res[i].add(new Vector3(...u.slice(3 * j, 3 * (j + 1))).applyMatrix3(s));
-                    res[j].add(new Vector3(...u.slice(3 * i, 3 * (i + 1))).applyMatrix3(s));
-                });
-                const dku = numberArrayFromVector3Array(removeFixedFromVector(world)(res));
-                return -dot(u, dku);
-            })
-        )
-    );
+    const result = [...Array(world.bots.length)];
+    for (let i = 0; i < world.bots.length; ++i) {
+        result[i] = new Vector3();
+        for (let dim = 0; dim < 3; ++dim) {
+            const res = world.bots.map(() => new Vector3(0, 0, 0));
+            const bot = world.bots[i];
+            for (let j = 0; j < world.bots.length; ++j) {
+                if (i === j) continue;
+                const s = stiffnessPairDerivative(edgeStrengthFun)(bot)(dim)(world.bots[i], world.bots[j]);
+                const si = new Vector3(...u.slice(3 * i, 3 * (i + 1))).applyMatrix3(s);
+                const sj = new Vector3(...u.slice(3 * j, 3 * (j + 1))).applyMatrix3(s);
+                res[i].sub(si);
+                res[j].sub(sj);
+                res[i].add(sj);
+                res[j].add(si);
+            }
+            const dku = numberArrayFromVector3Array(removeFixedFromVector(world)(res));
+            result[i].setComponent(dim, -dot(u, dku));
+        }
+    }
+    return result;
 };
 
 export const optimizeStepNumerical = (stepSize: number) => (world: World): World => {
