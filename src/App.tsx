@@ -36,7 +36,7 @@ edgeMeshes.map((row, i) =>
 );
 
 const updateWorld = () => {
-    world = World.optimizeStepNumerical(0.5)(world);
+    world = World.optimizeStepNumerical(0.1)(world);
     world.bots.map((bot, i) => {
         botMeshes[i].position.set(...bot.pos.toArray());
     });
@@ -97,7 +97,7 @@ const App: FC = () => {
     }, [controls, renderer, camera, frame]);
 
     useEffect(() => {
-        if (iterations >= 50) return;
+        if (iterations >= 150) return;
         const t = setTimeout(() => {
             updateWorld();
             setIterations(iterations + 1);

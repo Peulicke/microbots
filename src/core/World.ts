@@ -26,9 +26,9 @@ export const initEdges = (world: World): World => {
     return world;
 };
 
-const slack = 1.5;
+let power = 4;
 
-const edgeStrength = (d: number): number => 1 / (1 + Math.exp(4 * (d - slack)));
+const edgeStrength = (d: number): number => 2 / (1 + Math.exp(power * (d - 1)));
 
 export const stiffness = (d: Vector3): Matrix3 => outerProduct(d, d).multiplyScalar(-1 / d.dot(d));
 
@@ -201,6 +201,8 @@ export const gradient = (edgeStrengthFun: (d: number) => number) => (world: Worl
 };
 
 export const optimizeStepNumerical = (stepSize: number) => (world: World): World => {
+    power *= 1.005;
+    console.log(power);
     updateEdges(world);
     const g = gradient(edgeStrength)(world).map(v => v.multiplyScalar(-stepSize / (1 + v.length())));
     world.bots.map((bot, i) => {
