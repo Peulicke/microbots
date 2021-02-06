@@ -22,7 +22,7 @@ const bot1 = Bot.setFixed(true)(Bot.newBot());
 const bot2 = Bot.setFixed(true)(Bot.setPos(new Vector3(3, 0, 0))(Bot.newBot()));
 const bot3 = Bot.setFixed(true)(Bot.setPos(new Vector3(0, 0, 2))(Bot.newBot()));
 const bots = [bot1, bot2, bot3, ...[...Array(97)].map(randomBot)];
-let world = pipe(World.newWorld(), World.setBots(bots), World.initEdges);
+let world = pipe(World.newWorld(), World.setBots(bots));
 
 const botMeshes = bots.map(bot => newSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)));
 const edgeMeshes = bots.map(a => bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0))));
@@ -44,9 +44,10 @@ const updateWorld = () => {
         world.bots.map((to, j) => {
             if (i >= j) return;
             scene.remove(edgeMeshes[i][j]);
-            if (world.edges[i][j] < 0.01) return;
+            const strength = World.edgeStrength(to.pos.clone().sub(from.pos).length());
+            if (strength < 0.01) return;
             scene.add(edgeMeshes[i][j]);
-            updateCylinder(from.pos, to.pos, Math.sqrt(world.edges[i][j]) * 0.3)(edgeMeshes[i][j]);
+            updateCylinder(from.pos, to.pos, Math.sqrt(strength) * 0.3)(edgeMeshes[i][j]);
         })
     );
 };

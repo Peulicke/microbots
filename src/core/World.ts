@@ -10,25 +10,18 @@ import {
 import { ldiv } from "./matrix";
 import { Bot } from "./Bot";
 
-export type World = { bots: Bot[]; edges: number[][] };
+export type World = { bots: Bot[] };
 
-export const newWorld = (): World => ({ bots: [], edges: [] });
+export const newWorld = (): World => ({ bots: [] });
 
 export const setBots = (bots: Bot[]) => (world: World): World => {
     world.bots = bots;
     return world;
 };
 
-export const initEdges = (world: World): World => {
-    const list = [...Array(world.bots.length)].map(() => 1);
-    const array = list.map((_, i) => list.map((_, j) => (i === j ? 0 : 1)));
-    world.edges = array;
-    return world;
-};
-
 let power = 4;
 
-const edgeStrength = (d: number): number => 2 / (1 + Math.exp(power * (d - 1)));
+export const edgeStrength = (d: number): number => 2 / (1 + Math.exp(power * (d - 1)));
 
 export const stiffness = (d: Vector3): Matrix3 => outerProduct(d, d).multiplyScalar(-1 / d.dot(d));
 
@@ -44,8 +37,10 @@ export const stiffnessDerivative = (edgeStrengthFun: (d: number) => number) => (
     return subMatrix3(plus, minus).multiplyScalar(1 / (2 * epsilon));
 };
 
-export const stiffnessPair = (a: Bot, b: Bot, edge: number): Matrix3 =>
-    stiffness(b.pos.clone().sub(a.pos)).multiplyScalar(edge);
+export const stiffnessPair = (a: Bot, b: Bot): Matrix3 => {
+    const d = b.pos.clone().sub(a.pos);
+    return stiffness(d).multiplyScalar(edgeStrength(d.length()));
+};
 
 export const stiffnessPairDerivative = (edgeStrengthFun: (d: number) => number) => (bot: Bot) => (dim: number) => (
     a: Bot,
@@ -70,7 +65,7 @@ export const stiffnessMatrix = (world: World): Matrix3[][] => {
     for (let i = 0; i < world.bots.length; ++i) {
         for (let j = 0; j < world.bots.length; ++j) {
             if (i === j) continue;
-            const s = stiffnessPair(world.bots[i], world.bots[j], world.edges[i][j]);
+            const s = stiffnessPair(world.bots[i], world.bots[j]);
             result[i][i] = subMatrix3(result[i][i], s);
             result[i][j] = addMatrix3(result[i][j], s);
         }
@@ -81,7 +76,7 @@ export const stiffnessMatrix = (world: World): Matrix3[][] => {
 export const stiffnessMatrixDerivative = (edgeStrengthFun: (d: number) => number) => (i: number) => (dim: number) => (
     world: World
 ): Matrix3[][] => {
-    const result = world.edges.map(() => world.edges.map(() => new Matrix3().multiplyScalar(0)));
+    const result = world.bots.map(() => world.bots.map(() => new Matrix3().multiplyScalar(0)));
     const bot = world.bots[i];
     world.bots.forEach((b, j) => {
         if (i === j) return;
@@ -133,43 +128,6 @@ export const resolveCollision = (world: World): World => {
     return result;
 };
 
-const updateEdges = (world: World) => {
-    for (let i = 0; i < world.bots.length; ++i) {
-        for (let j = 0; j < world.bots.length; ++j) {
-            if (i === j) continue;
-            const d = world.bots[j].pos.clone().sub(world.bots[i].pos).length();
-            world.edges[i][j] = edgeStrength(d);
-        }
-    }
-};
-
-export const optimizeStepNumericalBotDim = (stepSize: number) => (world: World) => (bot: Bot) => (
-    dim: number
-): World => {
-    const epsilon = 0.001;
-    const val = bot.pos.getComponent(dim);
-    bot.pos.setComponent(dim, val + epsilon);
-    updateEdges(world);
-    const plus = compliance(world);
-    bot.pos.setComponent(dim, val - epsilon);
-    updateEdges(world);
-    const minus = compliance(world);
-    bot.pos.setComponent(dim, val);
-    let move = -(plus - minus) * stepSize;
-    const maxMove = 0.5;
-    if (Math.abs(move) > maxMove) move = maxMove * Math.sign(move);
-    bot.pos.setComponent(dim, val + move);
-    updateEdges(world);
-    return world;
-};
-
-export const optimizeStepNumericalBot = (stepSize: number) => (world: World) => (bot: Bot): World => {
-    if (bot.fixed) return world;
-    const fun = optimizeStepNumericalBotDim(stepSize)(world)(bot);
-    [0, 1, 2].map(dim => fun(dim));
-    return world;
-};
-
 export const gradient = (edgeStrengthFun: (d: number) => number) => (world: World): Vector3[] => {
     const u = displacement(world);
     const result = [...Array(world.bots.length)].map(() => new Vector3(0, 0, 0));
@@ -203,7 +161,6 @@ export const gradient = (edgeStrengthFun: (d: number) => number) => (world: Worl
 export const optimizeStepNumerical = (stepSize: number) => (world: World): World => {
     power *= 1.005;
     console.log(power);
-    updateEdges(world);
     const g = gradient(edgeStrength)(world).map(v => v.multiplyScalar(-stepSize / (1 + v.length())));
     world.bots.map((bot, i) => {
         if (bot.fixed) return;
