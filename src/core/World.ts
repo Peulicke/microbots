@@ -8,18 +8,19 @@ import {
     numberArrayFromMatrix3Array
 } from "./utils";
 import { ldiv } from "./matrix";
-import { Bot } from "./Bot";
+import * as Bot from "./Bot";
 
-export type World = { bots: Bot[] };
+export type World = { bots: Bot.Bot[] };
 
 export const newWorld = (): World => ({ bots: [] });
 
-export const setBots = (bots: Bot[]) => (world: World): World => {
+export const setBots = (bots: Bot.Bot[]) => (world: World): World => {
     world.bots = bots;
     return world;
 };
 
-let power = 4;
+const power = 4;
+const friction = 0.1;
 
 export const edgeStrength = (d: number): number => 2 / (1 + Math.exp(power * (d - 1)));
 
@@ -38,12 +39,12 @@ export const stiffnessDerivative = (dim: number) => (d: Vector3): Matrix3 => {
     return subMatrix3(plus, minus).multiplyScalar(1 / (2 * epsilon));
 };
 
-export const stiffnessPair = (a: Bot, b: Bot): Matrix3 => {
+export const stiffnessPair = (a: Bot.Bot, b: Bot.Bot): Matrix3 => {
     const d = b.pos.clone().sub(a.pos);
     return stiffness(d);
 };
 
-export const stiffnessPairDerivative = (bot: Bot) => (dim: number) => (a: Bot, b: Bot): Matrix3 => {
+export const stiffnessPairDerivative = (bot: Bot.Bot) => (dim: number) => (a: Bot.Bot, b: Bot.Bot): Matrix3 => {
     if (a !== bot && b !== bot) return new Matrix3().set(0, 0, 0, 0, 0, 0, 0, 0, 0);
     const derivative = stiffnessDerivative(dim)(b.pos.clone().sub(a.pos));
     if (a === bot) return derivative.multiplyScalar(-1);
@@ -61,8 +62,12 @@ export const removeFixedFromMatrix = (world: World) => (mat: Matrix3[][]): Matri
 export const stiffnessMatrix = (world: World): Matrix3[][] => {
     const result = world.bots.map(() => world.bots.map(() => new Matrix3().multiplyScalar(0)));
     for (let i = 0; i < world.bots.length; ++i) {
-        const s = stiffness(new Vector3(0, world.bots[i].pos.y + 0.5, 0));
-        result[i][i] = subMatrix3(result[i][i], s);
+        const sx = stiffness(new Vector3(world.bots[i].pos.y + 0.5, 0, 0)).multiplyScalar(friction);
+        const sy = stiffness(new Vector3(0, world.bots[i].pos.y + 0.5, 0));
+        const sz = stiffness(new Vector3(0, 0, world.bots[i].pos.y + 0.5)).multiplyScalar(friction);
+        result[i][i] = subMatrix3(result[i][i], sx);
+        result[i][i] = subMatrix3(result[i][i], sy);
+        result[i][i] = subMatrix3(result[i][i], sz);
     }
     for (let i = 0; i < world.bots.length; ++i) {
         for (let j = 0; j < world.bots.length; ++j) {
@@ -75,22 +80,25 @@ export const stiffnessMatrix = (world: World): Matrix3[][] => {
     return removeFixedFromMatrix(world)(result);
 };
 
-export const forceMatrix = (world: World): Vector3[] =>
-    removeFixedFromVector(world)(world.bots.map(bot => new Vector3(0, -bot.weight, 0)));
+export const acceleration = (before: World, after: World, dt: number) => (world: World): Vector3[] =>
+    world.bots.map((bot, i) => {
+        const v1 = world.bots[i].pos.clone().sub(before.bots[i].pos.clone()).divideScalar(dt);
+        const v2 = after.bots[i].pos.clone().sub(world.bots[i].pos.clone()).divideScalar(dt);
+        return v2.sub(v1).divideScalar(dt);
+    });
 
-export const displacement = (world: World): number[] => {
-    const f = numberArrayFromVector3Array(forceMatrix(world));
+export const forceMatrix = (before: World, after: World, dt: number) => (world: World): Vector3[] => {
+    const acc = acceleration(before, after, dt)(world);
+    return removeFixedFromVector(world)(
+        world.bots.map((bot, i) => new Vector3(0, -1, 0).sub(acc[i]).multiplyScalar(bot.weight))
+    );
+};
+
+export const displacement = (before: World, after: World, dt: number) => (world: World): number[] => {
+    const f = numberArrayFromVector3Array(forceMatrix(before, after, dt)(world));
     const k = numberArrayFromMatrix3Array(stiffnessMatrix(world));
     return ldiv(k, f);
 };
-
-export const compliance = (world: World): number => {
-    const f = numberArrayFromVector3Array(forceMatrix(world));
-    const u = displacement(world);
-    return dot(f, u);
-};
-
-export const objective = (world: World): number => compliance(world);
 
 export const resolveCollisionStep = (world: World): World => {
     for (let i = 0; i < world.bots.length; ++i) {
@@ -118,14 +126,25 @@ export const resolveCollision = (world: World): World => {
     return result;
 };
 
-export const gradient = (world: World): Vector3[] => {
-    const u = displacement(world);
+export const gradient = (beforeBefore: World, before: World, after: World, afterAfter: World, dt: number) => (
+    world: World
+): Vector3[] => {
+    const u = displacement(before, after, dt)(world);
     const result = [...Array(world.bots.length)].map(() => new Vector3(0, 0, 0));
     const res = [...Array(world.bots.length)].map(() =>
         [0, 1, 2].map(() => [...Array(world.bots.length)].map(() => new Vector3(0, 0, 0)))
     );
     for (let i = 0; i < world.bots.length; ++i) {
         for (let dim = 0; dim < 3; ++dim) {
+            const sx = stiffnessDerivative(dim)(new Vector3(world.bots[i].pos.y + 0.5, 0, 0)).multiplyScalar(friction);
+            const sy = stiffnessDerivative(dim)(new Vector3(0, world.bots[i].pos.y + 0.5, 0));
+            const sz = stiffnessDerivative(dim)(new Vector3(0, 0, world.bots[i].pos.y + 0.5)).multiplyScalar(friction);
+            const ssx = new Vector3(...u.slice(3 * i, 3 * (i + 1))).applyMatrix3(sx);
+            res[i][dim][i].sub(ssx);
+            const ssy = new Vector3(...u.slice(3 * i, 3 * (i + 1))).applyMatrix3(sy);
+            res[i][dim][i].sub(ssy);
+            const ssz = new Vector3(...u.slice(3 * i, 3 * (i + 1))).applyMatrix3(sz);
+            res[i][dim][i].sub(ssz);
             for (let j = 0; j < world.bots.length; ++j) {
                 if (i >= j) continue;
                 const s = stiffnessPairDerivative(world.bots[i])(dim)(world.bots[i], world.bots[j]);
@@ -139,22 +158,13 @@ export const gradient = (world: World): Vector3[] => {
             }
         }
     }
+    const uBefore = displacement(beforeBefore, world, dt)(before);
+    const uAfter = displacement(world, afterAfter, dt)(after);
     for (let i = 0; i < world.bots.length; ++i) {
         for (let dim = 0; dim < 3; ++dim) {
             const dku = numberArrayFromVector3Array(removeFixedFromVector(world)(res[i][dim]));
-            result[i].setComponent(dim, -dot(u, dku));
+            result[i].setComponent(dim, -dot(u, dku) + 2 * ((2 * u[i] - uBefore[i] - uAfter[i]) / dt ** 2));
         }
     }
     return result;
-};
-
-export const optimizeStepNumerical = (stepSize: number) => (world: World): World => {
-    power *= 1.005;
-    console.log(power);
-    const g = gradient(world).map(v => v.multiplyScalar(-stepSize / (1 + v.length())));
-    world.bots.map((bot, i) => {
-        if (bot.fixed) return;
-        bot.pos.add(g[i]);
-    });
-    return resolveCollision(world);
 };

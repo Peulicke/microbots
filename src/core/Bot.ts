@@ -26,3 +26,11 @@ export const setFixed = (fixed: boolean) => (bot: Bot): Bot => {
     bot.fixed = fixed;
     return bot;
 };
+
+export const average = (a: Bot, b: Bot): Bot => {
+    const result = newBot();
+    result.pos = a.pos.clone().add(b.pos).divideScalar(2);
+    result.weight = (a.weight + b.weight) / 2;
+    result.fixed = a.fixed || b.fixed;
+    return result;
+};

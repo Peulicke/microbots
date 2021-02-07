@@ -4,9 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
 import { pipe } from "ts-pipe-compose";
-import Prando from "prando";
-const rng = new Prando(123);
-import { Bot, World } from "./core";
+import { Bot, World, Animation } from "./core";
 import { newScene, newSphere, newCylinder, updateCylinder } from "./draw";
 
 const useStyles = makeStyles(theme => ({
@@ -16,18 +14,46 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-const randomBot = () => Bot.setPos(new Vector3(...[rng.next(), rng.next(), rng.next()].map(x => x * 10)))(Bot.newBot());
+const height = 3;
 
-const bot1 = Bot.setFixed(true)(Bot.newBot());
-const bot2 = Bot.setFixed(true)(Bot.setPos(new Vector3(3, 0, 0))(Bot.newBot()));
-const bot3 = Bot.setFixed(true)(Bot.setPos(new Vector3(0, 0, 2))(Bot.newBot()));
-const bots = [bot1, bot2, bot3, ...[...Array(97)].map(randomBot)];
-let world = pipe(World.newWorld(), World.setBots(bots));
+const worldStart = pipe(
+    World.newWorld(),
+    World.setBots([
+        ...[...Array(height)]
+            .map((_, i) => [
+                Bot.setPos(new Vector3(-2, 0.5 + i, 0))(Bot.newBot()),
+                Bot.setPos(new Vector3(2, 0.5 + i, 0))(Bot.newBot())
+            ])
+            .flat(),
+        Bot.setPos(new Vector3(-2, 0.5 + height, 0))(Bot.newBot())
+    ])
+);
 
-const botMeshes = bots.map(bot => newSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)));
-const edgeMeshes = bots.map(a => bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0))));
+const worldEnd = pipe(
+    World.newWorld(),
+    World.setBots([
+        ...[...Array(height)]
+            .map((_, i) => [
+                Bot.setPos(new Vector3(-2, 0.5 + i, 0))(Bot.newBot()),
+                Bot.setPos(new Vector3(2, 0.5 + i, 0))(Bot.newBot())
+            ])
+            .flat(),
+        Bot.setPos(new Vector3(2, 0.5 + height, 0))(Bot.newBot())
+    ])
+);
+
+const animation = Animation.createAnimation(worldStart, worldEnd, 8);
+
+const botMeshes = animation[0].bots.map(bot => newSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)));
+const groundEdgeMeshes = animation[0].bots.map(bot =>
+    newCylinder(bot.pos, new Vector3(bot.pos.x, 0, bot.pos.z), 1, new Color(1, 0, 0))
+);
+const edgeMeshes = animation[0].bots.map(a =>
+    animation[0].bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0)))
+);
 const scene = newScene();
 botMeshes.map(mesh => scene.add(mesh));
+groundEdgeMeshes.map(mesh => scene.add(mesh));
 edgeMeshes.map((row, i) =>
     row.map((mesh, j) => {
         if (i >= j) return;
@@ -35,13 +61,19 @@ edgeMeshes.map((row, i) =>
     })
 );
 
-const updateWorld = () => {
-    world = World.optimizeStepNumerical(0.1)(world);
-    world.bots.map((bot, i) => {
+const updateWorld = (time: number) => {
+    animation[time].bots.map((bot, i) => {
         botMeshes[i].position.set(...bot.pos.toArray());
     });
-    world.bots.map((from, i) =>
-        world.bots.map((to, j) => {
+    animation[time].bots.map((bot, i) => {
+        scene.remove(groundEdgeMeshes[i]);
+        const strength = World.edgeStrength(bot.pos.y + 0.5);
+        if (strength < 0.01) return;
+        scene.add(groundEdgeMeshes[i]);
+        updateCylinder(bot.pos, new Vector3(bot.pos.x, 0, bot.pos.z), Math.sqrt(strength) * 0.3)(groundEdgeMeshes[i]);
+    });
+    animation[time].bots.map((from, i) =>
+        animation[time].bots.map((to, j) => {
             if (i >= j) return;
             scene.remove(edgeMeshes[i][j]);
             const strength = World.edgeStrength(to.pos.clone().sub(from.pos).length());
@@ -63,7 +95,8 @@ const App: FC = () => {
     const [camera, setCamera] = useState<PerspectiveCamera>();
     const [renderer, setRenderer] = useState<WebGLRenderer>();
     const [frame, setFrame] = useState(0);
-    const [iterations, setIterations] = useState(0);
+    const [time, setTime] = useState(0);
+    const [animating, setAnimating] = useState(false);
 
     useEffect(() => {
         const mc = mount.current;
@@ -98,13 +131,15 @@ const App: FC = () => {
     }, [controls, renderer, camera, frame]);
 
     useEffect(() => {
-        if (iterations >= 150) return;
-        const t = setTimeout(() => {
-            updateWorld();
-            setIterations(iterations + 1);
-        }, 10);
-        return () => clearTimeout(t);
-    }, [iterations]);
+        const t = time % (2 * animation.length);
+        updateWorld(t < animation.length ? t : 2 * animation.length - t - 1);
+    }, [time]);
+
+    useEffect(() => {
+        if (!animating) return;
+        const t = setInterval(() => setTime(time => time + 1), 10);
+        return () => clearInterval(t);
+    }, [animating]);
 
     return (
         <>
@@ -121,8 +156,12 @@ const App: FC = () => {
                                         <b>Microbots</b>
                                     </ListItem>
                                     <ListItem>
-                                        <b>iterations: </b>
-                                        {iterations}
+                                        <button onClick={() => setTime(time + 1)}>Time: {time}</button>
+                                    </ListItem>
+                                    <ListItem>
+                                        <button onClick={() => setAnimating(!animating)}>
+                                            Animating: {animating ? "true" : "false"}
+                                        </button>
                                     </ListItem>
                                 </List>
                             </Paper>

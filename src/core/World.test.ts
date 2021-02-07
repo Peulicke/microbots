@@ -8,15 +8,7 @@ import {
     numberArrayToMatrix3Array
 } from "./utils";
 import { newBot, setPos, setFixed } from "./Bot";
-import {
-    newWorld,
-    setBots,
-    stiffnessPair,
-    compliance,
-    removeFixedFromVector,
-    removeFixedFromMatrix,
-    objective
-} from "./World";
+import { newWorld, setBots, stiffnessPair, removeFixedFromVector, removeFixedFromMatrix } from "./World";
 
 it("creates a new world", () => {
     expect(newWorld()).toStrictEqual({ bots: [] });
@@ -112,24 +104,4 @@ it("converts to Matrix3 array", () => {
         [new Matrix3().set(1, 2, 3, 4, 5, 6, 7, 8, 9), new Matrix3().set(11, 12, 13, 14, 15, 16, 17, 18, 19)],
         [new Matrix3().set(21, 22, 23, 24, 25, 26, 27, 28, 29), new Matrix3().set(31, 32, 33, 34, 35, 36, 37, 38, 39)]
     ]);
-});
-
-it("computes compliance", () => {
-    const bot1 = setFixed(true)(newBot());
-    const bot2 = setFixed(true)(setPos(new Vector3(1, 0, 0))(newBot()));
-    const bot3 = setFixed(true)(setPos(new Vector3(0, 0, 1))(newBot()));
-    const bot4 = setPos(new Vector3(0, 1, 0))(newBot());
-    const bots = [bot1, bot2, bot3, bot4];
-    const world = pipe(newWorld(), setBots(bots));
-    expect(compliance(world)).toBeCloseTo(1);
-});
-
-it("computes objective", () => {
-    const bot1 = setFixed(true)(newBot());
-    const bot2 = setFixed(true)(setPos(new Vector3(1, 0, 0))(newBot()));
-    const bot3 = setFixed(true)(setPos(new Vector3(0, 0, 1))(newBot()));
-    const bot4 = setPos(new Vector3(0, 1, 0))(newBot());
-    const bots = [bot1, bot2, bot3, bot4];
-    const world = pipe(newWorld(), setBots(bots));
-    expect(objective(world)).toBeCloseTo(1);
 });
