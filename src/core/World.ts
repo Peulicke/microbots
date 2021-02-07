@@ -61,7 +61,7 @@ export const removeFixedFromMatrix = (world: World) => (mat: Matrix3[][]): Matri
 export const stiffnessMatrix = (world: World): Matrix3[][] => {
     const result = world.bots.map(() => world.bots.map(() => new Matrix3().multiplyScalar(0)));
     for (let i = 0; i < world.bots.length; ++i) {
-        const s = stiffness(new Vector3(0, world.bots[i].pos.y, 0));
+        const s = stiffness(new Vector3(0, world.bots[i].pos.y + 0.5, 0));
         result[i][i] = subMatrix3(result[i][i], s);
     }
     for (let i = 0; i < world.bots.length; ++i) {
