@@ -25,15 +25,13 @@ export const edgeStrength = (d: number): number => 2 / (1 + Math.exp(power * (d 
 
 export const stiffness = (d: Vector3): Matrix3 => outerProduct(d, d).multiplyScalar(-1 / d.dot(d));
 
-export const stiffnessDerivative = (edgeStrengthFun: (d: number) => number) => (dim: number) => (
-    d: Vector3
-): Matrix3 => {
+export const stiffnessDerivative = (dim: number) => (d: Vector3): Matrix3 => {
     const epsilon = 0.00001;
     const val = d.getComponent(dim);
     const dPlus = d.clone().setComponent(dim, val + epsilon);
     const dMinus = d.clone().setComponent(dim, val - epsilon);
-    const plus = stiffness(dPlus).multiplyScalar(edgeStrengthFun(dPlus.length()));
-    const minus = stiffness(dMinus).multiplyScalar(edgeStrengthFun(dMinus.length()));
+    const plus = stiffness(dPlus).multiplyScalar(edgeStrength(dPlus.length()));
+    const minus = stiffness(dMinus).multiplyScalar(edgeStrength(dMinus.length()));
     return subMatrix3(plus, minus).multiplyScalar(1 / (2 * epsilon));
 };
 
@@ -42,12 +40,9 @@ export const stiffnessPair = (a: Bot, b: Bot): Matrix3 => {
     return stiffness(d).multiplyScalar(edgeStrength(d.length()));
 };
 
-export const stiffnessPairDerivative = (edgeStrengthFun: (d: number) => number) => (bot: Bot) => (dim: number) => (
-    a: Bot,
-    b: Bot
-): Matrix3 => {
+export const stiffnessPairDerivative = (bot: Bot) => (dim: number) => (a: Bot, b: Bot): Matrix3 => {
     if (a !== bot && b !== bot) return new Matrix3().set(0, 0, 0, 0, 0, 0, 0, 0, 0);
-    const derivative = stiffnessDerivative(edgeStrengthFun)(dim)(b.pos.clone().sub(a.pos));
+    const derivative = stiffnessDerivative(dim)(b.pos.clone().sub(a.pos));
     if (a === bot) return derivative.multiplyScalar(-1);
     return derivative;
 };
@@ -70,22 +65,6 @@ export const stiffnessMatrix = (world: World): Matrix3[][] => {
             result[i][j] = addMatrix3(result[i][j], s);
         }
     }
-    return removeFixedFromMatrix(world)(result);
-};
-
-export const stiffnessMatrixDerivative = (edgeStrengthFun: (d: number) => number) => (i: number) => (dim: number) => (
-    world: World
-): Matrix3[][] => {
-    const result = world.bots.map(() => world.bots.map(() => new Matrix3().multiplyScalar(0)));
-    const bot = world.bots[i];
-    world.bots.forEach((b, j) => {
-        if (i === j) return;
-        const s = stiffnessPairDerivative(edgeStrengthFun)(bot)(dim)(world.bots[i], world.bots[j]);
-        result[i][i] = subMatrix3(result[i][i], s);
-        result[j][j] = subMatrix3(result[j][j], s);
-        result[i][j] = addMatrix3(result[i][j], s);
-        result[j][i] = addMatrix3(result[j][i], s);
-    });
     return removeFixedFromMatrix(world)(result);
 };
 
@@ -132,7 +111,7 @@ export const resolveCollision = (world: World): World => {
     return result;
 };
 
-export const gradient = (edgeStrengthFun: (d: number) => number) => (world: World): Vector3[] => {
+export const gradient = (world: World): Vector3[] => {
     const u = displacement(world);
     const result = [...Array(world.bots.length)].map(() => new Vector3(0, 0, 0));
     const res = [...Array(world.bots.length)].map(() =>
@@ -142,7 +121,7 @@ export const gradient = (edgeStrengthFun: (d: number) => number) => (world: Worl
         for (let dim = 0; dim < 3; ++dim) {
             for (let j = 0; j < world.bots.length; ++j) {
                 if (i >= j) continue;
-                const s = stiffnessPairDerivative(edgeStrengthFun)(world.bots[i])(dim)(world.bots[i], world.bots[j]);
+                const s = stiffnessPairDerivative(world.bots[i])(dim)(world.bots[i], world.bots[j]);
                 const si = new Vector3(...u.slice(3 * i, 3 * (i + 1))).applyMatrix3(s);
                 const sj = new Vector3(...u.slice(3 * j, 3 * (j + 1))).applyMatrix3(s);
                 const ss = sj.sub(si);
@@ -165,7 +144,7 @@ export const gradient = (edgeStrengthFun: (d: number) => number) => (world: Worl
 export const optimizeStepNumerical = (stepSize: number) => (world: World): World => {
     power *= 1.005;
     console.log(power);
-    const g = gradient(edgeStrength)(world).map(v => v.multiplyScalar(-stepSize / (1 + v.length())));
+    const g = gradient(world).map(v => v.multiplyScalar(-stepSize / (1 + v.length())));
     world.bots.map((bot, i) => {
         if (bot.fixed) return;
         bot.pos.add(g[i]);
