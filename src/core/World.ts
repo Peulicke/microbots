@@ -108,6 +108,10 @@ export const objective = (world: World): number => compliance(world);
 
 export const resolveCollisionStep = (world: World): World => {
     for (let i = 0; i < world.bots.length; ++i) {
+        if (world.bots[i].fixed) continue;
+        world.bots[i].pos.y = Math.max(world.bots[i].pos.y, 0.5);
+    }
+    for (let i = 0; i < world.bots.length; ++i) {
         for (let j = i + 1; j < world.bots.length; ++j) {
             if (world.bots[i].fixed && world.bots[j].fixed) continue;
             const oneFixed = world.bots[i].fixed || world.bots[j].fixed;
