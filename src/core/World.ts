@@ -23,21 +23,24 @@ let power = 4;
 
 export const edgeStrength = (d: number): number => 2 / (1 + Math.exp(power * (d - 1)));
 
-export const stiffness = (d: Vector3): Matrix3 => outerProduct(d, d).multiplyScalar(-1 / d.dot(d));
+export const stiffness = (d: Vector3): Matrix3 =>
+    outerProduct(d, d)
+        .multiplyScalar(-1 / d.dot(d))
+        .multiplyScalar(edgeStrength(d.length()));
 
 export const stiffnessDerivative = (dim: number) => (d: Vector3): Matrix3 => {
     const epsilon = 0.00001;
     const val = d.getComponent(dim);
     const dPlus = d.clone().setComponent(dim, val + epsilon);
     const dMinus = d.clone().setComponent(dim, val - epsilon);
-    const plus = stiffness(dPlus).multiplyScalar(edgeStrength(dPlus.length()));
-    const minus = stiffness(dMinus).multiplyScalar(edgeStrength(dMinus.length()));
+    const plus = stiffness(dPlus);
+    const minus = stiffness(dMinus);
     return subMatrix3(plus, minus).multiplyScalar(1 / (2 * epsilon));
 };
 
 export const stiffnessPair = (a: Bot, b: Bot): Matrix3 => {
     const d = b.pos.clone().sub(a.pos);
-    return stiffness(d).multiplyScalar(edgeStrength(d.length()));
+    return stiffness(d);
 };
 
 export const stiffnessPairDerivative = (bot: Bot) => (dim: number) => (a: Bot, b: Bot): Matrix3 => {
