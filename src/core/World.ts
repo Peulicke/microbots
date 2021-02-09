@@ -163,7 +163,10 @@ export const gradient = (beforeBefore: World, before: World, after: World, after
     for (let i = 0; i < world.bots.length; ++i) {
         for (let dim = 0; dim < 3; ++dim) {
             const dku = numberArrayFromVector3Array(removeFixedFromVector(world)(res[i][dim]));
-            result[i].setComponent(dim, -dot(u, dku) + 2 * ((2 * u[i] - uBefore[i] - uAfter[i]) / dt ** 2));
+            result[i].setComponent(
+                dim,
+                -dot(u, dku) + 2 * ((2 * u[3 * i + dim] - uBefore[3 * i + dim] - uAfter[3 * i + dim]) / dt ** 2)
+            );
         }
     }
     return result;

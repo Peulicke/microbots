@@ -37,13 +37,13 @@ const subdivide = (animation: World.World[]): World.World[] => {
 
 export const createAnimation = (before: World.World, after: World.World, n: number): World.World[] => {
     let result = [before, after];
-    let dt = 1000;
-    let stepSize = 1;
+    let dt = 100;
+    let stepSize = 0.1;
     for (let i = 0; i < n; ++i) {
         dt /= 2;
         stepSize /= 2;
         result = subdivide(result);
-        for (let c = 0; c < 10; ++c) {
+        for (let c = 0; c < 30; ++c) {
             for (let j = 1; j < result.length - 1; j += 2) {
                 optimizeStepNumerical(stepSize)(
                     result[Math.max(j - 2, 0)],

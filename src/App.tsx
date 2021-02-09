@@ -21,11 +21,11 @@ const worldStart = pipe(
     World.setBots([
         ...[...Array(height)]
             .map((_, i) => [
-                Bot.setPos(new Vector3(-2, 0.5 + i, 0))(Bot.newBot()),
-                Bot.setPos(new Vector3(2, 0.5 + i, 0))(Bot.newBot())
+                Bot.setPos(new Vector3(-4, 0.5 + i, 0))(Bot.newBot()),
+                Bot.setPos(new Vector3(4, 0.5 + i, 0))(Bot.newBot())
             ])
             .flat(),
-        Bot.setPos(new Vector3(-2, 0.5 + height, 0))(Bot.newBot())
+        Bot.setPos(new Vector3(-4, 0.5 + height, 0))(Bot.newBot())
     ])
 );
 
@@ -34,11 +34,11 @@ const worldEnd = pipe(
     World.setBots([
         ...[...Array(height)]
             .map((_, i) => [
-                Bot.setPos(new Vector3(-2, 0.5 + i, 0))(Bot.newBot()),
-                Bot.setPos(new Vector3(2, 0.5 + i, 0))(Bot.newBot())
+                Bot.setPos(new Vector3(-4, 0.5 + i, 0))(Bot.newBot()),
+                Bot.setPos(new Vector3(4, 0.5 + i, 0))(Bot.newBot())
             ])
             .flat(),
-        Bot.setPos(new Vector3(2, 0.5 + height, 0))(Bot.newBot())
+        Bot.setPos(new Vector3(4, 0.5 + height, 0))(Bot.newBot())
     ])
 );
 
@@ -82,6 +82,15 @@ const updateWorld = (time: number) => {
             updateCylinder(from.pos, to.pos, Math.sqrt(strength) * 0.3)(edgeMeshes[i][j]);
         })
     );
+};
+
+const saveImage = () => {
+    const canvas = document.getElementsByTagName("canvas")[0];
+    const image = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = image.replace(/^data:image\/[^;]/, "data:application/octet-stream");
+    a.download = "image.png";
+    a.click();
 };
 
 const App: FC = () => {
@@ -131,8 +140,25 @@ const App: FC = () => {
     }, [controls, renderer, camera, frame]);
 
     useEffect(() => {
-        const t = time % (2 * animation.length);
-        updateWorld(t < animation.length ? t : 2 * animation.length - t - 1);
+        const pauseFrac = 0.1;
+        const pauseFrames = Math.round(pauseFrac * animation.length);
+        let t = time % (2 * (animation.length + pauseFrames));
+        if (t < pauseFrames) {
+            updateWorld(0);
+            return;
+        }
+        t -= pauseFrames;
+        if (t < animation.length) {
+            updateWorld(t);
+            return;
+        }
+        t -= animation.length;
+        if (t < pauseFrames) {
+            updateWorld(animation.length - 1);
+            return;
+        }
+        t -= pauseFrames;
+        updateWorld(animation.length - 1 - t);
     }, [time]);
 
     useEffect(() => {
@@ -162,6 +188,9 @@ const App: FC = () => {
                                         <button onClick={() => setAnimating(!animating)}>
                                             Animating: {animating ? "true" : "false"}
                                         </button>
+                                    </ListItem>
+                                    <ListItem>
+                                        <button onClick={() => saveImage()}>Save screenshot</button>
                                     </ListItem>
                                 </List>
                             </Paper>
