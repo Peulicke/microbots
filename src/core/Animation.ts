@@ -8,25 +8,31 @@ const average = (start: World.World, end: World.World): World.World => {
     return result;
 };
 
-export const optimizeStepNumerical = (stepSize: number) => (
-    beforeBefore: World.World,
-    before: World.World,
-    after: World.World,
-    afterAfter: World.World,
-    dt: number
-) => (world: World.World): World.World => {
-    const g = World.gradient(
-        beforeBefore,
-        before,
-        after,
-        afterAfter,
-        dt
-    )(world).map(v => Vec3.multiplyScalar(v, -stepSize / (1 + Vec3.length(v))));
-    world.bots.map((bot, i) => {
-        if (bot.fixed) return;
-        bot.pos = Vec3.add(bot.pos, g[i]);
-    });
-    return World.resolveCollision(world);
+export const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
+    const result = [...Array(animation.length)].map(() =>
+        [...Array(animation[0].bots.length)].map(() => Vec3.newVec3(0, 0, 0))
+    );
+    for (let i = 1; i < animation.length - 1; ++i) {
+        const beforeBefore = animation[Math.max(i - 2, 0)];
+        const before = animation[i - 1];
+        const after = animation[i + 1];
+        const afterAfter = animation[Math.min(i + 2, animation.length - 1)];
+        result[i] = World.gradient(beforeBefore, before, after, afterAfter, dt)(animation[i]);
+    }
+    return result;
+};
+
+export const optimizeStep = (stepSize: number) => (animation: World.World[], dt: number): void => {
+    const g = gradient(animation, dt).map(world =>
+        world.map(v => Vec3.multiplyScalar(v, -stepSize / (1 + Vec3.length(v))))
+    );
+    animation.map((world, i) =>
+        world.bots.map((bot, j) => {
+            if (bot.fixed) return;
+            bot.pos = Vec3.add(bot.pos, g[i][j]);
+        })
+    );
+    animation.map(world => World.resolveCollision(world));
 };
 
 const subdivide = (animation: World.World[]): World.World[] => {
@@ -45,22 +51,8 @@ export const createAnimation = (before: World.World, after: World.World, n: numb
         stepSize /= 2;
         result = subdivide(result);
         for (let c = 0; c < 30; ++c) {
-            for (let j = 1; j < result.length - 1; j += 2) {
-                optimizeStepNumerical(stepSize)(
-                    result[Math.max(j - 2, 0)],
-                    result[j - 1],
-                    result[j + 1],
-                    result[Math.min(j + 2, result.length - 1)],
-                    dt
-                )(result[j]);
-            }
-            for (let j = 2; j < result.length - 2; j += 2) {
-                optimizeStepNumerical(stepSize)(result[j - 2], result[j - 1], result[j + 1], result[j + 2], dt)(
-                    result[j]
-                );
-            }
+            optimizeStep(stepSize)(result, dt);
         }
     }
-    optimizeStepNumerical(0.1)(result[0], result[0], result[2], result[2], dt)(result[1]);
     return result;
 };
