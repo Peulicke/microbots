@@ -127,10 +127,13 @@ export const resolveCollision = (world: World): World => {
     return result;
 };
 
-export const gradient = (beforeBefore: World, before: World, after: World, afterAfter: World, dt: number) => (
-    world: World
-): Vec3.Vec3[] => {
-    const u = displacement(before, after, dt)(world);
+export const gradient = (uBefore: number[], u: number[], uAfter: number[]) => (
+    beforeBefore: World,
+    before: World,
+    after: World,
+    afterAfter: World,
+    dt: number
+) => (world: World): Vec3.Vec3[] => {
     const result = [...Array(world.bots.length)].map(() => Vec3.newVec3(0, 0, 0));
     const res = [...Array(world.bots.length)].map(() =>
         [0, 1, 2].map(() => [...Array(world.bots.length)].map(() => Vec3.newVec3(0, 0, 0)))
@@ -159,8 +162,6 @@ export const gradient = (beforeBefore: World, before: World, after: World, after
             }
         }
     }
-    const uBefore = displacement(beforeBefore, world, dt)(before);
-    const uAfter = displacement(world, afterAfter, dt)(after);
     for (let i = 0; i < world.bots.length; ++i) {
         for (let dim = 0; dim < 3; ++dim) {
             const dku = numberArrayFromVec3Array(removeFixedFromVector(world)(res[i][dim]));

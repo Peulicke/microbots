@@ -12,12 +12,24 @@ export const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] =>
     const result = [...Array(animation.length)].map(() =>
         [...Array(animation[0].bots.length)].map(() => Vec3.newVec3(0, 0, 0))
     );
+    const displacements = [...Array(animation.length)].map(() => [...Array(3 * animation[0].bots.length)].map(() => 0));
+    for (let i = 1; i < animation.length - 1; ++i) {
+        const before = animation[i - 1];
+        const after = animation[i + 1];
+        displacements[i] = World.displacement(before, after, dt)(animation[i]);
+    }
     for (let i = 1; i < animation.length - 1; ++i) {
         const beforeBefore = animation[Math.max(i - 2, 0)];
         const before = animation[i - 1];
         const after = animation[i + 1];
         const afterAfter = animation[Math.min(i + 2, animation.length - 1)];
-        result[i] = World.gradient(beforeBefore, before, after, afterAfter, dt)(animation[i]);
+        result[i] = World.gradient(displacements[i - 1], displacements[i], displacements[i + 1])(
+            beforeBefore,
+            before,
+            after,
+            afterAfter,
+            dt
+        )(animation[i]);
     }
     return result;
 };
