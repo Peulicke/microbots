@@ -1,6 +1,6 @@
 import * as Bot from "./Bot";
 import * as World from "./World";
-import { add, multiplyScalar, length } from "./Vec3";
+import * as Vec3 from "./Vec3";
 
 const average = (start: World.World, end: World.World): World.World => {
     const result = World.newWorld();
@@ -21,10 +21,10 @@ export const optimizeStepNumerical = (stepSize: number) => (
         after,
         afterAfter,
         dt
-    )(world).map(v => multiplyScalar(v, -stepSize / (1 + length(v))));
+    )(world).map(v => Vec3.multiplyScalar(v, -stepSize / (1 + Vec3.length(v))));
     world.bots.map((bot, i) => {
         if (bot.fixed) return;
-        bot.pos = add(bot.pos, g[i]);
+        bot.pos = Vec3.add(bot.pos, g[i]);
     });
     return World.resolveCollision(world);
 };
