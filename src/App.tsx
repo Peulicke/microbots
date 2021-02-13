@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useRef, useState } from "react";
-import { Vector3, PerspectiveCamera, WebGLRenderer, Color } from "three";
+import { PerspectiveCamera, WebGLRenderer, Color } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
@@ -45,14 +45,12 @@ const worldEnd = pipe(
 
 const animation = Animation.createAnimation(worldStart, worldEnd, 8);
 
-const botMeshes = animation[0].bots.map(bot =>
-    newSphere(new Vector3(...bot.pos), bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0))
-);
+const botMeshes = animation[0].bots.map(bot => newSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)));
 const groundEdgeMeshes = animation[0].bots.map(bot =>
-    newCylinder(new Vector3(...bot.pos), new Vector3(bot.pos[0], 0, bot.pos[2]), 1, new Color(1, 0, 0))
+    newCylinder(bot.pos, newVec3(bot.pos[0], 0, bot.pos[2]), 1, new Color(1, 0, 0))
 );
 const edgeMeshes = animation[0].bots.map(a =>
-    animation[0].bots.map(b => newCylinder(new Vector3(...a.pos), new Vector3(...b.pos), 1, new Color(1, 0, 0)))
+    animation[0].bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0)))
 );
 const scene = newScene();
 botMeshes.map(mesh => scene.add(mesh));
@@ -73,11 +71,7 @@ const updateWorld = (time: number) => {
         const strength = World.edgeStrength(bot.pos[1] + 0.5);
         if (strength < 0.01) return;
         scene.add(groundEdgeMeshes[i]);
-        updateCylinder(
-            new Vector3(...bot.pos),
-            new Vector3(bot.pos[0], 0, bot.pos[2]),
-            Math.sqrt(strength) * 0.3
-        )(groundEdgeMeshes[i]);
+        updateCylinder(bot.pos, newVec3(bot.pos[0], 0, bot.pos[2]), Math.sqrt(strength) * 0.3)(groundEdgeMeshes[i]);
     });
     animation[time].bots.map((from, i) =>
         animation[time].bots.map((to, j) => {
@@ -86,11 +80,7 @@ const updateWorld = (time: number) => {
             const strength = World.edgeStrength(length(sub(to.pos, from.pos)));
             if (strength < 0.01) return;
             scene.add(edgeMeshes[i][j]);
-            updateCylinder(
-                new Vector3(...from.pos),
-                new Vector3(...to.pos),
-                Math.sqrt(strength) * 0.3
-            )(edgeMeshes[i][j]);
+            updateCylinder(from.pos, to.pos, Math.sqrt(strength) * 0.3)(edgeMeshes[i][j]);
         })
     );
 };
