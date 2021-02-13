@@ -1,4 +1,5 @@
-import { Vector3, Matrix3 } from "three";
+import { Matrix3 } from "three";
+import { Vec3, newVec3 } from "./Vec3";
 
 const throwError = () => {
     throw new Error("Vectors need to be the same length");
@@ -16,18 +17,17 @@ export const applyMatrix = (A: number[][], b: number[]): number[] => {
     return [...Array(A.length)].map((_, i) => dot(A[i], b));
 };
 
-export const outerProduct = (a: Vector3, b: Vector3): Matrix3 => {
-    if (a.length !== b.length) throwError();
+export const outerProduct = (a: Vec3, b: Vec3): Matrix3 => {
     return new Matrix3().set(
-        a.x * b.x,
-        a.x * b.y,
-        a.x * b.z,
-        a.y * b.x,
-        a.y * b.y,
-        a.y * b.z,
-        a.z * b.x,
-        a.z * b.y,
-        a.z * b.z
+        a[0] * b[0],
+        a[0] * b[1],
+        a[0] * b[2],
+        a[1] * b[0],
+        a[1] * b[1],
+        a[1] * b[2],
+        a[2] * b[0],
+        a[2] * b[1],
+        a[2] * b[2]
     );
 };
 
@@ -46,25 +46,18 @@ export const subMatrix3 = (a: Matrix3, b: Matrix3): Matrix3 => {
 export const zeros = (height: number, width: number): number[][] =>
     [...Array(height)].map(() => [...Array(width)].map(() => 0));
 
-export const numberArrayFromVector3Array = (vec: Vector3[]): number[] => {
+export const numberArrayFromVector3Array = (vec: Vec3[]): number[] => {
     const result = [...Array(3 * vec.length)].map(() => 0);
     vec.map((e, i) => {
         for (let k = 0; k < 3; ++k) {
-            result[3 * i + k] = e.getComponent(k);
+            result[3 * i + k] = e[k];
         }
     });
     return result;
 };
 
-export const numberArrayToVector3Array = (vec: number[]): Vector3[] =>
-    [...Array(vec.length / 3)]
-        .map(() => new Vector3())
-        .map((e, i) => {
-            for (let k = 0; k < 3; ++k) {
-                e.setComponent(k, vec[3 * i + k]);
-            }
-            return e;
-        });
+export const numberArrayToVector3Array = (vec: number[]): Vec3[] =>
+    [...Array(vec.length / 3)].map((_, i) => newVec3(vec[3 * i], vec[3 * i + 1], vec[3 * i + 2]));
 
 export const numberArrayFromMatrix3Array = (mat: Matrix3[][]): number[][] => {
     const result = zeros(3 * mat.length, 3 * mat[0]?.length || 0);

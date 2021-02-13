@@ -1,5 +1,6 @@
 import { pipe } from "ts-pipe-compose";
-import { Vector3, Matrix3 } from "three";
+import { Matrix3 } from "three";
+import { newVec3 } from "./Vec3";
 import {
     subMatrix3,
     numberArrayFromVector3Array,
@@ -23,12 +24,8 @@ it("sets bots", () => {
 it("removes fixed from vector", () => {
     const bots = [newBot(), setFixed(true)(newBot()), newBot()];
     const world = pipe(newWorld(), setBots(bots));
-    const vector = [new Vector3(1, 2, 3), new Vector3(4, 5, 6), new Vector3(7, 8, 9)];
-    expect(removeFixedFromVector(world)(vector)).toStrictEqual([
-        new Vector3(1, 2, 3),
-        new Vector3(0, 0, 0),
-        new Vector3(7, 8, 9)
-    ]);
+    const vector = [newVec3(1, 2, 3), newVec3(4, 5, 6), newVec3(7, 8, 9)];
+    expect(removeFixedFromVector(world)(vector)).toStrictEqual([newVec3(1, 2, 3), newVec3(0, 0, 0), newVec3(7, 8, 9)]);
 });
 
 it("removes fixed from matrix", () => {
@@ -57,18 +54,18 @@ it("removes fixed from matrix", () => {
 });
 
 it("computes stiffness pair", () => {
-    const bots = [newBot(), setPos(new Vector3(0, 1, 0))(newBot()), setPos(new Vector3(1, 0, 0))(newBot())];
+    const bots = [newBot(), setPos(newVec3(0, 1, 0))(newBot()), setPos(newVec3(1, 0, 0))(newBot())];
     const expected = new Matrix3().set(...[...[0, 0, 0], ...[0, -1, 0], ...[0, 0, 0]]);
     const d = subMatrix3(stiffnessPair(bots[0], bots[1], 1), expected);
     d.elements.map(element => expect(element).toBeCloseTo(0));
 });
 
 it("converts from Vector3 array", () => {
-    expect(numberArrayFromVector3Array([new Vector3(1, 2, 3), new Vector3(4, 5, 6)])).toStrictEqual([1, 2, 3, 4, 5, 6]);
+    expect(numberArrayFromVector3Array([newVec3(1, 2, 3), newVec3(4, 5, 6)])).toStrictEqual([1, 2, 3, 4, 5, 6]);
 });
 
 it("converts to Vector3 array", () => {
-    expect(numberArrayToVector3Array([1, 2, 3, 4, 5, 6])).toStrictEqual([new Vector3(1, 2, 3), new Vector3(4, 5, 6)]);
+    expect(numberArrayToVector3Array([1, 2, 3, 4, 5, 6])).toStrictEqual([newVec3(1, 2, 3), newVec3(4, 5, 6)]);
 });
 
 it("converts from Matrix3 array", () => {

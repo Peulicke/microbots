@@ -6,6 +6,7 @@ import { useWindowSize } from "@react-hook/window-size";
 import { pipe } from "ts-pipe-compose";
 import { Bot, World, Animation } from "./core";
 import { newScene, newSphere, newCylinder, updateCylinder } from "./draw";
+import { newVec3, sub, length } from "./core/Vec3";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -21,11 +22,11 @@ const worldStart = pipe(
     World.setBots([
         ...[...Array(height)]
             .map((_, i) => [
-                Bot.setPos(new Vector3(-4, 0.5 + i, 0))(Bot.newBot()),
-                Bot.setPos(new Vector3(4, 0.5 + i, 0))(Bot.newBot())
+                Bot.setPos(newVec3(-4, 0.5 + i, 0))(Bot.newBot()),
+                Bot.setPos(newVec3(4, 0.5 + i, 0))(Bot.newBot())
             ])
             .flat(),
-        Bot.setPos(new Vector3(-4, 0.5 + height, 0))(Bot.newBot())
+        Bot.setPos(newVec3(-4, 0.5 + height, 0))(Bot.newBot())
     ])
 );
 
@@ -34,22 +35,24 @@ const worldEnd = pipe(
     World.setBots([
         ...[...Array(height)]
             .map((_, i) => [
-                Bot.setPos(new Vector3(-4, 0.5 + i, 0))(Bot.newBot()),
-                Bot.setPos(new Vector3(4, 0.5 + i, 0))(Bot.newBot())
+                Bot.setPos(newVec3(-4, 0.5 + i, 0))(Bot.newBot()),
+                Bot.setPos(newVec3(4, 0.5 + i, 0))(Bot.newBot())
             ])
             .flat(),
-        Bot.setPos(new Vector3(4, 0.5 + height, 0))(Bot.newBot())
+        Bot.setPos(newVec3(4, 0.5 + height, 0))(Bot.newBot())
     ])
 );
 
 const animation = Animation.createAnimation(worldStart, worldEnd, 8);
 
-const botMeshes = animation[0].bots.map(bot => newSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)));
+const botMeshes = animation[0].bots.map(bot =>
+    newSphere(new Vector3(...bot.pos), bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0))
+);
 const groundEdgeMeshes = animation[0].bots.map(bot =>
-    newCylinder(bot.pos, new Vector3(bot.pos.x, 0, bot.pos.z), 1, new Color(1, 0, 0))
+    newCylinder(new Vector3(...bot.pos), new Vector3(bot.pos[0], 0, bot.pos[2]), 1, new Color(1, 0, 0))
 );
 const edgeMeshes = animation[0].bots.map(a =>
-    animation[0].bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0)))
+    animation[0].bots.map(b => newCylinder(new Vector3(...a.pos), new Vector3(...b.pos), 1, new Color(1, 0, 0)))
 );
 const scene = newScene();
 botMeshes.map(mesh => scene.add(mesh));
@@ -63,23 +66,31 @@ edgeMeshes.map((row, i) =>
 
 const updateWorld = (time: number) => {
     animation[time].bots.map((bot, i) => {
-        botMeshes[i].position.set(...bot.pos.toArray());
+        botMeshes[i].position.set(...bot.pos);
     });
     animation[time].bots.map((bot, i) => {
         scene.remove(groundEdgeMeshes[i]);
-        const strength = World.edgeStrength(bot.pos.y + 0.5);
+        const strength = World.edgeStrength(bot.pos[1] + 0.5);
         if (strength < 0.01) return;
         scene.add(groundEdgeMeshes[i]);
-        updateCylinder(bot.pos, new Vector3(bot.pos.x, 0, bot.pos.z), Math.sqrt(strength) * 0.3)(groundEdgeMeshes[i]);
+        updateCylinder(
+            new Vector3(...bot.pos),
+            new Vector3(bot.pos[0], 0, bot.pos[2]),
+            Math.sqrt(strength) * 0.3
+        )(groundEdgeMeshes[i]);
     });
     animation[time].bots.map((from, i) =>
         animation[time].bots.map((to, j) => {
             if (i >= j) return;
             scene.remove(edgeMeshes[i][j]);
-            const strength = World.edgeStrength(to.pos.clone().sub(from.pos).length());
+            const strength = World.edgeStrength(length(sub(to.pos, from.pos)));
             if (strength < 0.01) return;
             scene.add(edgeMeshes[i][j]);
-            updateCylinder(from.pos, to.pos, Math.sqrt(strength) * 0.3)(edgeMeshes[i][j]);
+            updateCylinder(
+                new Vector3(...from.pos),
+                new Vector3(...to.pos),
+                Math.sqrt(strength) * 0.3
+            )(edgeMeshes[i][j]);
         })
     );
 };
