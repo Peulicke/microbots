@@ -4,9 +4,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
 import { pipe } from "ts-pipe-compose";
-import { Bot, World, Animation } from "./core";
+import { Vec3, Bot, World, Animation } from "./core";
 import { newScene, newSphere, newCylinder, updateCylinder } from "./draw";
-import { newVec3, sub, length } from "./core/Vec3";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -22,11 +21,11 @@ const worldStart = pipe(
     World.setBots([
         ...[...Array(height)]
             .map((_, i) => [
-                Bot.setPos(newVec3(-4, 0.5 + i, 0))(Bot.newBot()),
-                Bot.setPos(newVec3(4, 0.5 + i, 0))(Bot.newBot())
+                Bot.setPos(Vec3.newVec3(-4, 0.5 + i, 0))(Bot.newBot()),
+                Bot.setPos(Vec3.newVec3(4, 0.5 + i, 0))(Bot.newBot())
             ])
             .flat(),
-        Bot.setPos(newVec3(-4, 0.5 + height, 0))(Bot.newBot())
+        Bot.setPos(Vec3.newVec3(-4, 0.5 + height, 0))(Bot.newBot())
     ])
 );
 
@@ -35,11 +34,11 @@ const worldEnd = pipe(
     World.setBots([
         ...[...Array(height)]
             .map((_, i) => [
-                Bot.setPos(newVec3(-4, 0.5 + i, 0))(Bot.newBot()),
-                Bot.setPos(newVec3(4, 0.5 + i, 0))(Bot.newBot())
+                Bot.setPos(Vec3.newVec3(-4, 0.5 + i, 0))(Bot.newBot()),
+                Bot.setPos(Vec3.newVec3(4, 0.5 + i, 0))(Bot.newBot())
             ])
             .flat(),
-        Bot.setPos(newVec3(4, 0.5 + height, 0))(Bot.newBot())
+        Bot.setPos(Vec3.newVec3(4, 0.5 + height, 0))(Bot.newBot())
     ])
 );
 
@@ -47,7 +46,7 @@ const animation = Animation.createAnimation(worldStart, worldEnd, 8);
 
 const botMeshes = animation[0].bots.map(bot => newSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)));
 const groundEdgeMeshes = animation[0].bots.map(bot =>
-    newCylinder(bot.pos, newVec3(bot.pos[0], 0, bot.pos[2]), 1, new Color(1, 0, 0))
+    newCylinder(bot.pos, Vec3.newVec3(bot.pos[0], 0, bot.pos[2]), 1, new Color(1, 0, 0))
 );
 const edgeMeshes = animation[0].bots.map(a =>
     animation[0].bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0)))
@@ -71,13 +70,17 @@ const updateWorld = (time: number) => {
         const strength = World.edgeStrength(bot.pos[1] + 0.5);
         if (strength < 0.01) return;
         scene.add(groundEdgeMeshes[i]);
-        updateCylinder(bot.pos, newVec3(bot.pos[0], 0, bot.pos[2]), Math.sqrt(strength) * 0.3)(groundEdgeMeshes[i]);
+        updateCylinder(
+            bot.pos,
+            Vec3.newVec3(bot.pos[0], 0, bot.pos[2]),
+            Math.sqrt(strength) * 0.3
+        )(groundEdgeMeshes[i]);
     });
     animation[time].bots.map((from, i) =>
         animation[time].bots.map((to, j) => {
             if (i >= j) return;
             scene.remove(edgeMeshes[i][j]);
-            const strength = World.edgeStrength(length(sub(to.pos, from.pos)));
+            const strength = World.edgeStrength(Vec3.length(Vec3.sub(to.pos, from.pos)));
             if (strength < 0.01) return;
             scene.add(edgeMeshes[i][j]);
             updateCylinder(from.pos, to.pos, Math.sqrt(strength) * 0.3)(edgeMeshes[i][j]);
