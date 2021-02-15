@@ -8,14 +8,14 @@ const average = (start: World.World, end: World.World): World.World => {
     return result;
 };
 
-export const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
+const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
     const result = [...Array(animation.length)].map(() =>
         [...Array(animation[0].bots.length)].map(() => Vec3.newVec3(0, 0, 0))
     );
     const displacements = [...Array(animation.length)].map(() => [...Array(3 * animation[0].bots.length)].map(() => 0));
-    for (let i = 1; i < animation.length - 1; ++i) {
-        const before = animation[i - 1];
-        const after = animation[i + 1];
+    for (let i = 0; i < animation.length; ++i) {
+        const before = animation[Math.max(i - 1, 0)];
+        const after = animation[Math.min(i + 1, animation.length - 1)];
         displacements[i] = World.displacement(before, after, dt)(animation[i]);
     }
     for (let i = 1; i < animation.length - 1; ++i) {
@@ -34,7 +34,7 @@ export const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] =>
     return result;
 };
 
-export const optimizeStep = (stepSize: number) => (animation: World.World[], dt: number): void => {
+const optimizeStep = (stepSize: number) => (animation: World.World[], dt: number): void => {
     const g = gradient(animation, dt).map(world =>
         world.map(v => Vec3.multiplyScalar(v, -stepSize / (1 + Vec3.length(v))))
     );
@@ -56,13 +56,12 @@ const subdivide = (animation: World.World[]): World.World[] => {
 
 export const createAnimation = (before: World.World, after: World.World, n: number): World.World[] => {
     let result = [before, after];
-    let dt = 100;
-    let stepSize = 0.1;
+    let dt = 50;
     for (let i = 0; i < n; ++i) {
         dt /= 2;
-        stepSize /= 2;
         result = subdivide(result);
-        for (let c = 0; c < 30; ++c) {
+        result.map(world => World.resolveCollision(world));
+        for (let stepSize = 0.025 * dt; stepSize > 0.01; stepSize *= 0.99) {
             optimizeStep(stepSize)(result, dt);
         }
     }
