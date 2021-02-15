@@ -6,6 +6,8 @@ import { useWindowSize } from "@react-hook/window-size";
 import { pipe } from "ts-pipe-compose";
 import { Vec3, Bot, World, Animation } from "./core";
 import { newScene, newSphere, newCylinder, updateCylinder } from "./draw";
+import Prando from "prando";
+const rng = new Prando(123);
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -41,6 +43,10 @@ const worldEnd = pipe(
         Bot.setPos(Vec3.newVec3(4, 0.5 + height, 0))(Bot.newBot())
     ])
 );
+
+const rand = () => Vec3.multiplyScalar(Vec3.newVec3(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5), 0.0001);
+worldStart.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
+worldEnd.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
 
 const animation = Animation.createAnimation(worldStart, worldEnd, 8);
 
