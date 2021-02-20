@@ -54,7 +54,7 @@ it("removes fixed from matrix", () => {
 
 it("computes stiffness pair", () => {
     const bots = [newBot(), setPos(newVec3(0, 1, 0))(newBot()), setPos(newVec3(1, 0, 0))(newBot())];
-    const expected = newMat3(newVec3(0, 0, 0), newVec3(0, -1, 0), newVec3(0, 0, 0));
+    const expected = newMat3(newVec3(0, 0, 0), newVec3(0, 1, 0), newVec3(0, 0, 0));
     const d = sub(stiffnessPair(bots[0], bots[1], 1), expected);
     d.flat().map(element => expect(element).toBeCloseTo(0));
 });

@@ -19,7 +19,7 @@ const friction = 0.1;
 export const edgeStrength = (d: number): number => 2 / (1 + Math.exp(power * (d - 1)));
 
 export const stiffness = (d: Vec3.Vec3): Mat3.Mat3 =>
-    Mat3.multiplyScalar(outerProduct(d, d), -edgeStrength(Vec3.length(d)) / Vec3.dot(d, d));
+    Mat3.multiplyScalar(outerProduct(d, d), edgeStrength(Vec3.length(d)) / Vec3.dot(d, d));
 
 export const stiffnessDerivative = (dim: number) => (d: Vec3.Vec3): Mat3.Mat3 => {
     const epsilon = 0.00001;
@@ -42,8 +42,8 @@ export const stiffnessPairDerivative = (bot: Bot.Bot) => (dim: number) => (a: Bo
     if (a !== bot && b !== bot)
         return Mat3.newMat3(Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0));
     const derivative = stiffnessDerivative(dim)(Vec3.sub(b.pos, a.pos));
-    if (a === bot) return Mat3.multiplyScalar(derivative, -1);
-    return derivative;
+    if (a === bot) return derivative;
+    return Mat3.multiplyScalar(derivative, -1);
 };
 
 export const removeFixedFromVector = (world: World) => (vector: Vec3.Vec3[]): Vec3.Vec3[] =>
@@ -66,16 +66,16 @@ export const stiffnessMatrix = (world: World): Mat3.Mat3[][] => {
         const sx = Mat3.multiplyScalar(stiffness(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0)), friction);
         const sy = stiffness(Vec3.newVec3(0, world.bots[i].pos[1] + 0.5, 0));
         const sz = Mat3.multiplyScalar(stiffness(Vec3.newVec3(0, 0, world.bots[i].pos[1] + 0.5)), friction);
-        result[i][i] = Mat3.sub(result[i][i], sx);
-        result[i][i] = Mat3.sub(result[i][i], sy);
-        result[i][i] = Mat3.sub(result[i][i], sz);
+        result[i][i] = Mat3.add(result[i][i], sx);
+        result[i][i] = Mat3.add(result[i][i], sy);
+        result[i][i] = Mat3.add(result[i][i], sz);
     }
     for (let i = 0; i < world.bots.length; ++i) {
         for (let j = 0; j < world.bots.length; ++j) {
             if (i === j) continue;
             const s = stiffnessPair(world.bots[i], world.bots[j]);
-            result[i][i] = Mat3.sub(result[i][i], s);
-            result[i][j] = Mat3.add(result[i][j], s);
+            result[i][i] = Mat3.add(result[i][i], s);
+            result[i][j] = Mat3.sub(result[i][j], s);
         }
     }
     return removeFixedFromMatrix(world)(result);
@@ -150,7 +150,7 @@ export const gradient = (uBefore: number[], u: number[], uAfter: number[]) => (
                 friction
             );
             const v = Vec3.newVec3(u[3 * i], u[3 * i + 1], u[3 * i + 2]);
-            res[i][dim][i] = Vec3.sub(res[i][dim][i], Mat3.apply(Mat3.add(Mat3.add(sx, sy), sz), v));
+            res[i][dim][i] = Vec3.add(res[i][dim][i], Mat3.apply(Mat3.add(Mat3.add(sx, sy), sz), v));
             for (let j = 0; j < world.bots.length; ++j) {
                 if (i >= j) continue;
                 const s = stiffnessPairDerivative(world.bots[i])(dim)(world.bots[i], world.bots[j]);
@@ -166,8 +166,33 @@ export const gradient = (uBefore: number[], u: number[], uAfter: number[]) => (
         for (let dim = 0; dim < 3; ++dim) {
             const dku = numberArrayFromVec3Array(removeFixedFromVector(world)(res[i][dim]));
             result[i][dim] =
-                -dot(u, dku) + 2 * ((2 * u[3 * i + dim] - uBefore[3 * i + dim] - uAfter[3 * i + dim]) / dt ** 2);
+                -dot(u, dku) + 2 * ((-uBefore[3 * i + dim] + 2 * u[3 * i + dim] - uAfter[3 * i + dim]) / dt ** 2);
         }
+    }
+    const overlapPenalty = 1000;
+    for (let i = 0; i < world.bots.length; ++i) {
+        if (world.bots[i].pos[1] > 0.5) continue;
+        const l = world.bots[i].pos[1] + 0.5;
+        result[i][1] += 2 * overlapPenalty * ((2 * (l - 2)) / l);
+    }
+    for (let i = 0; i < world.bots.length; ++i) {
+        for (let j = i + 1; j < world.bots.length; ++j) {
+            let d = Vec3.sub(world.bots[j].pos, world.bots[i].pos);
+            const l = Vec3.length(d);
+            if (l > 1) continue;
+            d = Vec3.multiplyScalar(d, overlapPenalty * ((2 * (l - 2)) / l));
+            result[i] = Vec3.sub(result[i], d);
+            result[j] = Vec3.add(result[j], d);
+        }
+    }
+    for (let i = 0; i < world.bots.length; ++i) {
+        const p1 = Vec3.multiplyScalar(beforeBefore.bots[i].pos, 2);
+        const p2 = Vec3.multiplyScalar(before.bots[i].pos, -8);
+        const p3 = Vec3.multiplyScalar(world.bots[i].pos, 12);
+        const p4 = Vec3.multiplyScalar(after.bots[i].pos, -8);
+        const p5 = Vec3.multiplyScalar(afterAfter.bots[i].pos, 2);
+        const numerator = Vec3.add(Vec3.add(Vec3.add(Vec3.add(p1, p2), p3), p4), p5);
+        result[i] = Vec3.add(result[i], Vec3.multiplyScalar(numerator, 100000 / dt ** 4));
     }
     return result;
 };

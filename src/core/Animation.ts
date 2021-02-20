@@ -34,17 +34,22 @@ const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
     return result;
 };
 
-const optimizeStep = (stepSize: number) => (animation: World.World[], dt: number): void => {
-    const g = gradient(animation, dt).map(world =>
-        world.map(v => Vec3.multiplyScalar(v, -stepSize / (1 + Vec3.length(v))))
-    );
-    animation.map((world, i) =>
-        world.bots.map((bot, j) => {
-            if (bot.fixed) return;
-            bot.pos = Vec3.add(bot.pos, g[i][j]);
-        })
-    );
-    animation.map(world => World.resolveCollision(world));
+const optimize = (animation: World.World[], dt: number): void => {
+    const acc = 0.01;
+    const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
+    for (let iter = 0; iter < 2000 / animation.length; ++iter) {
+        const g = gradient(animation, dt).map(world =>
+            world.map(v => Vec3.multiplyScalar(v, -acc / (1 + Vec3.length(v))))
+        );
+        animation.map((world, i) =>
+            world.bots.map((bot, j) => {
+                if (bot.fixed) return;
+                vel[i][j] = Vec3.add(vel[i][j], g[i][j]);
+                vel[i][j] = Vec3.multiplyScalar(vel[i][j], 0.8);
+                bot.pos = Vec3.add(bot.pos, vel[i][j]);
+            })
+        );
+    }
 };
 
 const subdivide = (animation: World.World[]): World.World[] => {
@@ -56,14 +61,11 @@ const subdivide = (animation: World.World[]): World.World[] => {
 
 export const createAnimation = (before: World.World, after: World.World, n: number): World.World[] => {
     let result = [before, after];
-    let dt = 50;
+    let dt = 100;
     for (let i = 0; i < n; ++i) {
         dt /= 2;
         result = subdivide(result);
-        result.map(world => World.resolveCollision(world));
-        for (let stepSize = 0.025 * dt; stepSize > 0.01; stepSize *= 0.99) {
-            optimizeStep(stepSize)(result, dt);
-        }
+        optimize(result, dt);
     }
     return result;
 };

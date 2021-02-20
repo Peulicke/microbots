@@ -17,17 +17,18 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const height = 3;
+const dist = 8;
 
 const worldStart = pipe(
     World.newWorld(),
     World.setBots([
         ...[...Array(height)]
             .map((_, i) => [
-                Bot.setPos(Vec3.newVec3(-4, 0.5 + i, 0))(Bot.newBot()),
-                Bot.setPos(Vec3.newVec3(4, 0.5 + i, 0))(Bot.newBot())
+                Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + i, 0))(Bot.newBot()),
+                Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + i, 0))(Bot.newBot())
             ])
             .flat(),
-        Bot.setPos(Vec3.newVec3(-4, 0.5 + height, 0))(Bot.newBot())
+        Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + height, 0))(Bot.newBot())
     ])
 );
 
@@ -36,11 +37,11 @@ const worldEnd = pipe(
     World.setBots([
         ...[...Array(height)]
             .map((_, i) => [
-                Bot.setPos(Vec3.newVec3(-4, 0.5 + i, 0))(Bot.newBot()),
-                Bot.setPos(Vec3.newVec3(4, 0.5 + i, 0))(Bot.newBot())
+                Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + i, 0))(Bot.newBot()),
+                Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + i, 0))(Bot.newBot())
             ])
             .flat(),
-        Bot.setPos(Vec3.newVec3(4, 0.5 + height, 0))(Bot.newBot())
+        Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + height, 0))(Bot.newBot())
     ])
 );
 
