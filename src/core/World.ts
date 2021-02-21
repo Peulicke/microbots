@@ -13,7 +13,10 @@ export const setBots = (bots: Bot.Bot[]) => (world: World): World => {
     return world;
 };
 
-const power = 4;
+let power = 1;
+export const setPower = (p: number): void => {
+    power = p;
+};
 const friction = 0.1;
 
 export const edgeStrength = (d: number): number => 2 / (1 + Math.exp(power * (d - 1)));
@@ -173,7 +176,7 @@ export const gradient = (uBefore: number[], u: number[], uAfter: number[]) => (
     for (let i = 0; i < world.bots.length; ++i) {
         if (world.bots[i].pos[1] > 0.5) continue;
         const l = world.bots[i].pos[1] + 0.5;
-        result[i][1] += 2 * overlapPenalty * ((2 * (l - 2)) / l);
+        result[i][1] += 2 * overlapPenalty * (2 * (l - 2));
     }
     for (let i = 0; i < world.bots.length; ++i) {
         for (let j = i + 1; j < world.bots.length; ++j) {

@@ -1,6 +1,6 @@
+import * as Vec3 from "./Vec3";
 import * as Bot from "./Bot";
 import * as World from "./World";
-import * as Vec3 from "./Vec3";
 
 const average = (start: World.World, end: World.World): World.World => {
     const result = World.newWorld();
@@ -35,17 +35,21 @@ const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
 };
 
 const optimize = (animation: World.World[], dt: number): void => {
-    const acc = 0.01;
+    const n = 200;
+    const acc = 0.02;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
-    for (let iter = 0; iter < 2000 / animation.length; ++iter) {
+    for (let iter = 0; iter < n / animation.length; ++iter) {
+        const y = (iter * animation.length) / n;
+        const x = ((1 + y) * animation.length) / 10;
+        World.setPower(4 * (x / (1 + x)));
         const g = gradient(animation, dt).map(world =>
-            world.map(v => Vec3.multiplyScalar(v, -acc / (1 + Vec3.length(v))))
+            world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v))))
         );
         animation.map((world, i) =>
             world.bots.map((bot, j) => {
                 if (bot.fixed) return;
                 vel[i][j] = Vec3.add(vel[i][j], g[i][j]);
-                vel[i][j] = Vec3.multiplyScalar(vel[i][j], 0.8);
+                vel[i][j] = Vec3.multiplyScalar(vel[i][j], 0.9);
                 bot.pos = Vec3.add(bot.pos, vel[i][j]);
             })
         );

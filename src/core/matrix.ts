@@ -1,35 +1,22 @@
-const dot = (a: number[], b: number[]): number => {
-    let result = 0;
-    for (let i = 0; i < a.length; ++i) {
-        result += a[i] * b[i];
-    }
-    return result;
-};
-
-const matMultVec = (A: number[][], b: number[]): number[] => A.map(row => dot(row, b));
-
-const vecMultNum = (a: number[], b: number): number[] => a.map(v => v * b);
-
-const add = (a: number[], b: number[]): number[] => a.map((v, i) => v + b[i]);
-
-const sub = (a: number[], b: number[]): number[] => a.map((v, i) => v - b[i]);
-
-const clone = (a: number[]): number[] => a.map(v => v);
+import * as cg from "./conjugateGradientSparse";
 
 export const ldiv = (A: number[][], b: number[]): number[] => {
-    let x = A[0].map(() => 0);
-    let r = sub(b, matMultVec(A, x));
-    let p = clone(r);
-    let rsold = dot(r, r);
-    for (let i = 1; i < b.length; ++i) {
-        const Ap = matMultVec(A, p);
-        const alpha = rsold / dot(p, Ap);
-        x = add(x, vecMultNum(p, alpha));
-        r = sub(r, vecMultNum(Ap, alpha));
-        const rsnew = dot(r, r);
-        if (Math.sqrt(rsnew) < 1e-4) break;
-        p = add(r, vecMultNum(p, rsnew / rsold));
-        rsold = rsnew;
+    A = A.map(row => row.map(v => v));
+    b = b.map(v => v);
+    for (let i = 0; i < A.length; i += 3) {
+        let sum = 0;
+        for (let j = 0; j < 3; ++j) {
+            for (let k = 0; k < 3; ++k) {
+                sum += A[i + j][i + k] ** 2;
+            }
+        }
+        sum = Math.sqrt(3 / sum);
+        for (let j = 0; j < 3; ++j) {
+            for (let k = 0; k < A.length; ++k) {
+                A[i + j][k] *= sum;
+            }
+            b[i + j] *= sum;
+        }
     }
-    return x;
+    return cg.ldiv(A, b);
 };
