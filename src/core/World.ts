@@ -1,6 +1,6 @@
 import * as Vec3 from "./Vec3";
 import * as Mat3 from "./Mat3";
-import { dot, outerProduct, numberArrayFromVec3Array, numberArrayFromMat3Array } from "./utils";
+import { dot, outerProduct, numberArrayFromVec3Array } from "./utils";
 import { ldiv } from "./matrix";
 import * as Bot from "./Bot";
 
@@ -59,25 +59,34 @@ export const stiffnessPairDerivative = (bot: Bot.Bot) => (dim: number) => (a: Bo
     return Mat3.multiplyScalar(derivative, -1);
 };
 
-export const stiffnessMatrix = (world: World): Mat3.Mat3[][] => {
-    const result = world.bots.map(() =>
-        world.bots.map(() => Mat3.newMat3(Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0)))
-    );
+export const stiffnessMatrix = (world: World): number[][] => {
+    const result = [...Array(world.bots.length * 3)].map(() => [...Array(world.bots.length * 3)].map(() => 0));
     for (let i = 0; i < world.bots.length; ++i) {
         const sx = Mat3.multiplyScalar(stiffnessGround(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0)), friction);
         const sy = stiffnessGround(Vec3.newVec3(0, world.bots[i].pos[1] + 0.5, 0));
         const sz = Mat3.multiplyScalar(stiffnessGround(Vec3.newVec3(0, 0, world.bots[i].pos[1] + 0.5)), friction);
-        result[i][i] = Mat3.add(result[i][i], sx);
-        result[i][i] = Mat3.add(result[i][i], sy);
-        result[i][i] = Mat3.add(result[i][i], sz);
+        const s = Mat3.add(Mat3.add(sx, sy), sz);
+        for (let k = 0; k < 3; ++k) {
+            for (let l = 0; l < 3; ++l) {
+                result[3 * i + k][3 * i + l] = s[k][l];
+            }
+        }
     }
     for (let i = 0; i < world.bots.length; ++i) {
         for (let j = 0; j < world.bots.length; ++j) {
             if (i === j) continue;
             if (Vec3.length(Vec3.sub(world.bots[i].pos, world.bots[j].pos)) > offset + slack / 2) continue;
             const s = stiffnessPair(world.bots[i], world.bots[j]);
-            result[i][i] = Mat3.add(result[i][i], s);
-            result[i][j] = Mat3.sub(result[i][j], s);
+            for (let k = 0; k < 3; ++k) {
+                for (let l = 0; l < 3; ++l) {
+                    result[3 * i + k][3 * i + l] += s[k][l];
+                }
+            }
+            for (let k = 0; k < 3; ++k) {
+                for (let l = 0; l < 3; ++l) {
+                    result[3 * i + k][3 * j + l] -= s[k][l];
+                }
+            }
         }
     }
     return result;
@@ -97,7 +106,7 @@ export const forceMatrix = (before: World, after: World, dt: number) => (world: 
 
 export const displacement = (before: World, after: World, dt: number) => (world: World): number[] => {
     const f = numberArrayFromVec3Array(forceMatrix(before, after, dt)(world));
-    const k = numberArrayFromMat3Array(stiffnessMatrix(world));
+    const k = stiffnessMatrix(world);
     return ldiv(k, f);
 };
 

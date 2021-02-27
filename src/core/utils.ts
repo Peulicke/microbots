@@ -35,20 +35,6 @@ export const numberArrayFromVec3Array = (vec: Vec3.Vec3[]): number[] => {
 export const numberArrayToVec3Array = (vec: number[]): Vec3.Vec3[] =>
     [...Array(vec.length / 3)].map((_, i) => Vec3.newVec3(vec[3 * i], vec[3 * i + 1], vec[3 * i + 2]));
 
-export const numberArrayFromMat3Array = (mat: Mat3.Mat3[][]): number[][] => {
-    const result = zeros(3 * mat.length, 3 * mat[0]?.length || 0);
-    mat.map((row, i) =>
-        row.map((element, j) => {
-            for (let k = 0; k < 3; ++k) {
-                for (let l = 0; l < 3; ++l) {
-                    result[3 * i + k][3 * j + l] = mat[i][j][k][l];
-                }
-            }
-        })
-    );
-    return result;
-};
-
 export const numberArrayToMat3Array = (mat: number[][]): Mat3.Mat3[][] =>
     zeros(mat.length / 3, (mat[0]?.length || 0) / 3).map((row, i) =>
         row.map((element, j) => {
