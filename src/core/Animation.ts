@@ -41,7 +41,7 @@ const optimize = (animation: World.World[], dt: number): void => {
     for (let iter = 0; iter < n / animation.length; ++iter) {
         const y = (iter * animation.length) / n;
         const x = ((1 + y) * animation.length) / 10;
-        World.setPower(4 * (x / (1 + x)));
+        World.setSlack(2 / x);
         const g = gradient(animation, dt).map(world =>
             world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v))))
         );

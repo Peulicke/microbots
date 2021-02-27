@@ -13,16 +13,26 @@ export const setBots = (bots: Bot.Bot[]) => (world: World): World => {
     return world;
 };
 
-let power = 1;
-export const setPower = (p: number): void => {
-    power = p;
+const offset = 1.5;
+let slack = 2;
+export const setSlack = (s: number): void => {
+    slack = s;
 };
 const friction = 0.1;
 
-export const edgeStrength = (d: number): number => 2 / (1 + Math.exp(power * (d - 1)));
+export const edgeStrength = (d: number): number => {
+    if (d < offset - slack / 2) return 1;
+    if (d > offset + slack / 2) return 0;
+    return (2 * (d + slack - offset) * (offset + slack / 2 - d) ** 2) / slack ** 3;
+};
+
+export const edgeStrengthGround = (d: number): number => edgeStrength(d) + 1e-4;
 
 export const stiffness = (d: Vec3.Vec3): Mat3.Mat3 =>
     Mat3.multiplyScalar(outerProduct(d, d), edgeStrength(Vec3.length(d)) / Vec3.dot(d, d));
+
+export const stiffnessGround = (d: Vec3.Vec3): Mat3.Mat3 =>
+    Mat3.multiplyScalar(outerProduct(d, d), edgeStrengthGround(Vec3.length(d)) / Vec3.dot(d, d));
 
 export const stiffnessDerivative = (dim: number) => (d: Vec3.Vec3): Mat3.Mat3 => {
     const epsilon = 0.00001;
@@ -66,9 +76,9 @@ export const stiffnessMatrix = (world: World): Mat3.Mat3[][] => {
         world.bots.map(() => Mat3.newMat3(Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0)))
     );
     for (let i = 0; i < world.bots.length; ++i) {
-        const sx = Mat3.multiplyScalar(stiffness(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0)), friction);
-        const sy = stiffness(Vec3.newVec3(0, world.bots[i].pos[1] + 0.5, 0));
-        const sz = Mat3.multiplyScalar(stiffness(Vec3.newVec3(0, 0, world.bots[i].pos[1] + 0.5)), friction);
+        const sx = Mat3.multiplyScalar(stiffnessGround(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0)), friction);
+        const sy = stiffnessGround(Vec3.newVec3(0, world.bots[i].pos[1] + 0.5, 0));
+        const sz = Mat3.multiplyScalar(stiffnessGround(Vec3.newVec3(0, 0, world.bots[i].pos[1] + 0.5)), friction);
         result[i][i] = Mat3.add(result[i][i], sx);
         result[i][i] = Mat3.add(result[i][i], sy);
         result[i][i] = Mat3.add(result[i][i], sz);
@@ -76,6 +86,7 @@ export const stiffnessMatrix = (world: World): Mat3.Mat3[][] => {
     for (let i = 0; i < world.bots.length; ++i) {
         for (let j = 0; j < world.bots.length; ++j) {
             if (i === j) continue;
+            if (Vec3.length(Vec3.sub(world.bots[i].pos, world.bots[j].pos)) > offset + slack / 2) continue;
             const s = stiffnessPair(world.bots[i], world.bots[j]);
             result[i][i] = Mat3.add(result[i][i], s);
             result[i][j] = Mat3.sub(result[i][j], s);
