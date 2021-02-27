@@ -59,18 +59,6 @@ export const stiffnessPairDerivative = (bot: Bot.Bot) => (dim: number) => (a: Bo
     return Mat3.multiplyScalar(derivative, -1);
 };
 
-export const removeFixedFromVector = (world: World) => (vector: Vec3.Vec3[]): Vec3.Vec3[] =>
-    vector.map((v, i) => (world.bots[i].fixed ? Vec3.newVec3(0, 0, 0) : v));
-
-export const removeFixedFromMatrix = (world: World) => (mat: Mat3.Mat3[][]): Mat3.Mat3[][] =>
-    mat.map((vector, i) =>
-        vector.map((v, j) =>
-            world.bots[i].fixed || world.bots[j].fixed
-                ? Mat3.newMat3(Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0))
-                : v
-        )
-    );
-
 export const stiffnessMatrix = (world: World): Mat3.Mat3[][] => {
     const result = world.bots.map(() =>
         world.bots.map(() => Mat3.newMat3(Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0)))
@@ -92,7 +80,7 @@ export const stiffnessMatrix = (world: World): Mat3.Mat3[][] => {
             result[i][j] = Mat3.sub(result[i][j], s);
         }
     }
-    return removeFixedFromMatrix(world)(result);
+    return result;
 };
 
 export const acceleration = (before: World, after: World, dt: number) => (world: World): Vec3.Vec3[] =>
@@ -104,9 +92,7 @@ export const acceleration = (before: World, after: World, dt: number) => (world:
 
 export const forceMatrix = (before: World, after: World, dt: number) => (world: World): Vec3.Vec3[] => {
     const acc = acceleration(before, after, dt)(world);
-    return removeFixedFromVector(world)(
-        world.bots.map((bot, i) => Vec3.multiplyScalar(Vec3.sub(Vec3.newVec3(0, -1, 0), acc[i]), bot.weight))
-    );
+    return world.bots.map((bot, i) => Vec3.multiplyScalar(Vec3.sub(Vec3.newVec3(0, -1, 0), acc[i]), bot.weight));
 };
 
 export const displacement = (before: World, after: World, dt: number) => (world: World): number[] => {
@@ -178,7 +164,7 @@ export const gradient = (uBefore: number[], u: number[], uAfter: number[]) => (
     }
     for (let i = 0; i < world.bots.length; ++i) {
         for (let dim = 0; dim < 3; ++dim) {
-            const dku = numberArrayFromVec3Array(removeFixedFromVector(world)(res[i][dim]));
+            const dku = numberArrayFromVec3Array(res[i][dim]);
             result[i][dim] =
                 -dot(u, dku) + 2 * ((-uBefore[3 * i + dim] + 2 * u[3 * i + dim] - uAfter[3 * i + dim]) / dt ** 2);
         }
