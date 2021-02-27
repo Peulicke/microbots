@@ -34,7 +34,7 @@ const matMultVec = (A: SparseMat, b: number[]): number[] => {
     return result;
 };
 
-export const ldiv = (ADense: number[][], b: number[]): number[] => {
+export const cg = (ADense: number[][], b: number[]): number[] => {
     const A = matToSparse(ADense);
     let x = b.map(() => 0);
     let r = addVecMultNum(b, matMultVec(A, x), -1);
@@ -50,4 +50,30 @@ export const ldiv = (ADense: number[][], b: number[]): number[] => {
         rsold = rsnew;
     }
     return x;
+};
+
+export const precondition = (A: number[][], b: number[]): [number[][], number[]] => {
+    A = A.map(row => row.map(v => v));
+    b = b.map(v => v);
+    for (let i = 0; i < A.length; i += 3) {
+        let sum = 0;
+        for (let j = 0; j < 3; ++j) {
+            for (let k = 0; k < 3; ++k) {
+                sum += A[i + j][i + k] ** 2;
+            }
+        }
+        sum = Math.sqrt(3 / sum);
+        for (let j = 0; j < 3; ++j) {
+            for (let k = 0; k < A.length; ++k) {
+                A[i + j][k] *= sum;
+            }
+            b[i + j] *= sum;
+        }
+    }
+    return [A, b];
+};
+
+export const ldiv = (A: number[][], b: number[]): number[] => {
+    [A, b] = precondition(A, b);
+    return cg(A, b);
 };

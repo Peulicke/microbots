@@ -1,7 +1,7 @@
 import * as Vec3 from "./Vec3";
 import * as Mat3 from "./Mat3";
 import { dot, outerProduct, numberArrayFromVec3Array } from "./utils";
-import { ldiv } from "./matrix";
+import { ldiv } from "./conjugateGradientSparse";
 import * as Bot from "./Bot";
 
 export type World = { bots: Bot.Bot[] };
