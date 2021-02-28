@@ -1,7 +1,7 @@
 import * as Vec3 from "./Vec3";
 import * as Mat3 from "./Mat3";
 import { dot, outerProduct, numberArrayFromVec3Array } from "./utils";
-import { ldiv } from "./conjugateGradientSparse";
+import { SparseMat, ldiv } from "./conjugateGradientSparse";
 import * as Bot from "./Bot";
 
 export type World = { bots: Bot.Bot[] };
@@ -59,8 +59,8 @@ export const stiffnessPairDerivative = (bot: Bot.Bot) => (dim: number) => (a: Bo
     return Mat3.multiplyScalar(derivative, -1);
 };
 
-export const stiffnessMatrix = (world: World): number[][] => {
-    const result = [...Array(world.bots.length * 3)].map(() => [...Array(world.bots.length * 3)].map(() => 0));
+export const stiffnessMatrix = (world: World): SparseMat => {
+    const result: SparseMat = [];
     for (let i = 0; i < world.bots.length; ++i) {
         const sx = Mat3.multiplyScalar(stiffnessGround(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0)), friction);
         const sy = stiffnessGround(Vec3.newVec3(0, world.bots[i].pos[1] + 0.5, 0));
@@ -68,7 +68,7 @@ export const stiffnessMatrix = (world: World): number[][] => {
         const s = Mat3.add(Mat3.add(sx, sy), sz);
         for (let k = 0; k < 3; ++k) {
             for (let l = 0; l < 3; ++l) {
-                result[3 * i + k][3 * i + l] = s[k][l];
+                result.push([3 * i + k, 3 * i + l, s[k][l]]);
             }
         }
     }
@@ -79,12 +79,12 @@ export const stiffnessMatrix = (world: World): number[][] => {
             const s = stiffnessPair(world.bots[i], world.bots[j]);
             for (let k = 0; k < 3; ++k) {
                 for (let l = 0; l < 3; ++l) {
-                    result[3 * i + k][3 * i + l] += s[k][l];
+                    result[9 * i + 3 * k + l][2] += s[k][l];
                 }
             }
             for (let k = 0; k < 3; ++k) {
                 for (let l = 0; l < 3; ++l) {
-                    result[3 * i + k][3 * j + l] -= s[k][l];
+                    result.push([3 * i + k, 3 * j + l, -s[k][l]]);
                 }
             }
         }

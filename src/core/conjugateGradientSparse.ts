@@ -1,15 +1,4 @@
-type SparseMat = [number, number, number][];
-
-export const matToSparse = (A: number[][]): SparseMat => {
-    const result: SparseMat = [];
-    for (let i = 0; i < A.length; ++i) {
-        for (let j = 0; j < A.length; ++j) {
-            if (Math.floor(i / 3) !== Math.floor(j / 3) && Math.abs(A[i][j]) < 1e-3) continue;
-            result.push([i, j, A[i][j]]);
-        }
-    }
-    return result;
-};
+export type SparseMat = [number, number, number][];
 
 const clone = (a: number[]): number[] => a.map(v => v);
 
@@ -68,7 +57,7 @@ export const precondition = (A: SparseMat, b: number[]): [SparseMat, number[]] =
     return [A, b];
 };
 
-export const ldiv = (A: number[][], b: number[]): number[] => {
-    const p = precondition(matToSparse(A), b);
+export const ldiv = (A: SparseMat, b: number[]): number[] => {
+    const p = precondition(A, b);
     return cg(p[0], p[1]);
 };
