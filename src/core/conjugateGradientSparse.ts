@@ -34,8 +34,7 @@ const matMultVec = (A: SparseMat, b: number[]): number[] => {
     return result;
 };
 
-export const cg = (ADense: number[][], b: number[]): number[] => {
-    const A = matToSparse(ADense);
+export const cg = (A: SparseMat, b: number[]): number[] => {
     let x = b.map(() => 0);
     let r = addVecMultNum(b, matMultVec(A, x), -1);
     let p = clone(r);
@@ -52,28 +51,24 @@ export const cg = (ADense: number[][], b: number[]): number[] => {
     return x;
 };
 
-export const precondition = (A: number[][], b: number[]): [number[][], number[]] => {
-    A = A.map(row => row.map(v => v));
+export const precondition = (A: SparseMat, b: number[]): [SparseMat, number[]] => {
     b = b.map(v => v);
-    for (let i = 0; i < A.length; i += 3) {
-        let sum = 0;
-        for (let j = 0; j < 3; ++j) {
-            for (let k = 0; k < 3; ++k) {
-                sum += A[i + j][i + k] ** 2;
-            }
-        }
-        sum = Math.sqrt(3 / sum);
-        for (let j = 0; j < 3; ++j) {
-            for (let k = 0; k < A.length; ++k) {
-                A[i + j][k] *= sum;
-            }
-            b[i + j] *= sum;
-        }
+    const sum = [...Array(b.length / 3)].map(() => 0);
+    for (let c = 0; c < A.length; ++c) {
+        const [i, j, v] = A[c];
+        if (Math.floor(i / 3) === Math.floor(j / 3)) sum[Math.floor(i / 3)] += v;
+    }
+    sum.map((v, i) => (sum[i] = Math.sqrt(3 / v)));
+    for (let c = 0; c < A.length; ++c) {
+        A[c][2] *= sum[Math.floor(A[c][0] / 3)];
+    }
+    for (let i = 0; i < b.length; ++i) {
+        b[i] *= sum[Math.floor(i / 3)];
     }
     return [A, b];
 };
 
 export const ldiv = (A: number[][], b: number[]): number[] => {
-    [A, b] = precondition(A, b);
-    return cg(A, b);
+    const p = precondition(matToSparse(A), b);
+    return cg(p[0], p[1]);
 };
