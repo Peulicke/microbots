@@ -37,7 +37,7 @@ const App: FC = () => {
     const [renderer, setRenderer] = useState<WebGLRenderer>();
     const [frame, setFrame] = useState(0);
     const [time, setTime] = useState(0);
-    const [animating, setAnimating] = useState(false);
+    const [animate, setAnimate] = useState(false);
     const [scene, setScene] = useState(newScene());
     const [botMeshes, setBotMeshes] = useState<Mesh[]>([]);
     const [groundEdgeMeshes, setGroundEdgeMeshes] = useState<Mesh[]>([]);
@@ -157,10 +157,10 @@ const App: FC = () => {
     }, [time, scene]);
 
     useEffect(() => {
-        if (!animating) return;
+        if (!animate) return;
         const t = setInterval(() => setTime(time => time + 1), 10);
         return () => clearInterval(t);
-    }, [animating]);
+    }, [animate]);
 
     return (
         <>
@@ -170,31 +170,12 @@ const App: FC = () => {
                     xs={4}
                     style={{ height: window.innerHeight * 0.9, overflowX: "hidden", overflowY: "scroll" }}>
                     <Grid container direction="column">
+                        <b>Microbots</b>
                         <Grid item className={classes.gridItem}>
                             <Paper>
                                 <List>
                                     <ListItem>
-                                        <b>Microbots</b>
-                                    </ListItem>
-                                    <ListItem>
-                                        <button onClick={() => setTime(time + 1)}>Time: {time}</button>
-                                    </ListItem>
-                                    <ListItem>
-                                        <button onClick={() => setAnimating(!animating)}>
-                                            Animating: {animating ? "true" : "false"}
-                                        </button>
-                                    </ListItem>
-                                    <ListItem>
-                                        <button onClick={() => saveImage()}>Save screenshot</button>
-                                    </ListItem>
-                                </List>
-                            </Paper>
-                        </Grid>
-                        <Grid item className={classes.gridItem}>
-                            <Paper>
-                                <List>
-                                    <ListItem>
-                                        <b>Test setups</b>
+                                        <b>Select an example</b>
                                     </ListItem>
                                     {examples.map((example, i) => (
                                         <ListItem key={i}>
@@ -215,6 +196,7 @@ const App: FC = () => {
                                                     setWorldStart(ws);
                                                     setWorldEnd(we);
                                                     setAnimation([ws, we]);
+                                                    setAnimate(false);
                                                 }}>
                                                 {example.title}
                                             </button>
@@ -227,12 +209,36 @@ const App: FC = () => {
                             <Paper>
                                 <List>
                                     <ListItem>
+                                        <b>Compute the animation</b>
+                                    </ListItem>
+                                    <ListItem>
                                         <button
                                             onClick={() => {
                                                 setAnimation(Animation.createAnimation(worldStart, worldEnd, 8));
+                                                setAnimate(true);
                                             }}>
                                             Generate animation
                                         </button>
+                                    </ListItem>
+                                </List>
+                            </Paper>
+                        </Grid>
+                        <Grid item className={classes.gridItem}>
+                            <Paper>
+                                <List>
+                                    <ListItem>
+                                        <b>Extra options</b>
+                                    </ListItem>
+                                    <ListItem>
+                                        <button onClick={() => setTime(time + 1)}>Time: {time}</button>
+                                    </ListItem>
+                                    <ListItem>
+                                        <button onClick={() => setAnimate(!animate)}>
+                                            Animate: {animate ? "true" : "false"}
+                                        </button>
+                                    </ListItem>
+                                    <ListItem>
+                                        <button onClick={() => saveImage()}>Save screenshot</button>
                                     </ListItem>
                                 </List>
                             </Paper>
