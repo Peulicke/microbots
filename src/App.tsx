@@ -3,11 +3,11 @@ import { PerspectiveCamera, WebGLRenderer, Color, Mesh } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
-import { pipe } from "ts-pipe-compose";
-import { Vec3, Bot, World, Animation } from "./core";
+import { Vec3, World, Animation } from "./core";
 import { newScene, newSphere, newCylinder, updateCylinder } from "./draw";
 import Prando from "prando";
 const rng = new Prando(123);
+import loadExample, { examples } from "./examples";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -196,68 +196,30 @@ const App: FC = () => {
                                     <ListItem>
                                         <b>Test setups</b>
                                     </ListItem>
-                                    <ListItem>
-                                        <button
-                                            onClick={() => {
-                                                const height = 10;
-                                                const dist = 8;
-
-                                                const ws = pipe(
-                                                    World.newWorld(),
-                                                    World.setBots([
-                                                        ...[...Array(height)]
-                                                            .map((_, i) => [
-                                                                Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + i, 0))(
-                                                                    Bot.newBot()
-                                                                ),
-                                                                Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + i, 0))(
-                                                                    Bot.newBot()
-                                                                )
-                                                            ])
-                                                            .flat(),
-                                                        Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + height, 0))(
-                                                            Bot.newBot()
-                                                        )
-                                                    ])
-                                                );
-
-                                                const we = pipe(
-                                                    World.newWorld(),
-                                                    World.setBots([
-                                                        ...[...Array(height)]
-                                                            .map((_, i) => [
-                                                                Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + i, 0))(
-                                                                    Bot.newBot()
-                                                                ),
-                                                                Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + i, 0))(
-                                                                    Bot.newBot()
-                                                                )
-                                                            ])
-                                                            .flat(),
-                                                        Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + height, 0))(
-                                                            Bot.newBot()
-                                                        )
-                                                    ])
-                                                );
-
-                                                const rand = () =>
-                                                    Vec3.multiplyScalar(
-                                                        Vec3.newVec3(
-                                                            rng.next() - 0.5,
-                                                            rng.next() - 0.5,
-                                                            rng.next() - 0.5
-                                                        ),
-                                                        0.0001
-                                                    );
-                                                ws.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
-                                                we.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
-                                                setWorldStart(ws);
-                                                setWorldEnd(we);
-                                                setAnimation([ws, we]);
-                                            }}>
-                                            Setup 1
-                                        </button>
-                                    </ListItem>
+                                    {examples.map((example, i) => (
+                                        <ListItem key={i}>
+                                            <button
+                                                onClick={() => {
+                                                    const [ws, we] = loadExample(i);
+                                                    const rand = () =>
+                                                        Vec3.multiplyScalar(
+                                                            Vec3.newVec3(
+                                                                rng.next() - 0.5,
+                                                                rng.next() - 0.5,
+                                                                rng.next() - 0.5
+                                                            ),
+                                                            0.0001
+                                                        );
+                                                    ws.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
+                                                    we.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
+                                                    setWorldStart(ws);
+                                                    setWorldEnd(we);
+                                                    setAnimation([ws, we]);
+                                                }}>
+                                                {example.title}
+                                            </button>
+                                        </ListItem>
+                                    ))}
                                 </List>
                             </Paper>
                         </Grid>
