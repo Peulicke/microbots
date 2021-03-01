@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useRef, useState } from "react";
-import { PerspectiveCamera, WebGLRenderer, Color } from "three";
+import { PerspectiveCamera, WebGLRenderer, Color, Mesh } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
@@ -15,85 +15,6 @@ const useStyles = makeStyles(theme => ({
         textAlign: "center"
     }
 }));
-
-const height = 20;
-const dist = 8;
-
-const worldStart = pipe(
-    World.newWorld(),
-    World.setBots([
-        ...[...Array(height)]
-            .map((_, i) => [
-                Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + i, 0))(Bot.newBot()),
-                Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + i, 0))(Bot.newBot())
-            ])
-            .flat(),
-        Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + height, 0))(Bot.newBot())
-    ])
-);
-
-const worldEnd = pipe(
-    World.newWorld(),
-    World.setBots([
-        ...[...Array(height)]
-            .map((_, i) => [
-                Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + i, 0))(Bot.newBot()),
-                Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + i, 0))(Bot.newBot())
-            ])
-            .flat(),
-        Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + height, 0))(Bot.newBot())
-    ])
-);
-
-const rand = () => Vec3.multiplyScalar(Vec3.newVec3(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5), 0.0001);
-worldStart.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
-worldEnd.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
-
-const animation = Animation.createAnimation(worldStart, worldEnd, 8);
-
-const botMeshes = animation[0].bots.map(bot => newSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)));
-const groundEdgeMeshes = animation[0].bots.map(bot =>
-    newCylinder(bot.pos, Vec3.newVec3(bot.pos[0], 0, bot.pos[2]), 1, new Color(1, 0, 0))
-);
-const edgeMeshes = animation[0].bots.map(a =>
-    animation[0].bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0)))
-);
-const scene = newScene();
-botMeshes.map(mesh => scene.add(mesh));
-groundEdgeMeshes.map(mesh => scene.add(mesh));
-edgeMeshes.map((row, i) =>
-    row.map((mesh, j) => {
-        if (i >= j) return;
-        scene.add(mesh);
-    })
-);
-
-const updateWorld = (time: number) => {
-    animation[time].bots.map((bot, i) => {
-        botMeshes[i].position.set(...bot.pos);
-    });
-    animation[time].bots.map((bot, i) => {
-        scene.remove(groundEdgeMeshes[i]);
-        const strength = World.edgeStrength(bot.pos[1] + 0.5);
-        if (strength < 0.01) return;
-        scene.add(groundEdgeMeshes[i]);
-        updateCylinder(
-            bot.pos,
-            Vec3.newVec3(bot.pos[0], 0, bot.pos[2]),
-            Math.sqrt(strength) * 0.3
-        )(groundEdgeMeshes[i]);
-    });
-    animation[time].bots.map((from, i) =>
-        animation[time].bots.map((to, j) => {
-            if (i >= j) return;
-            scene.remove(edgeMeshes[i][j]);
-            const strength = World.edgeStrength(Vec3.length(Vec3.sub(to.pos, from.pos)));
-            if (strength < 0.01) return;
-            scene.add(edgeMeshes[i][j]);
-            updateCylinder(from.pos, to.pos, Math.sqrt(strength) * 0.3)(edgeMeshes[i][j]);
-        })
-    );
-};
 
 const saveImage = () => {
     const canvas = document.getElementsByTagName("canvas")[0];
@@ -117,6 +38,68 @@ const App: FC = () => {
     const [frame, setFrame] = useState(0);
     const [time, setTime] = useState(0);
     const [animating, setAnimating] = useState(false);
+    const [scene, setScene] = useState(newScene());
+    const [botMeshes, setBotMeshes] = useState<Mesh[]>([]);
+    const [groundEdgeMeshes, setGroundEdgeMeshes] = useState<Mesh[]>([]);
+    const [edgeMeshes, setEdgeMeshes] = useState<Mesh[][]>([]);
+    const [animation, setAnimation] = useState<World.World[]>([]);
+    const [worldStart, setWorldStart] = useState<World.World>(World.newWorld());
+    const [worldEnd, setWorldEnd] = useState<World.World>(World.newWorld());
+
+    const updateWorld = (time: number) => {
+        animation[time].bots.map((bot, i) => {
+            botMeshes[i].position.set(...bot.pos);
+        });
+        animation[time].bots.map((bot, i) => {
+            scene.remove(groundEdgeMeshes[i]);
+            const strength = World.edgeStrength(bot.pos[1] + 0.5);
+            if (strength < 0.01) return;
+            scene.add(groundEdgeMeshes[i]);
+            updateCylinder(
+                bot.pos,
+                Vec3.newVec3(bot.pos[0], 0, bot.pos[2]),
+                Math.sqrt(strength) * 0.3
+            )(groundEdgeMeshes[i]);
+        });
+        animation[time].bots.map((from, i) =>
+            animation[time].bots.map((to, j) => {
+                if (i >= j) return;
+                scene.remove(edgeMeshes[i][j]);
+                const strength = World.edgeStrength(Vec3.length(Vec3.sub(to.pos, from.pos)));
+                if (strength < 0.01) return;
+                scene.add(edgeMeshes[i][j]);
+                updateCylinder(from.pos, to.pos, Math.sqrt(strength) * 0.3)(edgeMeshes[i][j]);
+            })
+        );
+    };
+
+    useEffect(() => {
+        if (animation.length === 0) return;
+        setBotMeshes(
+            animation[0].bots.map(bot => newSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)))
+        );
+        setGroundEdgeMeshes(
+            animation[0].bots.map(bot =>
+                newCylinder(bot.pos, Vec3.newVec3(bot.pos[0], 0, bot.pos[2]), 1, new Color(1, 0, 0))
+            )
+        );
+        setEdgeMeshes(
+            animation[0].bots.map(a => animation[0].bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0))))
+        );
+    }, [animation]);
+
+    useEffect(() => {
+        const scn = newScene();
+        botMeshes.map(mesh => scn.add(mesh));
+        groundEdgeMeshes.map(mesh => scn.add(mesh));
+        edgeMeshes.map((row, i) =>
+            row.map((mesh, j) => {
+                if (i >= j) return;
+                scn.add(mesh);
+            })
+        );
+        setScene(scn);
+    }, [botMeshes, groundEdgeMeshes, edgeMeshes]);
 
     useEffect(() => {
         const mc = mount.current;
@@ -147,10 +130,11 @@ const App: FC = () => {
 
     useEffect(() => {
         if (controls) controls.update();
-        if (renderer && camera) renderer.render(scene, camera);
-    }, [controls, renderer, camera, frame]);
+        if (renderer && camera && scene) renderer.render(scene, camera);
+    }, [controls, renderer, camera, frame, scene]);
 
     useEffect(() => {
+        if (botMeshes.length === 0) return;
         const pauseFrac = 0.1;
         const pauseFrames = Math.round(pauseFrac * animation.length);
         let t = time % (2 * (animation.length + pauseFrames));
@@ -170,7 +154,7 @@ const App: FC = () => {
         }
         t -= pauseFrames;
         updateWorld(animation.length - 1 - t);
-    }, [time]);
+    }, [time, scene]);
 
     useEffect(() => {
         if (!animating) return;
@@ -202,6 +186,91 @@ const App: FC = () => {
                                     </ListItem>
                                     <ListItem>
                                         <button onClick={() => saveImage()}>Save screenshot</button>
+                                    </ListItem>
+                                </List>
+                            </Paper>
+                        </Grid>
+                        <Grid item className={classes.gridItem}>
+                            <Paper>
+                                <List>
+                                    <ListItem>
+                                        <b>Test setups</b>
+                                    </ListItem>
+                                    <ListItem>
+                                        <button
+                                            onClick={() => {
+                                                const height = 10;
+                                                const dist = 8;
+
+                                                const ws = pipe(
+                                                    World.newWorld(),
+                                                    World.setBots([
+                                                        ...[...Array(height)]
+                                                            .map((_, i) => [
+                                                                Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + i, 0))(
+                                                                    Bot.newBot()
+                                                                ),
+                                                                Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + i, 0))(
+                                                                    Bot.newBot()
+                                                                )
+                                                            ])
+                                                            .flat(),
+                                                        Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + height, 0))(
+                                                            Bot.newBot()
+                                                        )
+                                                    ])
+                                                );
+
+                                                const we = pipe(
+                                                    World.newWorld(),
+                                                    World.setBots([
+                                                        ...[...Array(height)]
+                                                            .map((_, i) => [
+                                                                Bot.setPos(Vec3.newVec3(-dist / 2, 0.5 + i, 0))(
+                                                                    Bot.newBot()
+                                                                ),
+                                                                Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + i, 0))(
+                                                                    Bot.newBot()
+                                                                )
+                                                            ])
+                                                            .flat(),
+                                                        Bot.setPos(Vec3.newVec3(dist / 2, 0.5 + height, 0))(
+                                                            Bot.newBot()
+                                                        )
+                                                    ])
+                                                );
+
+                                                const rand = () =>
+                                                    Vec3.multiplyScalar(
+                                                        Vec3.newVec3(
+                                                            rng.next() - 0.5,
+                                                            rng.next() - 0.5,
+                                                            rng.next() - 0.5
+                                                        ),
+                                                        0.0001
+                                                    );
+                                                ws.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
+                                                we.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
+                                                setWorldStart(ws);
+                                                setWorldEnd(we);
+                                                setAnimation([ws, we]);
+                                            }}>
+                                            Setup 1
+                                        </button>
+                                    </ListItem>
+                                </List>
+                            </Paper>
+                        </Grid>
+                        <Grid item className={classes.gridItem}>
+                            <Paper>
+                                <List>
+                                    <ListItem>
+                                        <button
+                                            onClick={() => {
+                                                setAnimation(Animation.createAnimation(worldStart, worldEnd, 8));
+                                            }}>
+                                            Generate animation
+                                        </button>
                                     </ListItem>
                                 </List>
                             </Paper>
