@@ -1,11 +1,12 @@
 import { Vec3, Bot, World } from "../core";
 import arc from "./arc";
+import bigArc from "./bigArc";
 import bigCube from "./bigCube";
 import cube from "./cube";
 import stack from "./stack";
 import towers from "./towers";
 
-export const examples = [towers, stack, cube, bigCube, arc].sort((a, b) => {
+export const examples = [towers, stack, cube, bigCube, arc, bigArc].sort((a, b) => {
     const d = a.data[0].length - b.data[0].length;
     if (d === 0) return a.title > b.title ? 1 : -1;
     return d;

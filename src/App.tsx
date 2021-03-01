@@ -6,7 +6,6 @@ import { useWindowSize } from "@react-hook/window-size";
 import { Vec3, World, Animation } from "./core";
 import { newScene, newSphere, newCylinder, updateCylinder } from "./draw";
 import Prando from "prando";
-const rng = new Prando(123);
 import loadExample, { examples } from "./examples";
 
 const useStyles = makeStyles(theme => ({
@@ -185,6 +184,7 @@ const App: FC = () => {
                                         variant="contained"
                                         color={selectedExample === i ? "primary" : "default"}
                                         onClick={() => {
+                                            const rng = new Prando(123);
                                             const [ws, we] = loadExample(i);
                                             const rand = () =>
                                                 Vec3.multiplyScalar(

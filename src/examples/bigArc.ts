@@ -1,4 +1,4 @@
-const n = 10;
+const n = 20;
 const width = 4;
 
 const arc = [[0, 0, 0]];
@@ -17,6 +17,6 @@ const m = Math.min(...arc.map(p => p[1]));
 arc.forEach((_, i) => (arc[i][1] = arc[i][1] - m + 0.5));
 
 export default {
-    title: "Arc",
+    title: "Big arc",
     data: [[...[...Array(n + 1)].map((_, i) => [i, 0.5, 0]), ...[...Array(n)].map((_, i) => [-i - 1, 0.5, 0])], arc]
 };
