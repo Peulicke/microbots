@@ -16,7 +16,7 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-const height = 10;
+const height = 20;
 const dist = 8;
 
 const worldStart = pipe(

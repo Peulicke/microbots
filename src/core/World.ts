@@ -28,8 +28,11 @@ export const edgeStrength = (d: number): number => {
 
 export const edgeStrengthGround = (d: number): number => edgeStrength(d) + 1e-4;
 
-export const stiffness = (d: Vec3.Vec3): Mat3.Mat3 =>
-    Mat3.multiplyScalar(outerProduct(d, d), edgeStrength(Vec3.length(d)) / Vec3.dot(d, d));
+export const stiffness = (d: Vec3.Vec3): Mat3.Mat3 => {
+    const l = Vec3.length(d);
+    d = Vec3.multiplyScalar(d, Math.sqrt(edgeStrength(l)) / l);
+    return outerProduct(d, d);
+};
 
 export const stiffnessGround = (d: Vec3.Vec3): Mat3.Mat3 =>
     Mat3.multiplyScalar(outerProduct(d, d), edgeStrengthGround(Vec3.length(d)) / Vec3.dot(d, d));
@@ -92,16 +95,17 @@ export const stiffnessMatrix = (world: World): SparseMat => {
     return result;
 };
 
-export const acceleration = (before: World, after: World, dt: number) => (world: World): Vec3.Vec3[] =>
-    world.bots.map((bot, i) => {
-        const v1 = Vec3.divideScalar(Vec3.sub(world.bots[i].pos, before.bots[i].pos), dt);
-        const v2 = Vec3.divideScalar(Vec3.sub(after.bots[i].pos, world.bots[i].pos), dt);
-        return Vec3.divideScalar(Vec3.sub(v2, v1), dt);
-    });
-
 export const forceMatrix = (before: World, after: World, dt: number) => (world: World): number[] => {
-    const acc = acceleration(before, after, dt)(world);
-    return world.bots.map((bot, i) => Vec3.multiplyScalar(Vec3.sub(Vec3.newVec3(0, -1, 0), acc[i]), bot.weight)).flat();
+    const result = [...Array(world.bots.length * 3)].map(() => 0);
+    world.bots.forEach((bot, i) => {
+        for (let j = 0; j < 3; ++j) {
+            const v1 = (world.bots[i].pos[j] - before.bots[i].pos[j]) / dt;
+            const v2 = (after.bots[i].pos[j] - world.bots[i].pos[j]) / dt;
+            const acc = (v2 - v1) / dt;
+            result[3 * i + j] = ((j === 1 ? -1 : 0) - acc) * bot.weight;
+        }
+    });
+    return result;
 };
 
 export const displacement = (before: World, after: World, dt: number) => (world: World): number[] => {
@@ -163,8 +167,8 @@ export const gradient = (uBefore: number[], u: number[], uAfter: number[]) => (
             for (let j = 0; j < 3; ++j) {
                 res[i][dim][3 * i + j] += d[j];
             }
-            for (let j = 0; j < world.bots.length; ++j) {
-                if (i >= j) continue;
+            for (let j = i + 1; j < world.bots.length; ++j) {
+                if (Vec3.length(Vec3.sub(world.bots[j].pos, world.bots[i].pos)) > offset + slack / 2) continue;
                 const s = stiffnessPairDerivative(world.bots[i])(dim)(world.bots[i], world.bots[j]);
                 const ss = Mat3.apply(s, Vec3.sub(Vec3.newVec3(u[3 * j], u[3 * j + 1], u[3 * j + 2]), v));
                 for (let k = 0; k < 3; ++k) {

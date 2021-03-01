@@ -35,7 +35,7 @@ const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
 };
 
 const optimize = (animation: World.World[], dt: number): void => {
-    const n = 200;
+    const n = 500;
     const acc = 0.02;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
     for (let iter = 0; iter < n / animation.length; ++iter) {
