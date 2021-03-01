@@ -199,7 +199,7 @@ const App: FC = () => {
                                             setAnimate(false);
                                             setSelectedExample(i);
                                         }}>
-                                        {example.title}
+                                        {example.title} ({example.data[0].length} bots)
                                     </Button>
                                 ))}
                                 <br />
