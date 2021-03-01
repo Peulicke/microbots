@@ -178,36 +178,32 @@ const App: FC = () => {
                                     <ListItem>
                                         <b>Select an example</b>
                                     </ListItem>
-                                    <ListItem>
-                                        {examples.map((example, i) => (
-                                            <Button
-                                                key={i}
-                                                variant="contained"
-                                                color={selectedExample === i ? "primary" : "default"}
-                                                onClick={() => {
-                                                    const [ws, we] = loadExample(i);
-                                                    const rand = () =>
-                                                        Vec3.multiplyScalar(
-                                                            Vec3.newVec3(
-                                                                rng.next() - 0.5,
-                                                                rng.next() - 0.5,
-                                                                rng.next() - 0.5
-                                                            ),
-                                                            0.0001
-                                                        );
-                                                    ws.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
-                                                    we.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
-                                                    setWorldStart(ws);
-                                                    setWorldEnd(we);
-                                                    setAnimation([ws, we]);
-                                                    setAnimate(false);
-                                                    setSelectedExample(i);
-                                                }}>
-                                                {example.title}
-                                            </Button>
-                                        ))}
-                                    </ListItem>
                                 </List>
+                                {examples.map((example, i) => (
+                                    <Button
+                                        key={i}
+                                        variant="contained"
+                                        color={selectedExample === i ? "primary" : "default"}
+                                        onClick={() => {
+                                            const [ws, we] = loadExample(i);
+                                            const rand = () =>
+                                                Vec3.multiplyScalar(
+                                                    Vec3.newVec3(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5),
+                                                    0.0001
+                                                );
+                                            ws.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
+                                            we.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
+                                            setWorldStart(ws);
+                                            setWorldEnd(we);
+                                            setAnimation([ws, we]);
+                                            setAnimate(false);
+                                            setSelectedExample(i);
+                                        }}>
+                                        {example.title}
+                                    </Button>
+                                ))}
+                                <br />
+                                <br />
                             </Paper>
                         </Grid>
                         <Grid item className={classes.gridItem}>
