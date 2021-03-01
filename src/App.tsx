@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import { PerspectiveCamera, WebGLRenderer, Color, Mesh } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { Grid, Paper, makeStyles, List, ListItem } from "@material-ui/core";
+import { Grid, Paper, makeStyles, List, ListItem, Button } from "@material-ui/core";
 import { useWindowSize } from "@react-hook/window-size";
 import { Vec3, World, Animation } from "./core";
 import { newScene, newSphere, newCylinder, updateCylinder } from "./draw";
@@ -45,6 +45,7 @@ const App: FC = () => {
     const [animation, setAnimation] = useState<World.World[]>([]);
     const [worldStart, setWorldStart] = useState<World.World>(World.newWorld());
     const [worldEnd, setWorldEnd] = useState<World.World>(World.newWorld());
+    const [selectedExample, setSelectedExample] = useState<number | undefined>(undefined);
 
     const updateWorld = (time: number) => {
         animation[time].bots.map((bot, i) => {
@@ -177,9 +178,12 @@ const App: FC = () => {
                                     <ListItem>
                                         <b>Select an example</b>
                                     </ListItem>
-                                    {examples.map((example, i) => (
-                                        <ListItem key={i}>
-                                            <button
+                                    <ListItem>
+                                        {examples.map((example, i) => (
+                                            <Button
+                                                key={i}
+                                                variant="contained"
+                                                color={selectedExample === i ? "primary" : "default"}
                                                 onClick={() => {
                                                     const [ws, we] = loadExample(i);
                                                     const rand = () =>
@@ -197,11 +201,12 @@ const App: FC = () => {
                                                     setWorldEnd(we);
                                                     setAnimation([ws, we]);
                                                     setAnimate(false);
+                                                    setSelectedExample(i);
                                                 }}>
                                                 {example.title}
-                                            </button>
-                                        </ListItem>
-                                    ))}
+                                            </Button>
+                                        ))}
+                                    </ListItem>
                                 </List>
                             </Paper>
                         </Grid>
@@ -212,13 +217,14 @@ const App: FC = () => {
                                         <b>Compute the animation</b>
                                     </ListItem>
                                     <ListItem>
-                                        <button
+                                        <Button
+                                            variant="contained"
                                             onClick={() => {
                                                 setAnimation(Animation.createAnimation(worldStart, worldEnd, 8));
                                                 setAnimate(true);
                                             }}>
                                             Generate animation
-                                        </button>
+                                        </Button>
                                     </ListItem>
                                 </List>
                             </Paper>
@@ -230,15 +236,19 @@ const App: FC = () => {
                                         <b>Extra options</b>
                                     </ListItem>
                                     <ListItem>
-                                        <button onClick={() => setTime(time + 1)}>Time: {time}</button>
+                                        <Button variant="contained" onClick={() => setTime(time + 1)}>
+                                            Time: {time}
+                                        </Button>
                                     </ListItem>
                                     <ListItem>
-                                        <button onClick={() => setAnimate(!animate)}>
+                                        <Button variant="contained" onClick={() => setAnimate(!animate)}>
                                             Animate: {animate ? "true" : "false"}
-                                        </button>
+                                        </Button>
                                     </ListItem>
                                     <ListItem>
-                                        <button onClick={() => saveImage()}>Save screenshot</button>
+                                        <Button variant="contained" onClick={() => saveImage()}>
+                                            Save screenshot
+                                        </Button>
                                     </ListItem>
                                 </List>
                             </Paper>
