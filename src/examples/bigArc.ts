@@ -1,5 +1,4 @@
 const n = 20;
-const width = 4;
 
 const arc = [[0, 0, 0]];
 
