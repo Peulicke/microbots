@@ -28,7 +28,7 @@ export const cg = (A: SparseMat, b: number[]): number[] => {
     let r = addVecMultNum(b, matMultVec(A, x), -1);
     let p = clone(r);
     let rsold = dot(r, r);
-    for (let i = 0; i < 10; ++i) {
+    for (let i = 0; i < 20; ++i) {
         const Ap = matMultVec(A, p);
         const alpha = rsold / dot(p, Ap);
         x = addVecMultNum(x, p, alpha);
@@ -47,7 +47,7 @@ export const precondition = (A: SparseMat, b: number[]): [SparseMat, number[]] =
         const [i, j, v] = A[c];
         if (Math.floor(i / 3) === Math.floor(j / 3)) sum[Math.floor(i / 3)] += v;
     }
-    sum.map((v, i) => (sum[i] = Math.sqrt(3 / v)));
+    sum.forEach((v, i) => (sum[i] = Math.sqrt(3 / v)));
     for (let c = 0; c < A.length; ++c) {
         A[c][2] *= sum[Math.floor(A[c][0] / 3)];
     }

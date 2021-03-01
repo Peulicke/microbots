@@ -1,6 +1,6 @@
 import * as Vec3 from "./Vec3";
 import * as Mat3 from "./Mat3";
-import { dot, outerProduct } from "./utils";
+import { outerProduct } from "./utils";
 import { SparseMat, ldiv } from "./conjugateGradientSparse";
 import * as Bot from "./Bot";
 
@@ -54,40 +54,31 @@ export const stiffnessPair = (a: Bot.Bot, b: Bot.Bot): Mat3.Mat3 => {
     return stiffness(d);
 };
 
-export const stiffnessPairDerivative = (bot: Bot.Bot) => (dim: number) => (a: Bot.Bot, b: Bot.Bot): Mat3.Mat3 => {
-    if (a !== bot && b !== bot)
-        return Mat3.newMat3(Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0), Vec3.newVec3(0, 0, 0));
-    const derivative = stiffnessDerivative(dim)(Vec3.sub(b.pos, a.pos));
-    if (a === bot) return derivative;
-    return Mat3.multiplyScalar(derivative, -1);
-};
+export const stiffnessPairDerivative = (a: Bot.Bot, dim: number, b: Bot.Bot): Mat3.Mat3 =>
+    stiffnessDerivative(dim)(Vec3.sub(a.pos, b.pos));
 
 export const stiffnessMatrix = (world: World): SparseMat => {
     const result: SparseMat = [];
     for (let i = 0; i < world.bots.length; ++i) {
-        const sx = Mat3.multiplyScalar(stiffnessGround(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0)), friction);
+        const sx = stiffnessGround(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0));
         const sy = stiffnessGround(Vec3.newVec3(0, world.bots[i].pos[1] + 0.5, 0));
-        const sz = Mat3.multiplyScalar(stiffnessGround(Vec3.newVec3(0, 0, world.bots[i].pos[1] + 0.5)), friction);
-        const s = Mat3.add(Mat3.add(sx, sy), sz);
+        const sz = stiffnessGround(Vec3.newVec3(0, 0, world.bots[i].pos[1] + 0.5));
         for (let k = 0; k < 3; ++k) {
             for (let l = 0; l < 3; ++l) {
-                result.push([3 * i + k, 3 * i + l, s[k][l]]);
+                result.push([3 * i + k, 3 * i + l, (sx[k][l] + sz[k][l]) * friction + sy[k][l]]);
             }
         }
     }
     for (let i = 0; i < world.bots.length; ++i) {
-        for (let j = 0; j < world.bots.length; ++j) {
-            if (i === j) continue;
+        for (let j = i + 1; j < world.bots.length; ++j) {
             if (Vec3.length(Vec3.sub(world.bots[i].pos, world.bots[j].pos)) > offset + slack / 2) continue;
             const s = stiffnessPair(world.bots[i], world.bots[j]);
             for (let k = 0; k < 3; ++k) {
                 for (let l = 0; l < 3; ++l) {
                     result[9 * i + 3 * k + l][2] += s[k][l];
-                }
-            }
-            for (let k = 0; k < 3; ++k) {
-                for (let l = 0; l < 3; ++l) {
+                    result[9 * j + 3 * k + l][2] += s[k][l];
                     result.push([3 * i + k, 3 * j + l, -s[k][l]]);
+                    result.push([3 * j + k, 3 * i + l, -s[k][l]]);
                 }
             }
         }
@@ -147,10 +138,7 @@ export const gradient = (uBefore: number[], u: number[], uAfter: number[]) => (
     afterAfter: World,
     dt: number
 ) => (world: World): Vec3.Vec3[] => {
-    const result = [...Array(world.bots.length)].map(() => Vec3.newVec3(0, 0, 0));
-    const res = [...Array(world.bots.length)].map(() =>
-        [0, 1, 2].map(() => [...Array(world.bots.length * 3)].map(() => 0))
-    );
+    const udku = [...Array(world.bots.length)].map(() => [0, 1, 2].map(() => 0));
     for (let i = 0; i < world.bots.length; ++i) {
         for (let dim = 0; dim < 3; ++dim) {
             const sx = Mat3.multiplyScalar(
@@ -162,29 +150,25 @@ export const gradient = (uBefore: number[], u: number[], uAfter: number[]) => (
                 stiffnessDerivative(dim)(Vec3.newVec3(0, 0, world.bots[i].pos[1] + 0.5)),
                 friction
             );
-            const v = Vec3.newVec3(u[3 * i], u[3 * i + 1], u[3 * i + 2]);
-            const d = Mat3.apply(Mat3.add(Mat3.add(sx, sy), sz), v);
-            for (let j = 0; j < 3; ++j) {
-                res[i][dim][3 * i + j] += d[j];
-            }
+            const vi = Vec3.newVec3(u[3 * i], u[3 * i + 1], u[3 * i + 2]);
+            const d = Vec3.dot(vi, Mat3.apply(Mat3.add(Mat3.add(sx, sy), sz), vi));
+            udku[i][dim] += d;
             for (let j = i + 1; j < world.bots.length; ++j) {
                 if (Vec3.length(Vec3.sub(world.bots[j].pos, world.bots[i].pos)) > offset + slack / 2) continue;
-                const s = stiffnessPairDerivative(world.bots[i])(dim)(world.bots[i], world.bots[j]);
-                const ss = Mat3.apply(s, Vec3.sub(Vec3.newVec3(u[3 * j], u[3 * j + 1], u[3 * j + 2]), v));
-                for (let k = 0; k < 3; ++k) {
-                    res[i][dim][3 * i + k] += ss[k];
-                    res[i][dim][3 * j + k] -= ss[k];
-                    res[j][dim][3 * j + k] += ss[k];
-                    res[j][dim][3 * i + k] -= ss[k];
-                }
+                const s = stiffnessPairDerivative(world.bots[i], dim, world.bots[j]);
+                const vj = Vec3.newVec3(u[3 * j], u[3 * j + 1], u[3 * j + 2]);
+                const diff =
+                    Vec3.dot(Vec3.sub(vi, vj), Mat3.apply(s, vi)) - Vec3.dot(Vec3.sub(vi, vj), Mat3.apply(s, vj));
+                udku[i][dim] += diff;
+                udku[j][dim] -= diff;
             }
         }
     }
+    const result = [...Array(world.bots.length)].map(() => Vec3.newVec3(0, 0, 0));
     for (let i = 0; i < world.bots.length; ++i) {
         for (let dim = 0; dim < 3; ++dim) {
-            const dku = res[i][dim];
             result[i][dim] =
-                -dot(u, dku) + 2 * ((-uBefore[3 * i + dim] + 2 * u[3 * i + dim] - uAfter[3 * i + dim]) / dt ** 2);
+                -udku[i][dim] + 2 * ((-uBefore[3 * i + dim] + 2 * u[3 * i + dim] - uAfter[3 * i + dim]) / dt ** 2);
         }
     }
     const overlapPenalty = 1000;
