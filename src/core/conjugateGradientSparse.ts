@@ -10,7 +10,7 @@ const dot = (a: number[], b: number[]): number => {
     return result;
 };
 
-const addVecMultNum = (a: number[], b: number[], c: number): number[] => a.map((v, i) => v + b[i] * c);
+const addVecMultNum = (a: number[], b: number[], c: number): void => a.forEach((v, i) => (a[i] = v + b[i] * c));
 
 const matMultVec = (A: SparseSymmetric, b: number[]): number[] => {
     const result = b.map(() => 0);
@@ -26,25 +26,27 @@ const matMultVec = (A: SparseSymmetric, b: number[]): number[] => {
     return result;
 };
 
-export const cg = (A: SparseSymmetric, b: number[]): number[] => {
-    let x = b.map(() => 0);
-    let r = addVecMultNum(b, matMultVec(A, x), -1);
+const cg = (A: SparseSymmetric, b: number[]): number[] => {
+    const x = b.map(() => 0);
+    const r = clone(b);
+    addVecMultNum(r, matMultVec(A, x), -1);
     let p = clone(r);
     let rsold = dot(r, r);
     for (let i = 0; i < 20; ++i) {
         const Ap = matMultVec(A, p);
         const alpha = rsold / dot(p, Ap);
-        x = addVecMultNum(x, p, alpha);
-        r = addVecMultNum(r, Ap, -alpha);
+        addVecMultNum(x, p, alpha);
+        addVecMultNum(r, Ap, -alpha);
         const rsnew = dot(r, r);
-        p = addVecMultNum(r, p, rsnew / rsold);
+        const pOld = p;
+        p = clone(r);
+        addVecMultNum(p, pOld, rsnew / rsold);
         rsold = rsnew;
     }
     return x;
 };
 
-export const ldiv = (A: SparseSymmetric, b: number[]): number[] => {
-    b = b.map(v => v);
+const preconditioner = (A: SparseSymmetric, b: number[]): number[] => {
     const sum = [...Array(b.length / 3)].map(() => 0);
     for (let c = 0; c < A.length; ++c) {
         const [i, j, v] = A[c];
@@ -55,6 +57,10 @@ export const ldiv = (A: SparseSymmetric, b: number[]): number[] => {
         sum[Math.floor(j / 3)] += v;
     }
     sum.forEach((v, i) => (sum[i] = Math.sqrt(Math.sqrt(3 / v))));
+    return sum;
+};
+
+const conditionMatrix = (sum: number[], A: SparseSymmetric): void => {
     for (let c = 0; c < A.length; ++c) {
         const i = A[c][0];
         const j = A[c][1];
@@ -62,12 +68,20 @@ export const ldiv = (A: SparseSymmetric, b: number[]): number[] => {
         A[c][2] *= sum[Math.floor(i / 3)];
         A[c][2] *= sum[Math.floor(j / 3)];
     }
+};
+
+const conditionVector = (sum: number[], b: number[]): void => {
     for (let i = 0; i < b.length; ++i) {
         b[i] *= sum[Math.floor(i / 3)];
     }
+};
+
+export const ldiv = (A: SparseSymmetric, b: number[]): number[] => {
+    b = clone(b);
+    const sum = preconditioner(A, b);
+    conditionMatrix(sum, A);
+    conditionVector(sum, b);
     const x = cg(A, b);
-    for (let i = 0; i < x.length; ++i) {
-        x[i] *= sum[Math.floor(i / 3)];
-    }
+    conditionVector(sum, x);
     return x;
 };
