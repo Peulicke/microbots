@@ -1,7 +1,7 @@
 import * as Vec3 from "./Vec3";
 import * as Mat3 from "./Mat3";
 import { outerProduct } from "./utils";
-import { SparseMat, ldiv } from "./conjugateGradientSparse";
+import { SparseSymmetric, ldiv } from "./conjugateGradientSparse";
 import * as Bot from "./Bot";
 
 export type World = { bots: Bot.Bot[] };
@@ -57,14 +57,14 @@ export const stiffnessPair = (a: Bot.Bot, b: Bot.Bot): Mat3.Mat3 => {
 export const stiffnessPairDerivative = (a: Bot.Bot, dim: number, b: Bot.Bot): Mat3.Mat3 =>
     stiffnessDerivative(dim)(Vec3.sub(a.pos, b.pos));
 
-export const stiffnessMatrix = (world: World): SparseMat => {
-    const result: SparseMat = [];
+export const stiffnessMatrix = (world: World): SparseSymmetric => {
+    const result: SparseSymmetric = [];
     for (let i = 0; i < world.bots.length; ++i) {
         const sx = stiffnessGround(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0));
         const sy = stiffnessGround(Vec3.newVec3(0, world.bots[i].pos[1] + 0.5, 0));
         const sz = stiffnessGround(Vec3.newVec3(0, 0, world.bots[i].pos[1] + 0.5));
         for (let k = 0; k < 3; ++k) {
-            for (let l = 0; l < 3; ++l) {
+            for (let l = k; l < 3; ++l) {
                 result.push([3 * i + k, 3 * i + l, (sx[k][l] + sz[k][l]) * friction + sy[k][l]]);
             }
         }
@@ -75,10 +75,10 @@ export const stiffnessMatrix = (world: World): SparseMat => {
             const s = stiffnessPair(world.bots[i], world.bots[j]);
             for (let k = 0; k < 3; ++k) {
                 for (let l = 0; l < 3; ++l) {
-                    result[9 * i + 3 * k + l][2] += s[k][l];
-                    result[9 * j + 3 * k + l][2] += s[k][l];
                     result.push([3 * i + k, 3 * j + l, -s[k][l]]);
-                    result.push([3 * j + k, 3 * i + l, -s[k][l]]);
+                    if (k > l) continue;
+                    result[6 * i + k + (k === 0 ? 0 : 1) + l][2] += s[k][l];
+                    result[6 * j + k + (k === 0 ? 0 : 1) + l][2] += s[k][l];
                 }
             }
         }

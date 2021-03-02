@@ -1,4 +1,4 @@
-export type SparseMat = [number, number, number][];
+export type SparseSymmetric = [number, number, number][];
 
 const clone = (a: number[]): number[] => a.map(v => v);
 
@@ -12,18 +12,21 @@ const dot = (a: number[], b: number[]): number => {
 
 const addVecMultNum = (a: number[], b: number[], c: number): number[] => a.map((v, i) => v + b[i] * c);
 
-const matMultVec = (A: SparseMat, b: number[]): number[] => {
+const matMultVec = (A: SparseSymmetric, b: number[]): number[] => {
     const result = b.map(() => 0);
     for (let c = 0; c < A.length; ++c) {
         const i = A[c][0];
         const j = A[c][1];
+        if (i > j) continue;
         const v = A[c][2];
         result[i] += v * b[j];
+        if (i === j) continue;
+        result[j] += v * b[i];
     }
     return result;
 };
 
-export const cg = (A: SparseMat, b: number[]): number[] => {
+export const cg = (A: SparseSymmetric, b: number[]): number[] => {
     let x = b.map(() => 0);
     let r = addVecMultNum(b, matMultVec(A, x), -1);
     let p = clone(r);
@@ -40,17 +43,24 @@ export const cg = (A: SparseMat, b: number[]): number[] => {
     return x;
 };
 
-export const ldiv = (A: SparseMat, b: number[]): number[] => {
+export const ldiv = (A: SparseSymmetric, b: number[]): number[] => {
     b = b.map(v => v);
     const sum = [...Array(b.length / 3)].map(() => 0);
     for (let c = 0; c < A.length; ++c) {
         const [i, j, v] = A[c];
-        if (Math.floor(i / 3) === Math.floor(j / 3)) sum[Math.floor(i / 3)] += v;
+        if (i > j) continue;
+        if (Math.floor(i / 3) !== Math.floor(j / 3)) continue;
+        sum[Math.floor(i / 3)] += v;
+        if (i === j) continue;
+        sum[Math.floor(j / 3)] += v;
     }
     sum.forEach((v, i) => (sum[i] = Math.sqrt(Math.sqrt(3 / v))));
     for (let c = 0; c < A.length; ++c) {
-        A[c][2] *= sum[Math.floor(A[c][0] / 3)];
-        A[c][2] *= sum[Math.floor(A[c][1] / 3)];
+        const i = A[c][0];
+        const j = A[c][1];
+        if (i > j) continue;
+        A[c][2] *= sum[Math.floor(i / 3)];
+        A[c][2] *= sum[Math.floor(j / 3)];
     }
     for (let i = 0; i < b.length; ++i) {
         b[i] *= sum[Math.floor(i / 3)];
