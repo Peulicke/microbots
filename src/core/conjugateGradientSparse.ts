@@ -40,24 +40,24 @@ export const cg = (A: SparseMat, b: number[]): number[] => {
     return x;
 };
 
-export const precondition = (A: SparseMat, b: number[]): [SparseMat, number[]] => {
+export const ldiv = (A: SparseMat, b: number[]): number[] => {
     b = b.map(v => v);
     const sum = [...Array(b.length / 3)].map(() => 0);
     for (let c = 0; c < A.length; ++c) {
         const [i, j, v] = A[c];
         if (Math.floor(i / 3) === Math.floor(j / 3)) sum[Math.floor(i / 3)] += v;
     }
-    sum.forEach((v, i) => (sum[i] = Math.sqrt(3 / v)));
+    sum.forEach((v, i) => (sum[i] = Math.sqrt(Math.sqrt(3 / v))));
     for (let c = 0; c < A.length; ++c) {
         A[c][2] *= sum[Math.floor(A[c][0] / 3)];
+        A[c][2] *= sum[Math.floor(A[c][1] / 3)];
     }
     for (let i = 0; i < b.length; ++i) {
         b[i] *= sum[Math.floor(i / 3)];
     }
-    return [A, b];
-};
-
-export const ldiv = (A: SparseMat, b: number[]): number[] => {
-    const p = precondition(A, b);
-    return cg(p[0], p[1]);
+    const x = cg(A, b);
+    for (let i = 0; i < x.length; ++i) {
+        x[i] *= sum[Math.floor(i / 3)];
+    }
+    return x;
 };
