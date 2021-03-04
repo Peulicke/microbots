@@ -58,14 +58,14 @@ export const stiffnessPairDerivative = (a: Bot.Bot, dim: number, b: Bot.Bot): Ma
     stiffnessDerivative(dim)(Vec3.sub(a.pos, b.pos));
 
 export const stiffnessMatrix = (world: World): SparseSymmetric => {
-    const result: SparseSymmetric = [];
+    const result: SparseSymmetric = [...Array(world.bots.length * 3)].map(() => []);
     for (let i = 0; i < world.bots.length; ++i) {
         const sx = stiffnessGround(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0));
         const sy = stiffnessGround(Vec3.newVec3(0, world.bots[i].pos[1] + 0.5, 0));
         const sz = stiffnessGround(Vec3.newVec3(0, 0, world.bots[i].pos[1] + 0.5));
         for (let k = 0; k < 3; ++k) {
             for (let l = k; l < 3; ++l) {
-                result.push([3 * i + k, 3 * i + l, (sx[k][l] + sz[k][l]) * friction + sy[k][l]]);
+                result[3 * i + k].push([3 * i + l, (sx[k][l] + sz[k][l]) * friction + sy[k][l]]);
             }
         }
     }
@@ -75,10 +75,10 @@ export const stiffnessMatrix = (world: World): SparseSymmetric => {
             const s = stiffnessPair(world.bots[i], world.bots[j]);
             for (let k = 0; k < 3; ++k) {
                 for (let l = 0; l < 3; ++l) {
-                    result.push([3 * i + k, 3 * j + l, -s[k][l]]);
+                    result[3 * i + k].push([3 * j + l, -s[k][l]]);
                     if (k > l) continue;
-                    result[6 * i + k + (k === 0 ? 0 : 1) + l][2] += s[k][l];
-                    result[6 * j + k + (k === 0 ? 0 : 1) + l][2] += s[k][l];
+                    result[3 * i + k][l - k][1] += s[k][l];
+                    result[3 * j + k][l - k][1] += s[k][l];
                 }
             }
         }
