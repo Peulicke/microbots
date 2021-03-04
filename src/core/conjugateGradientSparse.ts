@@ -30,10 +30,10 @@ const matMultVec = (A: SparseSymmetric, b: number[], result: number[]): void => 
 };
 
 const cg = (A: SparseSymmetric, b: number[]): number[] => {
-    const x = b.map(() => 0);
+    const x = Array(b.length).fill(0);
     const r = Array(b.length);
     clone(b, r);
-    const Ap = b.map(() => 0);
+    const Ap = Array(b.length);
     matMultVec(A, x, Ap);
     addVecMultNum(r, Ap, -1);
     const p = Array(r.length);
@@ -55,7 +55,7 @@ const cg = (A: SparseSymmetric, b: number[]): number[] => {
 };
 
 const preconditioner = (A: SparseSymmetric, b: number[]): number[] => {
-    const sum = [...Array(b.length / 3)].map(() => 0);
+    const sum = Array(b.length / 3).fill(0);
     for (let i = 0; i < A.length; ++i) {
         for (let c = 0; c < A[i].length; ++c) {
             const [j, v] = A[i][c];
@@ -65,7 +65,7 @@ const preconditioner = (A: SparseSymmetric, b: number[]): number[] => {
             sum[Math.floor(j / 3)] += v;
         }
     }
-    sum.forEach((v, i) => (sum[i] = Math.sqrt(Math.sqrt(3 / v))));
+    for (let i = 0; i < sum.length; ++i) sum[i] = Math.sqrt(Math.sqrt(3 / sum[i]));
     return sum;
 };
 
