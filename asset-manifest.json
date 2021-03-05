@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.js": "/microbots/static/js/main.e94d3d0a.chunk.js",
-    "main.js.map": "/microbots/static/js/main.e94d3d0a.chunk.js.map",
+    "main.js": "/microbots/static/js/main.14b22b74.chunk.js",
+    "main.js.map": "/microbots/static/js/main.14b22b74.chunk.js.map",
     "runtime-main.js": "/microbots/static/js/runtime-main.698d5b35.js",
     "runtime-main.js.map": "/microbots/static/js/runtime-main.698d5b35.js.map",
-    "static/js/2.0fe32b41.chunk.js": "/microbots/static/js/2.0fe32b41.chunk.js",
-    "static/js/2.0fe32b41.chunk.js.map": "/microbots/static/js/2.0fe32b41.chunk.js.map",
+    "static/js/2.a5c78506.chunk.js": "/microbots/static/js/2.a5c78506.chunk.js",
+    "static/js/2.a5c78506.chunk.js.map": "/microbots/static/js/2.a5c78506.chunk.js.map",
     "index.html": "/microbots/index.html",
-    "static/js/2.0fe32b41.chunk.js.LICENSE.txt": "/microbots/static/js/2.0fe32b41.chunk.js.LICENSE.txt"
+    "static/js/2.a5c78506.chunk.js.LICENSE.txt": "/microbots/static/js/2.a5c78506.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.698d5b35.js",
-    "static/js/2.0fe32b41.chunk.js",
-    "static/js/main.e94d3d0a.chunk.js"
+    "static/js/2.a5c78506.chunk.js",
+    "static/js/main.14b22b74.chunk.js"
   ]
 }
