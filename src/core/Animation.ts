@@ -16,20 +16,24 @@ const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
     for (let i = 0; i < animation.length; ++i) {
         const before = animation[Math.max(i - 1, 0)];
         const after = animation[Math.min(i + 1, animation.length - 1)];
-        displacements[i] = World.displacement(before, after, dt)(animation[i]);
+        displacements[i] = World.displacement(before, after, dt, animation[i]);
     }
     for (let i = 1; i < animation.length - 1; ++i) {
         const beforeBefore = animation[Math.max(i - 2, 0)];
         const before = animation[i - 1];
         const after = animation[i + 1];
         const afterAfter = animation[Math.min(i + 2, animation.length - 1)];
-        result[i] = World.gradient(displacements[i - 1], displacements[i], displacements[i + 1])(
+        result[i] = World.gradient(
+            displacements[i - 1],
+            displacements[i],
+            displacements[i + 1],
             beforeBefore,
             before,
             after,
             afterAfter,
-            dt
-        )(animation[i]);
+            dt,
+            animation[i]
+        );
     }
     return result;
 };
@@ -42,9 +46,8 @@ const optimize = (animation: World.World[], dt: number): void => {
         const y = (iter * animation.length) / n;
         const x = ((1 + y) * animation.length) / 10;
         World.setSlack(2 / x);
-        const g = gradient(animation, dt).map(world =>
-            world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v))))
-        );
+        let g = gradient(animation, dt);
+        g = g.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.map((world, i) =>
             world.bots.map((bot, j) => {
                 if (bot.fixed) return;

@@ -29,7 +29,7 @@ export const setFixed = (fixed: boolean) => (bot: Bot): Bot => {
 
 export const average = (a: Bot, b: Bot): Bot => {
     const result = newBot();
-    result.pos = Vec3.divideScalar(Vec3.add(a.pos, b.pos), 2);
+    result.pos = Vec3.multiplyScalar(Vec3.add(a.pos, b.pos), 1 / 2);
     result.weight = (a.weight + b.weight) / 2;
     result.fixed = a.fixed || b.fixed;
     return result;

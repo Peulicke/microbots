@@ -42,7 +42,7 @@ export const updateCylinder = (from: Vec3.Vec3, to: Vec3.Vec3, radius: number) =
     orientation.multiply(new Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1));
     cylinder.setRotationFromMatrix(orientation);
     cylinder.scale.set(radius, Vec3.length(Vec3.sub(to, from)), radius);
-    const pos = Vec3.divideScalar(Vec3.add(from, to), 2);
+    const pos = Vec3.multiplyScalar(Vec3.add(from, to), 1 / 2);
     cylinder.position.set(pos[0], pos[1], pos[2]);
     return cylinder;
 };
