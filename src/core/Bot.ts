@@ -1,36 +1,18 @@
 import * as Vec3 from "./Vec3";
 
+type Target = (t: number) => Vec3.Vec3 | undefined;
+
 export type Bot = {
     pos: Vec3.Vec3;
+    target: Target;
     weight: number;
-    fixed: boolean;
 };
 
-export const newBot = (): Bot => ({
-    pos: Vec3.newVec3(0, 0, 0),
-    weight: 1,
-    fixed: false
+export const newBot = (config: { pos?: Vec3.Vec3; target?: Target; weight?: number }): Bot => ({
+    pos: config.pos || Vec3.newVec3(0, 0, 0),
+    target: config.target || (() => undefined),
+    weight: config.weight || 1
 });
 
-export const setPos = (pos: Vec3.Vec3) => (bot: Bot): Bot => {
-    bot.pos = pos;
-    return bot;
-};
-
-export const setWeight = (weight: number) => (bot: Bot): Bot => {
-    bot.weight = weight;
-    return bot;
-};
-
-export const setFixed = (fixed: boolean) => (bot: Bot): Bot => {
-    bot.fixed = fixed;
-    return bot;
-};
-
-export const average = (a: Bot, b: Bot): Bot => {
-    const result = newBot();
-    result.pos = Vec3.multiplyScalar(Vec3.add(a.pos, b.pos), 1 / 2);
-    result.weight = (a.weight + b.weight) / 2;
-    result.fixed = a.fixed || b.fixed;
-    return result;
-};
+export const average = (a: Bot, b: Bot): Bot =>
+    newBot({ ...a, pos: Vec3.multiplyScalar(Vec3.add(a.pos, b.pos), 1 / 2) });

@@ -76,7 +76,9 @@ const App: FC = () => {
     useEffect(() => {
         if (animation.length === 0) return;
         setBotMeshes(
-            animation[0].bots.map(bot => newSphere(bot.pos, bot.fixed ? new Color(0, 0, 1) : new Color(0, 1, 0)))
+            animation[0].bots.map(bot =>
+                newSphere(bot.pos, bot.target(1) === undefined ? new Color(0, 0, 1) : new Color(0, 1, 0))
+            )
         );
         setGroundEdgeMeshes(
             animation[0].bots.map(bot =>
@@ -186,6 +188,7 @@ const App: FC = () => {
                                         onClick={() => {
                                             const rng = new Prando(123);
                                             const [ws, we] = loadExample(i);
+                                            console.log(ws, we);
                                             const rand = () =>
                                                 Vec3.multiplyScalar(
                                                     Vec3.newVec3(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5),
@@ -199,7 +202,7 @@ const App: FC = () => {
                                             setAnimate(false);
                                             setSelectedExample(i);
                                         }}>
-                                        {example.title} ({example.data[0].length} bots)
+                                        {example.title} ({example.world.bots.length} bots)
                                     </Button>
                                 ))}
                                 <br />

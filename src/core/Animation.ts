@@ -18,15 +18,15 @@ const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
         const after = animation[Math.min(i + 1, animation.length - 1)];
         displacements[i] = World.displacement(before, after, dt, animation[i]);
     }
-    for (let i = 1; i < animation.length - 1; ++i) {
+    for (let i = 1; i < animation.length; ++i) {
         const beforeBefore = animation[Math.max(i - 2, 0)];
         const before = animation[i - 1];
-        const after = animation[i + 1];
+        const after = animation[Math.min(i + 1, animation.length - 1)];
         const afterAfter = animation[Math.min(i + 2, animation.length - 1)];
         result[i] = World.gradient(
             displacements[i - 1],
             displacements[i],
-            displacements[i + 1],
+            displacements[Math.min(i + 1, animation.length - 1)],
             beforeBefore,
             before,
             after,
@@ -39,18 +39,22 @@ const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
 };
 
 const optimize = (animation: World.World[], dt: number): void => {
-    const n = 500;
+    const n = 1000;
     const acc = 0.02;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
     for (let iter = 0; iter < n / animation.length; ++iter) {
         const y = (iter * animation.length) / n;
         const x = ((1 + y) * animation.length) / 10;
-        World.setSlack(2 / x);
+        World.setOffset(1 + 2 / x);
         let g = gradient(animation, dt);
         g = g.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.map((world, i) =>
             world.bots.map((bot, j) => {
-                if (bot.fixed) return;
+                const target = bot.target(i / (animation.length - 1));
+                if (target !== undefined) {
+                    bot.pos = target;
+                    return;
+                }
                 vel[i][j] = Vec3.add(vel[i][j], g[i][j]);
                 vel[i][j] = Vec3.multiplyScalar(vel[i][j], 0.9);
                 bot.pos = Vec3.add(bot.pos, vel[i][j]);

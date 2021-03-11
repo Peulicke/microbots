@@ -13,10 +13,14 @@ export const setBots = (bots: Bot.Bot[]) => (world: World): World => {
     return world;
 };
 
-const offset = 1.5;
+let offset = 1.5;
 let slack = 2;
 export const setSlack = (s: number): void => {
     slack = s;
+};
+export const setOffset = (o: number): void => {
+    offset = o;
+    console.log(offset);
 };
 const friction = 0.1;
 
@@ -179,7 +183,7 @@ export const gradient = (
         Vec3.addEq(p1, p3);
         Vec3.addEq(p1, p4);
         Vec3.addEq(p1, p5);
-        Vec3.addEq(result[i], Vec3.multiplyScalar(p1, 100000 / dt ** 4));
+        Vec3.addEq(result[i], Vec3.multiplyScalar(p1, 100 / dt ** 4));
     }
     return result;
 };

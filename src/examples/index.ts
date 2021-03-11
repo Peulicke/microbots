@@ -1,20 +1,27 @@
-import { Vec3, Bot, World } from "../core";
+import { Bot, World } from "../core";
 import arc from "./arc";
 import bigArc from "./bigArc";
 import bigCube from "./bigCube";
 import cube from "./cube";
 import stack from "./stack";
 import towers from "./towers";
+import targets from "./targets";
 
-export const examples = [towers, stack, cube, bigCube, arc, bigArc].sort((a, b) => {
-    const d = a.data[0].length - b.data[0].length;
+export const examples = [stack, towers, targets, arc, bigArc, cube, bigCube].sort((a, b) => {
+    const d = a.world.bots.length - b.world.bots.length;
     if (d === 0) return a.title > b.title ? 1 : -1;
     return d;
 });
 
-const toWorld = (index: number, time: number): World.World =>
-    World.setBots(examples[index].data[time].map(p => Bot.setPos(Vec3.newVec3(p[0], p[1], p[2]))(Bot.newBot())))(
-        World.newWorld()
-    );
-
-export default (index: number): [World.World, World.World] => [toWorld(index, 0), toWorld(index, 1)];
+export default (index: number): [World.World, World.World] => [
+    examples[index].world,
+    World.setBots(
+        examples[index].world.bots.map((bot: Bot.Bot) => {
+            return {
+                pos: bot.target !== undefined ? bot.target(1) || bot.pos : bot.pos,
+                target: bot.target,
+                weight: bot.weight
+            };
+        })
+    )(World.newWorld())
+];

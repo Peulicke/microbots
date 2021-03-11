@@ -1,19 +1,23 @@
-export default {
-    title: "Stack",
-    data: [
-        [
-            [0, 0.5, 0],
-            [0, 1.5, 0],
-            [0, 2.5, 0],
-            [0, 3.5, 0],
-            [0, 4.5, 0]
-        ],
-        [
-            [0, 0.5, 0],
-            [1, 0.5, 0],
-            [2, 0.5, 0],
-            [3, 0.5, 0],
-            [4, 0.5, 0]
-        ]
+import { Bot, World } from "../core";
+
+const world: World.World = {
+    bots: [
+        ...[...Array(5)].map(
+            (_, i): Bot.Bot =>
+                Bot.newBot({
+                    pos: [i, 0.5, 0],
+                    target: t => {
+                        if (t > 0.9) return [0, 0.5 + i, 0];
+                    },
+                    weight: 0.1
+                })
+        )
     ]
 };
+
+const example: { title: string; world: World.World } = {
+    title: "Stack",
+    world: world
+};
+
+export default example;
