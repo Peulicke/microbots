@@ -219,7 +219,9 @@ const App: FC = () => {
                                         <Button
                                             variant="contained"
                                             onClick={() => {
+                                                const t = Date.now();
                                                 setAnimation(Animation.createAnimation(worldStart, worldEnd, 8));
+                                                console.log((Date.now() - t) / 1000);
                                                 setAnimate(true);
                                             }}>
                                             Generate animation

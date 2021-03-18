@@ -3,6 +3,7 @@ import * as Mat3 from "./Mat3";
 import { outerProduct } from "./utils";
 import { SparseSymmetric, ldiv } from "./conjugateGradientSparse";
 import * as Bot from "./Bot";
+import delaunay from "./delaunay";
 
 export type World = { bots: Bot.Bot[] };
 
@@ -20,7 +21,6 @@ export const setSlack = (s: number): void => {
 };
 export const setOffset = (o: number): void => {
     offset = o;
-    console.log(offset);
 };
 const friction = 0.1;
 
@@ -66,7 +66,7 @@ const stiffnessPair = (a: Bot.Bot, b: Bot.Bot): Mat3.Mat3 => {
 const stiffnessPairDerivative = (a: Bot.Bot, dim: number, b: Bot.Bot): Mat3.Mat3 =>
     stiffnessDerivative(dim, Vec3.sub(a.pos, b.pos));
 
-const stiffnessMatrix = (world: World): SparseSymmetric => {
+const stiffnessMatrix = (world: World, con: number[][]): SparseSymmetric => {
     const result: SparseSymmetric = [...Array(world.bots.length * 3)].map(() => []);
     for (let i = 0; i < world.bots.length; ++i) {
         const sx = stiffnessGround(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0));
@@ -80,7 +80,9 @@ const stiffnessMatrix = (world: World): SparseSymmetric => {
     }
     for (let i = 0; i < world.bots.length; ++i) {
         for (let j = i + 1; j < world.bots.length; ++j) {
-            if (Vec3.length(Vec3.sub(world.bots[i].pos, world.bots[j].pos)) > offset + slack / 2) continue;
+            const d = Vec3.dist(world.bots[i].pos, world.bots[j].pos);
+            if (d > offset + slack / 2) continue;
+            if (d > 1.5 && !con[i].includes(j)) continue;
             const s = stiffnessPair(world.bots[i], world.bots[j]);
             for (let k = 0; k < 3; ++k) {
                 for (let l = 0; l < 3; ++l) {
@@ -108,9 +110,9 @@ const forceMatrix = (before: World, after: World, dt: number, world: World): num
     return result;
 };
 
-export const displacement = (before: World, after: World, dt: number, world: World): number[] => {
+export const displacement = (before: World, after: World, dt: number, world: World, con: number[][]): number[] => {
     const f = forceMatrix(before, after, dt, world);
-    const k = stiffnessMatrix(world);
+    const k = stiffnessMatrix(world, con);
     return ldiv(k, f);
 };
 
@@ -123,7 +125,8 @@ export const gradient = (
     after: World,
     afterAfter: World,
     dt: number,
-    world: World
+    world: World,
+    con: number[][]
 ): Vec3.Vec3[] => {
     const udku = [...Array(world.bots.length)].map(() => [0, 1, 2].map(() => 0));
     for (let i = 0; i < world.bots.length; ++i) {
@@ -139,7 +142,9 @@ export const gradient = (
             const d = Vec3.dot(vi, Mat3.apply(sx, vi));
             udku[i][dim] += d;
             for (let j = i + 1; j < world.bots.length; ++j) {
-                if (Vec3.length(Vec3.sub(world.bots[j].pos, world.bots[i].pos)) > offset + slack / 2) continue;
+                const d = Vec3.dist(world.bots[i].pos, world.bots[j].pos);
+                if (d > offset + slack / 2) continue;
+                if (d > 1.5 && !con[i].includes(j)) continue;
                 const s = stiffnessPairDerivative(world.bots[i], dim, world.bots[j]);
                 const vj = Vec3.newVec3(u[3 * j], u[3 * j + 1], u[3 * j + 2]);
                 Vec3.subEq(vj, vi);
@@ -187,3 +192,5 @@ export const gradient = (
     }
     return result;
 };
+
+export const connections = (world: World): number[][] => delaunay(world.bots.map(bot => bot.pos));

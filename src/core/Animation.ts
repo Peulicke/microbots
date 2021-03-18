@@ -8,7 +8,7 @@ const average = (start: World.World, end: World.World): World.World => {
     return result;
 };
 
-const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
+const gradient = (animation: World.World[], dt: number, connections: number[][][]): Vec3.Vec3[][] => {
     const result = [...Array(animation.length)].map(() =>
         [...Array(animation[0].bots.length)].map(() => Vec3.newVec3(0, 0, 0))
     );
@@ -16,7 +16,7 @@ const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
     for (let i = 0; i < animation.length; ++i) {
         const before = animation[Math.max(i - 1, 0)];
         const after = animation[Math.min(i + 1, animation.length - 1)];
-        displacements[i] = World.displacement(before, after, dt, animation[i]);
+        displacements[i] = World.displacement(before, after, dt, animation[i], connections[i]);
     }
     for (let i = 1; i < animation.length; ++i) {
         const beforeBefore = animation[Math.max(i - 2, 0)];
@@ -32,7 +32,8 @@ const gradient = (animation: World.World[], dt: number): Vec3.Vec3[][] => {
             after,
             afterAfter,
             dt,
-            animation[i]
+            animation[i],
+            connections[i]
         );
     }
     return result;
@@ -42,11 +43,13 @@ const optimize = (animation: World.World[], dt: number): void => {
     const n = 1000;
     const acc = 0.02;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
+    let connections = animation.map(world => World.connections(world));
     for (let iter = 0; iter < n / animation.length; ++iter) {
+        if (iter > 0 && iter % 10 === 0) connections = animation.map(world => World.connections(world));
         const y = (iter * animation.length) / n;
-        const x = ((1 + y) * animation.length) / 10;
-        World.setOffset(1 + 2 / x);
-        let g = gradient(animation, dt);
+        const x = (1 + y) * animation.length;
+        World.setOffset(1 + 20 / x);
+        let g = gradient(animation, dt, connections);
         g = g.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.map((world, i) =>
             world.bots.map((bot, j) => {

@@ -26,4 +26,8 @@ export const dot = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2
 
 export const length = (a: Vec3): number => Math.sqrt(dot(a, a));
 
+export const dist = (a: Vec3, b: Vec3): number => length(sub(a, b));
+
 export const normalize = (a: Vec3): Vec3 => multiplyScalar(a, 1 / length(a));
+
+export const dir = (a: Vec3, b: Vec3): Vec3 => normalize(sub(a, b));
