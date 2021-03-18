@@ -121,31 +121,13 @@ export const displacement = (
     return ldiv(k, f);
 };
 
-export const neighbors = (world: World, con: number[][], n: number): number[] => {
-    const checked: { [key: string]: boolean } = {};
-    const result: { [key: string]: boolean } = {};
-    const checkI = [n];
-    const checkLevel = [0];
-    while (checkI.length > 0) {
-        const i = checkI.shift()!;
-        const level = checkLevel.shift()!;
-        if (checked[i]) continue;
-        checked[i] = true;
-        const d = Vec3.dist(world.bots[n].pos, world.bots[i].pos);
-        if (d > offset + slack / 2) continue;
-        if (level === 1 && i > n) result[i] = true;
-        if (d > 1.5 && !con[n].includes(i)) continue;
-        if (i > n) result[i] = true;
-        for (let c = 0; c < con[i].length; ++c) {
-            const j = con[i][c];
-            checkI.push(j);
-            checkLevel.push(level + 1);
-        }
-    }
-    return Object.keys(result)
-        .map(v => Number(v))
-        .sort();
-};
+export const neighbors = (world: World, con: number[][], n: number): number[] =>
+    con[n]
+        .filter(i => i > n)
+        .filter(i => {
+            const d = Vec3.dist(world.bots[n].pos, world.bots[i].pos);
+            return d < offset + slack / 2;
+        });
 
 export const gradient = (
     uBefore: number[],
