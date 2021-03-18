@@ -8,15 +8,20 @@ const average = (start: World.World, end: World.World): World.World => {
     return result;
 };
 
-const gradient = (animation: World.World[], dt: number, connections: number[][][]): Vec3.Vec3[][] => {
+const gradient = (
+    animation: World.World[],
+    dt: number,
+    connections: number[][][],
+    neighbors: number[][][]
+): Vec3.Vec3[][] => {
     const result = [...Array(animation.length)].map(() =>
         [...Array(animation[0].bots.length)].map(() => Vec3.newVec3(0, 0, 0))
     );
-    const displacements = [...Array(animation.length)].map(() => [...Array(3 * animation[0].bots.length)].map(() => 0));
+    const displacements = animation.map(() => [...Array(3 * animation[0].bots.length)].map(() => 0));
     for (let i = 0; i < animation.length; ++i) {
         const before = animation[Math.max(i - 1, 0)];
         const after = animation[Math.min(i + 1, animation.length - 1)];
-        displacements[i] = World.displacement(before, after, dt, animation[i], connections[i]);
+        displacements[i] = World.displacement(before, after, dt, animation[i], connections[i], neighbors[i]);
     }
     for (let i = 1; i < animation.length; ++i) {
         const beforeBefore = animation[Math.max(i - 2, 0)];
@@ -33,7 +38,7 @@ const gradient = (animation: World.World[], dt: number, connections: number[][][
             afterAfter,
             dt,
             animation[i],
-            connections[i]
+            neighbors[i]
         );
     }
     return result;
@@ -44,12 +49,18 @@ const optimize = (animation: World.World[], dt: number): void => {
     const acc = 0.02;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
     let connections = animation.map(world => World.connections(world));
+    let neighbors = animation.map((world, i) => world.bots.map((_, j) => World.neighbors(world, connections[i], j)));
     for (let iter = 0; iter < n / animation.length; ++iter) {
-        if (iter > 0 && iter % 10 === 0) connections = animation.map(world => World.connections(world));
+        if (iter > 0 && iter % 10 === 0) {
+            connections = animation.map(world => World.connections(world));
+            neighbors = animation.map((world, i) =>
+                world.bots.map((_, j) => World.neighbors(world, connections[i], j))
+            );
+        }
         const y = (iter * animation.length) / n;
         const x = (1 + y) * animation.length;
         World.setOffset(1 + 20 / x);
-        let g = gradient(animation, dt, connections);
+        let g = gradient(animation, dt, connections, neighbors);
         g = g.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.map((world, i) =>
             world.bots.map((bot, j) => {
@@ -77,9 +88,11 @@ export const createAnimation = (before: World.World, after: World.World, n: numb
     let result = [before, after];
     let dt = 100;
     for (let i = 0; i < n; ++i) {
+        console.log(`${i} subdivisions`);
         dt /= 2;
         result = subdivide(result);
         optimize(result, dt);
     }
+    console.log("done");
     return result;
 };

@@ -4,6 +4,7 @@ import { outerProduct } from "./utils";
 import { SparseSymmetric, ldiv } from "./conjugateGradientSparse";
 import * as Bot from "./Bot";
 import delaunay from "./delaunay";
+import Prando from "prando";
 
 export type World = { bots: Bot.Bot[] };
 
@@ -66,7 +67,7 @@ const stiffnessPair = (a: Bot.Bot, b: Bot.Bot): Mat3.Mat3 => {
 const stiffnessPairDerivative = (a: Bot.Bot, dim: number, b: Bot.Bot): Mat3.Mat3 =>
     stiffnessDerivative(dim, Vec3.sub(a.pos, b.pos));
 
-const stiffnessMatrix = (world: World, con: number[][]): SparseSymmetric => {
+const stiffnessMatrix = (world: World, con: number[][], neigh: number[][]): SparseSymmetric => {
     const result: SparseSymmetric = [...Array(world.bots.length * 3)].map(() => []);
     for (let i = 0; i < world.bots.length; ++i) {
         const sx = stiffnessGround(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0));
@@ -79,10 +80,7 @@ const stiffnessMatrix = (world: World, con: number[][]): SparseSymmetric => {
         }
     }
     for (let i = 0; i < world.bots.length; ++i) {
-        for (let j = i + 1; j < world.bots.length; ++j) {
-            const d = Vec3.dist(world.bots[i].pos, world.bots[j].pos);
-            if (d > offset + slack / 2) continue;
-            if (d > 1.5 && !con[i].includes(j)) continue;
+        neigh[i].forEach(j => {
             const s = stiffnessPair(world.bots[i], world.bots[j]);
             for (let k = 0; k < 3; ++k) {
                 for (let l = 0; l < 3; ++l) {
@@ -92,7 +90,7 @@ const stiffnessMatrix = (world: World, con: number[][]): SparseSymmetric => {
                     result[3 * j + k][l - k][1] += s[k][l];
                 }
             }
-        }
+        });
     }
     return result;
 };
@@ -110,10 +108,43 @@ const forceMatrix = (before: World, after: World, dt: number, world: World): num
     return result;
 };
 
-export const displacement = (before: World, after: World, dt: number, world: World, con: number[][]): number[] => {
+export const displacement = (
+    before: World,
+    after: World,
+    dt: number,
+    world: World,
+    con: number[][],
+    neigh: number[][]
+): number[] => {
     const f = forceMatrix(before, after, dt, world);
-    const k = stiffnessMatrix(world, con);
+    const k = stiffnessMatrix(world, con, neigh);
     return ldiv(k, f);
+};
+
+export const neighbors = (world: World, con: number[][], n: number): number[] => {
+    const checked: { [key: string]: boolean } = {};
+    const result: { [key: string]: boolean } = {};
+    const checkI = [n];
+    const checkLevel = [0];
+    while (checkI.length > 0) {
+        const i = checkI.shift()!;
+        const level = checkLevel.shift()!;
+        if (checked[i]) continue;
+        checked[i] = true;
+        const d = Vec3.dist(world.bots[n].pos, world.bots[i].pos);
+        if (d > offset + slack / 2) continue;
+        if (level === 1 && i > n) result[i] = true;
+        if (d > 1.5 && !con[n].includes(i)) continue;
+        if (i > n) result[i] = true;
+        for (let c = 0; c < con[i].length; ++c) {
+            const j = con[i][c];
+            checkI.push(j);
+            checkLevel.push(level + 1);
+        }
+    }
+    return Object.keys(result)
+        .map(v => Number(v))
+        .sort();
 };
 
 export const gradient = (
@@ -126,7 +157,7 @@ export const gradient = (
     afterAfter: World,
     dt: number,
     world: World,
-    con: number[][]
+    neigh: number[][]
 ): Vec3.Vec3[] => {
     const udku = [...Array(world.bots.length)].map(() => [0, 1, 2].map(() => 0));
     for (let i = 0; i < world.bots.length; ++i) {
@@ -141,10 +172,7 @@ export const gradient = (
             Mat3.add(sx, sz);
             const d = Vec3.dot(vi, Mat3.apply(sx, vi));
             udku[i][dim] += d;
-            for (let j = i + 1; j < world.bots.length; ++j) {
-                const d = Vec3.dist(world.bots[i].pos, world.bots[j].pos);
-                if (d > offset + slack / 2) continue;
-                if (d > 1.5 && !con[i].includes(j)) continue;
+            neigh[i].forEach(j => {
                 const s = stiffnessPairDerivative(world.bots[i], dim, world.bots[j]);
                 const vj = Vec3.newVec3(u[3 * j], u[3 * j + 1], u[3 * j + 2]);
                 Vec3.subEq(vj, vi);
@@ -152,7 +180,7 @@ export const gradient = (
                 const diff = Vec3.dot(vj, svisvj);
                 udku[i][dim] += diff;
                 udku[j][dim] -= diff;
-            }
+            });
         }
     }
     const result = [...Array(world.bots.length)].map(() => Vec3.newVec3(0, 0, 0));
@@ -169,14 +197,14 @@ export const gradient = (
         result[i][1] += 2 * overlapPenalty * (2 * (l - 2));
     }
     for (let i = 0; i < world.bots.length; ++i) {
-        for (let j = i + 1; j < world.bots.length; ++j) {
+        neigh[i].forEach(j => {
             let d = Vec3.sub(world.bots[j].pos, world.bots[i].pos);
             const l = Vec3.length(d);
-            if (l > 1) continue;
+            if (l > 1) return;
             d = Vec3.multiplyScalar(d, overlapPenalty * ((2 * (l - 2)) / l));
             Vec3.subEq(result[i], d);
             Vec3.addEq(result[j], d);
-        }
+        });
     }
     for (let i = 0; i < world.bots.length; ++i) {
         const p1 = Vec3.multiplyScalar(beforeBefore.bots[i].pos, 2);
@@ -193,4 +221,8 @@ export const gradient = (
     return result;
 };
 
-export const connections = (world: World): number[][] => delaunay(world.bots.map(bot => bot.pos));
+const rng = new Prando(123);
+
+const rand = () => Vec3.multiplyScalar(Vec3.newVec3(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5), 0.1);
+
+export const connections = (world: World): number[][] => delaunay(world.bots.map(bot => Vec3.add(bot.pos, rand())));
