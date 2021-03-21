@@ -2,7 +2,7 @@ import { Bot, World } from "../core";
 
 const world: World.World = {
     bots: [
-        ...[...Array(9)].map((_, i): Bot.Bot => Bot.newBot({ pos: [i, 0.5, 0], weight: 0.001 })),
+        ...[...Array(9)].map((_, i): Bot.Bot => Bot.newBot({ pos: [i, 0.5, 0], weight: 0.01 })),
         Bot.newBot({
             pos: [4.5, 0.5, 4],
             target: t => {
