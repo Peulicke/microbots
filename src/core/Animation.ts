@@ -2,9 +2,9 @@ import * as Vec3 from "./Vec3";
 import * as Bot from "./Bot";
 import * as World from "./World";
 
-const average = (start: World.World, end: World.World): World.World => {
+const average = (start: World.World, end: World.World, t1: number, t2: number): World.World => {
     const result = World.newWorld();
-    result.bots = start.bots.map((b, i) => Bot.average(b, end.bots[i]));
+    result.bots = start.bots.map((b, i) => Bot.average(b, end.bots[i], t1, t2));
     return result;
 };
 
@@ -45,21 +45,15 @@ const gradient = (
 };
 
 const optimize = (animation: World.World[], dt: number): void => {
-    const n = 1000;
-    const acc = 0.02;
+    const n = 20;
+    const maxIter = Math.floor(n / animation.length);
+    if (maxIter === 0) return;
+    const acc = 1 / animation.length;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
-    let connections = animation.map(world => World.connections(world));
-    let neighbors = animation.map((world, i) => world.bots.map((_, j) => World.neighbors(world, connections[i], j)));
-    for (let iter = 0; iter < n / animation.length; ++iter) {
-        if (iter > 0 && iter % 10 === 0) {
-            connections = animation.map(world => World.connections(world));
-            neighbors = animation.map((world, i) =>
-                world.bots.map((_, j) => World.neighbors(world, connections[i], j))
-            );
-        }
-        const y = (iter * animation.length) / n;
-        const x = (1 + y) * animation.length;
-        World.setOffset(1 + 20 / x);
+    const connections = animation.map(world => World.connections(world));
+    const neighbors = animation.map((world, i) => world.bots.map((_, j) => World.neighbors(world, connections[i], j)));
+    for (let iter = 0; iter < maxIter; ++iter) {
+        World.setOffset(1 + 5 / ((1 + iter / maxIter) * animation.length));
         let g = gradient(animation, dt, connections, neighbors);
         g = g.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.map((world, i) =>
@@ -80,8 +74,64 @@ const optimize = (animation: World.World[], dt: number): void => {
 const subdivide = (animation: World.World[]): World.World[] => {
     const result = [...Array(animation.length * 2 - 1)];
     for (let i = 0; i < animation.length; ++i) result[2 * i] = animation[i];
-    for (let i = 1; i < result.length - 1; i += 2) result[i] = average(result[i - 1], result[i + 1]);
+    for (let i = 1; i < result.length - 1; i += 2)
+        result[i] = average(result[i - 1], result[i + 1], (i - 1) / (result.length - 1), (i + 1) / (result.length - 1));
     return result;
+};
+
+const contract = (animation: World.World[]): void => {
+    const n = 100;
+    const maxIter = Math.floor(n / animation.length);
+    if (maxIter === 0) return;
+    const connections = animation.map(world => World.connections(world));
+    for (let iter = 0; iter < maxIter; ++iter) {
+        for (let time = 1; time < animation.length - 1; ++time) {
+            const beforeBefore = animation[Math.max(time - 2, 0)];
+            const before = animation[time - 1];
+            const world = animation[time];
+            const after = animation[time + 1];
+            const afterAfter = animation[Math.min(time + 2, animation.length - 1)];
+            const originalPos = world.bots.map((bot, i) => {
+                const p1 = Vec3.multiplyScalar(beforeBefore.bots[i].pos, -1);
+                const p2 = Vec3.multiplyScalar(before.bots[i].pos, 4);
+                const p4 = Vec3.multiplyScalar(after.bots[i].pos, 4);
+                const p5 = Vec3.multiplyScalar(afterAfter.bots[i].pos, -1);
+                Vec3.addEq(p1, p2);
+                Vec3.addEq(p1, p4);
+                Vec3.addEq(p1, p5);
+                return Vec3.multiplyScalar(p1, 1 / 6);
+            });
+            world.bots.map(a => {
+                a.pos[1] += 0.01 * (0.5 - a.pos[1]);
+            });
+            world.bots.map((a, i) => {
+                connections[time][i].map(j => {
+                    if (i >= j) return;
+                    const b = world.bots[j];
+                    const d = Vec3.sub(b.pos, a.pos);
+                    const l = Vec3.length(d);
+                    const l1 = l - 1;
+                    const dn = Vec3.multiplyScalar(
+                        d,
+                        ((l1 > 0 ? 0.2 / (connections[time][i].length + connections[time][j].length) : 1) * l1) / l
+                    );
+                    const m = a.weight + b.weight;
+                    Vec3.addEq(a.pos, Vec3.multiplyScalar(dn, b.weight / m));
+                    Vec3.subEq(b.pos, Vec3.multiplyScalar(dn, a.weight / m));
+                });
+            });
+            world.bots.map((bot, i) => {
+                const target = bot.target(time / (animation.length - 1));
+                if (target !== undefined) {
+                    bot.pos = target;
+                    return;
+                }
+                const w = 0.1;
+                bot.pos = Vec3.multiplyScalar(bot.pos, w);
+                Vec3.addEq(bot.pos, Vec3.multiplyScalar(originalPos[i], 1 - w));
+            });
+        }
+    }
 };
 
 export const createAnimation = (before: World.World, after: World.World, n: number): World.World[] => {
@@ -91,6 +141,7 @@ export const createAnimation = (before: World.World, after: World.World, n: numb
         console.log(`${i} subdivisions`);
         dt /= 2;
         result = subdivide(result);
+        contract(result);
         optimize(result, dt);
     }
     console.log("done");

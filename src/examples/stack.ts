@@ -7,7 +7,7 @@ const world: World.World = {
                 Bot.newBot({
                     pos: [i, 0.5, 0],
                     target: t => {
-                        if (t > 0.9) return [0, 0.5 + i, 0];
+                        if (t > 0.9999) return [0, 0.5 + i, 0];
                     },
                     weight: 0.1
                 })
