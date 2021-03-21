@@ -80,7 +80,7 @@ const subdivide = (animation: World.World[]): World.World[] => {
 };
 
 const contract = (animation: World.World[]): void => {
-    const n = 100;
+    const n = 50;
     const maxIter = Math.floor(n / animation.length);
     if (maxIter === 0) return;
     const connections = animation.map(world => World.connections(world));
