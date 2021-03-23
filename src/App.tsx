@@ -192,7 +192,7 @@ const App: FC = () => {
                                             const rand = () =>
                                                 Vec3.multiplyScalar(
                                                     Vec3.newVec3(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5),
-                                                    0.0001
+                                                    0.1
                                                 );
                                             ws.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
                                             we.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));

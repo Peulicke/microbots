@@ -38,7 +38,8 @@ const gradient = (
             afterAfter,
             dt,
             animation[i],
-            neighbors[i]
+            neighbors[i],
+            i / (animation.length - 1)
         );
     }
     return result;
@@ -80,7 +81,7 @@ const subdivide = (animation: World.World[]): World.World[] => {
 };
 
 const contract = (animation: World.World[], dt: number): void => {
-    const n = 50;
+    const n = 100;
     const maxIter = Math.floor(n / animation.length);
     if (maxIter === 0) return;
     const connections = animation.map(world => World.connections(world));
@@ -103,7 +104,7 @@ const contract = (animation: World.World[], dt: number): void => {
                 )
             );
             world.bots.map((a, i) => {
-                a.pos[1] += (0.02 * (0.5 - a.pos[1])) / connections[time][i].length;
+                a.pos[1] += (0.1 * (0.5 - a.pos[1])) / connections[time][i].length;
                 connections[time][i].map(j => {
                     if (i >= j) return;
                     const b = world.bots[j];
@@ -112,7 +113,7 @@ const contract = (animation: World.World[], dt: number): void => {
                     const l1 = l - 1;
                     const dn = Vec3.multiplyScalar(
                         d,
-                        ((l1 > 0 ? 0.2 / (connections[time][i].length + connections[time][j].length) : 1) * l1) / l
+                        ((l1 > 0 ? 0.3 / (connections[time][i].length + connections[time][j].length) : 1) * l1) / l
                     );
                     const m = a.weight + b.weight;
                     Vec3.addEq(a.pos, Vec3.multiplyScalar(dn, b.weight / m));
@@ -125,7 +126,7 @@ const contract = (animation: World.World[], dt: number): void => {
                     bot.pos = Vec3.clone(target);
                     return;
                 }
-                const w = Math.pow(0.2, 1 / dt);
+                const w = Math.pow(0.2, bot.weight / dt);
                 bot.pos = Vec3.multiplyScalar(bot.pos, w);
                 Vec3.addEq(bot.pos, Vec3.multiplyScalar(originalPos[i], 1 - w));
             });

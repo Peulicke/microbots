@@ -14,7 +14,7 @@ const world: World.World = {
                 target: t => {
                     if (t > 0.9999) return end[i];
                 },
-                weight: 0.01
+                weight: 1
             })
     )
 };

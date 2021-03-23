@@ -139,7 +139,8 @@ export const gradient = (
     afterAfter: World,
     dt: number,
     world: World,
-    neigh: number[][]
+    neigh: number[][],
+    t: number
 ): Vec3.Vec3[] => {
     const udku = [...Array(world.bots.length)].map(() => [0, 1, 2].map(() => 0));
     for (let i = 0; i < world.bots.length; ++i) {
@@ -189,16 +190,17 @@ export const gradient = (
         });
     }
     for (let i = 0; i < world.bots.length; ++i) {
-        const p1 = Vec3.multiplyScalar(beforeBefore.bots[i].pos, 2);
-        const p2 = Vec3.multiplyScalar(before.bots[i].pos, -8);
-        const p3 = Vec3.multiplyScalar(world.bots[i].pos, 12);
-        const p4 = Vec3.multiplyScalar(after.bots[i].pos, -8);
-        const p5 = Vec3.multiplyScalar(afterAfter.bots[i].pos, 2);
-        Vec3.addEq(p1, p2);
-        Vec3.addEq(p1, p3);
-        Vec3.addEq(p1, p4);
-        Vec3.addEq(p1, p5);
-        Vec3.addEq(result[i], Vec3.multiplyScalar(p1, 100 / dt ** 4));
+        const dest = Bot.interpolate(
+            world.bots[i],
+            t,
+            dt,
+            beforeBefore.bots[i].pos,
+            before.bots[i].pos,
+            after.bots[i].pos,
+            afterAfter.bots[i].pos
+        );
+        const d = Vec3.sub(dest, world.bots[i].pos);
+        Vec3.addEq(result[i], Vec3.multiplyScalar(d, -0.1));
     }
     return result;
 };

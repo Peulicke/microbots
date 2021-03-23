@@ -9,7 +9,7 @@ const world: World.World = {
                     target: t => {
                         if (t > 0.9999) return [0, 0.5 + i, 0];
                     },
-                    weight: 0.1
+                    weight: 1
                 })
         )
     ]
