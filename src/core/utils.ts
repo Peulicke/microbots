@@ -33,6 +33,7 @@ export const minAcc = (
     p5: Vec3.Vec3,
     t3: number
 ): Vec3.Vec3 => {
+    const epsilon = 1e-10;
     const t12 = t2 - t1;
     const t13 = t3 - t1;
     const t23 = t3 - t2;
@@ -40,12 +41,12 @@ export const minAcc = (
     const t34 = t4 - t3;
     const t35 = t5 - t3;
     const t45 = t5 - t4;
-    const t1213 = t12 * t13;
-    const t1323 = t13 * t23;
-    const t2324 = t23 * t24;
-    const t2434 = t24 * t34;
-    const t3435 = t34 * t35;
-    const t3545 = t35 * t45;
+    const t1213 = t12 * t13 + epsilon;
+    const t1323 = t13 * t23 + epsilon;
+    const t2324 = t23 * t24 + epsilon;
+    const t2434 = t24 * t34 + epsilon;
+    const t3435 = t34 * t35 + epsilon;
+    const t3545 = t35 * t45 + epsilon;
     const c = 1 / (t2434 * t2324);
     const a = c + 1 / t1323 ** 2 + 1 / t2324 ** 2;
     const b = c + 1 / t2434 ** 2 + 1 / t3435 ** 2;

@@ -15,45 +15,31 @@ export const newBot = (config: { pos?: Vec3.Vec3; target?: Target; weight?: numb
     weight: config.weight || 1
 });
 
+type SpacetimePoint = {
+    pos: Vec3.Vec3;
+    time: number;
+};
+
+const findTarget = (bot: Bot, t: number, limit: SpacetimePoint): SpacetimePoint => {
+    const dir = limit.time > t ? 1 : -1;
+    const dt = 0.01;
+    let target, time;
+    for (time = t; (limit.time - time) * dir <= 0; time += dt * dir) {
+        target = bot.target(time);
+        if (target !== undefined) return { pos: target, time: time };
+    }
+    return limit;
+};
+
 export const average = (a: Bot, b: Bot, t1: number, t2: number): Bot => {
     const t = (t1 + t2) / 2;
-    let pos = a.target(t);
-    if (pos === undefined) {
-        const dt = 0.01;
-        let targetPrev, targetNext, timePrev, timeNext;
-        for (timePrev = t; timePrev >= t1; timePrev -= dt) {
-            targetPrev = a.target(timePrev);
-            if (targetPrev !== undefined) break;
-        }
-        for (timeNext = t; timeNext <= t2; timeNext += dt) {
-            targetNext = a.target(timeNext);
-            if (targetNext !== undefined) break;
-        }
-        if (targetPrev === undefined && targetNext === undefined)
-            pos = Vec3.multiplyScalar(Vec3.add(a.pos, b.pos), 1 / 2);
-        if (targetPrev === undefined && targetNext !== undefined) {
-            const totalTime = timeNext - t1;
-            pos = Vec3.multiplyScalar(
-                Vec3.add(Vec3.multiplyScalar(a.pos, timeNext - t), Vec3.multiplyScalar(targetNext, t - t1)),
-                1 / totalTime
-            );
-        }
-        if (targetPrev !== undefined && targetNext === undefined) {
-            const totalTime = t2 - timePrev;
-            pos = Vec3.multiplyScalar(
-                Vec3.add(Vec3.multiplyScalar(targetPrev, t2 - t), Vec3.multiplyScalar(b.pos, t - timePrev)),
-                1 / totalTime
-            );
-        }
-        if (targetPrev !== undefined && targetNext !== undefined) {
-            const totalTime = timeNext - timePrev;
-            pos = Vec3.multiplyScalar(
-                Vec3.add(Vec3.multiplyScalar(targetPrev, timeNext - t), Vec3.multiplyScalar(targetNext, t - timePrev)),
-                1 / totalTime
-            );
-        }
-    }
-    return newBot({ ...a, pos: pos });
+    const prev = findTarget(a, t, { pos: a.pos, time: t1 });
+    const next = findTarget(a, t, { pos: b.pos, time: t2 });
+    if (next.time - prev.time < 1e-10) return newBot({ ...a, pos: next.pos });
+    const w1 = (next.time - t) / (next.time - prev.time);
+    const w2 = (t - prev.time) / (next.time - prev.time);
+    const pos = Vec3.add(Vec3.multiplyScalar(prev.pos, w1), Vec3.multiplyScalar(next.pos, w2));
+    return { ...a, pos: pos };
 };
 
 export const interpolate = (
