@@ -91,16 +91,17 @@ const contract = (animation: World.World[], dt: number): void => {
             const world = animation[time];
             const after = animation[Math.min(time + 1, animation.length - 1)];
             const afterAfter = animation[Math.min(time + 2, animation.length - 1)];
-            const originalPos = world.bots.map((bot, i) => {
-                const p1 = Vec3.multiplyScalar(beforeBefore.bots[i].pos, -1);
-                const p2 = Vec3.multiplyScalar(before.bots[i].pos, 4);
-                const p4 = Vec3.multiplyScalar(after.bots[i].pos, 4);
-                const p5 = Vec3.multiplyScalar(afterAfter.bots[i].pos, -1);
-                Vec3.addEq(p1, p2);
-                Vec3.addEq(p1, p4);
-                Vec3.addEq(p1, p5);
-                return Vec3.multiplyScalar(p1, 1 / 6);
-            });
+            const originalPos = world.bots.map((bot, i) =>
+                Bot.interpolate(
+                    bot,
+                    time / (animation.length - 1),
+                    dt,
+                    beforeBefore.bots[i].pos,
+                    before.bots[i].pos,
+                    after.bots[i].pos,
+                    afterAfter.bots[i].pos
+                )
+            );
             world.bots.map((a, i) => {
                 a.pos[1] += (0.02 * (0.5 - a.pos[1])) / connections[time][i].length;
                 connections[time][i].map(j => {
