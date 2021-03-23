@@ -1,5 +1,5 @@
 import * as Vec3 from "./Vec3";
-import { minAcc } from "./utils";
+import { Spacetime, minAcc } from "./utils";
 
 type Target = (t: number) => Vec3.Vec3 | undefined;
 
@@ -15,12 +15,7 @@ export const newBot = (config: { pos?: Vec3.Vec3; target?: Target; weight?: numb
     weight: config.weight || 1
 });
 
-type SpacetimePoint = {
-    pos: Vec3.Vec3;
-    time: number;
-};
-
-const findTarget = (bot: Bot, t: number, limit: SpacetimePoint): SpacetimePoint => {
+const findTarget = (bot: Bot, t: number, limit: Spacetime): Spacetime => {
     const dir = limit.time > t ? 1 : -1;
     const dt = 0.01;
     let target, time;
@@ -51,5 +46,11 @@ export const interpolate = (
     p4: Vec3.Vec3,
     p5: Vec3.Vec3
 ): Vec3.Vec3 => {
-    return minAcc(t - 2 * dt, t - dt, t + dt, t + 2 * dt, p1, p2, p4, p5, t);
+    return minAcc(
+        { pos: p1, time: t - 2 * dt },
+        { pos: p2, time: t - dt },
+        { pos: p4, time: t + dt },
+        { pos: p5, time: t + 2 * dt },
+        t
+    );
 };

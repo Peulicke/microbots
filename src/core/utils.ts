@@ -1,6 +1,11 @@
 import * as Vec3 from "./Vec3";
 import * as Mat3 from "./Mat3";
 
+export type Spacetime = {
+    pos: Vec3.Vec3;
+    time: number;
+};
+
 const throwError = () => {
     throw new Error("Vectors need to be the same length");
 };
@@ -22,25 +27,15 @@ export const outerProduct = (a: Vec3.Vec3, b: Vec3.Vec3): Mat3.Mat3 =>
 export const zeros = (height: number, width: number): number[][] =>
     [...Array(height)].map(() => [...Array(width)].map(() => 0));
 
-export const minAcc = (
-    t1: number,
-    t2: number,
-    t4: number,
-    t5: number,
-    p1: Vec3.Vec3,
-    p2: Vec3.Vec3,
-    p4: Vec3.Vec3,
-    p5: Vec3.Vec3,
-    t3: number
-): Vec3.Vec3 => {
+export const minAcc = (v1: Spacetime, v2: Spacetime, v4: Spacetime, v5: Spacetime, t3: number): Vec3.Vec3 => {
     const epsilon = 1e-10;
-    const t12 = t2 - t1;
-    const t13 = t3 - t1;
-    const t23 = t3 - t2;
-    const t24 = t4 - t2;
-    const t34 = t4 - t3;
-    const t35 = t5 - t3;
-    const t45 = t5 - t4;
+    const t12 = v2.time - v1.time;
+    const t13 = t3 - v1.time;
+    const t23 = t3 - v2.time;
+    const t24 = v4.time - v2.time;
+    const t34 = v4.time - t3;
+    const t35 = v5.time - t3;
+    const t45 = v5.time - v4.time;
     const t1213 = t12 * t13 + epsilon;
     const t1323 = t13 * t23 + epsilon;
     const t2324 = t23 * t24 + epsilon;
@@ -54,10 +49,10 @@ export const minAcc = (
     const w2 = (a + 1 / (t1213 * t1323)) / (a + b);
     const w4 = (b + 1 / (t3435 * t3545)) / (a + b);
     const w5 = -1 / (t3435 * t3545 * (a + b));
-    const q1 = Vec3.multiplyScalar(p1, w1);
-    const q2 = Vec3.multiplyScalar(p2, w2);
-    const q4 = Vec3.multiplyScalar(p4, w4);
-    const q5 = Vec3.multiplyScalar(p5, w5);
+    const q1 = Vec3.multiplyScalar(v1.pos, w1);
+    const q2 = Vec3.multiplyScalar(v2.pos, w2);
+    const q4 = Vec3.multiplyScalar(v4.pos, w4);
+    const q5 = Vec3.multiplyScalar(v5.pos, w5);
     const p3 = Vec3.add(Vec3.add(Vec3.add(q1, q2), q4), q5);
     return p3;
 };
