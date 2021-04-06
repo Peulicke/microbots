@@ -3,9 +3,7 @@ import { Color, Mesh } from "three";
 import { Grid, Paper, makeStyles, List, ListItem, Button } from "@material-ui/core";
 import { Vec3, World, Animation } from "./core";
 import { newScene, newSphere, newCylinder, updateCylinder } from "./draw";
-import Prando from "prando";
-import loadExample, { examples } from "./examples";
-import { Canvas } from "./gui";
+import { Canvas, SelectExample } from "./gui";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -32,9 +30,6 @@ const App: FC = () => {
     const [groundEdgeMeshes, setGroundEdgeMeshes] = useState<Mesh[]>([]);
     const [edgeMeshes, setEdgeMeshes] = useState<Mesh[][]>([]);
     const [animation, setAnimation] = useState<World.World[]>([]);
-    const [worldStart, setWorldStart] = useState<World.World>(World.newWorld());
-    const [worldEnd, setWorldEnd] = useState<World.World>(World.newWorld());
-    const [selectedExample, setSelectedExample] = useState<number | undefined>(undefined);
 
     const updateWorld = (time: number) => {
         animation[time].bots.map((bot, i) => {
@@ -132,40 +127,12 @@ const App: FC = () => {
                     <Grid container direction="column">
                         <b>Microbots</b>
                         <Grid item className={classes.gridItem}>
-                            <Paper>
-                                <List>
-                                    <ListItem>
-                                        <b>Select an example</b>
-                                    </ListItem>
-                                </List>
-                                {examples.map((example, i) => (
-                                    <Button
-                                        key={i}
-                                        variant="contained"
-                                        color={selectedExample === i ? "primary" : "default"}
-                                        onClick={() => {
-                                            const rng = new Prando(123);
-                                            const [ws, we] = loadExample(i);
-                                            console.log(ws, we);
-                                            const rand = () =>
-                                                Vec3.multiplyScalar(
-                                                    Vec3.newVec3(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5),
-                                                    0.1
-                                                );
-                                            ws.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
-                                            we.bots.map(bot => (bot.pos = Vec3.add(bot.pos, rand())));
-                                            setWorldStart(ws);
-                                            setWorldEnd(we);
-                                            setAnimation([ws, we]);
-                                            setAnimate(false);
-                                            setSelectedExample(i);
-                                        }}>
-                                        {example.title} ({example.world.bots.length} bots)
-                                    </Button>
-                                ))}
-                                <br />
-                                <br />
-                            </Paper>
+                            <SelectExample
+                                onSelect={(ws: World.World, we: World.World) => {
+                                    setAnimation([ws, we]);
+                                    setAnimate(false);
+                                }}
+                            />
                         </Grid>
                         <Grid item className={classes.gridItem}>
                             <Paper>
@@ -178,7 +145,13 @@ const App: FC = () => {
                                             variant="contained"
                                             onClick={() => {
                                                 const t = Date.now();
-                                                setAnimation(Animation.createAnimation(worldStart, worldEnd, 8));
+                                                setAnimation(
+                                                    Animation.createAnimation(
+                                                        animation[0],
+                                                        animation[animation.length - 1],
+                                                        8
+                                                    )
+                                                );
                                                 console.log((Date.now() - t) / 1000);
                                                 setAnimate(true);
                                             }}>
