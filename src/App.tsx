@@ -1,12 +1,11 @@
-import React, { FC, useEffect, useRef, useState } from "react";
-import { PerspectiveCamera, WebGLRenderer, Color, Mesh } from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import React, { FC, useEffect, useState } from "react";
+import { Color, Mesh } from "three";
 import { Grid, Paper, makeStyles, List, ListItem, Button } from "@material-ui/core";
-import { useWindowSize } from "@react-hook/window-size";
 import { Vec3, World, Animation } from "./core";
 import { newScene, newSphere, newCylinder, updateCylinder } from "./draw";
 import Prando from "prando";
 import loadExample, { examples } from "./examples";
+import { Canvas } from "./gui";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -25,16 +24,7 @@ const saveImage = () => {
 };
 
 const App: FC = () => {
-    const [windowWidth, windowHeight] = useWindowSize();
-    const width = windowWidth * 0.55;
-    const height = windowHeight * 0.9;
-    const fov = 75;
     const classes = useStyles();
-    const mount = useRef<HTMLDivElement>(null);
-    const [controls, setControls] = useState<OrbitControls>();
-    const [camera, setCamera] = useState<PerspectiveCamera>();
-    const [renderer, setRenderer] = useState<WebGLRenderer>();
-    const [frame, setFrame] = useState(0);
     const [time, setTime] = useState(0);
     const [animate, setAnimate] = useState(false);
     const [scene, setScene] = useState(newScene());
@@ -102,38 +92,6 @@ const App: FC = () => {
         );
         setScene(scn);
     }, [botMeshes, groundEdgeMeshes, edgeMeshes]);
-
-    useEffect(() => {
-        const mc = mount.current;
-        if (!mc) return;
-        // Camera
-        const cam = new PerspectiveCamera(fov, width / height, 0.1, 1000);
-        cam.position.set(10, 10, 10);
-        cam.lookAt(0, 0, 0);
-        setCamera(cam);
-        // Renderer
-        const ren = new WebGLRenderer({ antialias: true });
-        ren.setClearColor("#000000");
-        ren.setSize(width, height);
-        mc.appendChild(ren.domElement);
-        setRenderer(ren);
-        // Controls
-        const ctrls = new OrbitControls(cam, ren.domElement);
-        ctrls.enableDamping = true;
-        ctrls.dampingFactor = 0.5;
-        setControls(ctrls);
-        // Animate
-        const t = window.setInterval(() => setFrame(frame => frame + 1), 1000 / 30);
-        return () => {
-            window.clearInterval(t);
-            mc.removeChild(ren.domElement);
-        };
-    }, [mount, width, height]);
-
-    useEffect(() => {
-        if (controls) controls.update();
-        if (renderer && camera && scene) renderer.render(scene, camera);
-    }, [controls, renderer, camera, frame, scene]);
 
     useEffect(() => {
         if (botMeshes.length === 0) return;
@@ -257,7 +215,7 @@ const App: FC = () => {
                     </Grid>
                 </Grid>
                 <Grid item xs={5}>
-                    <div ref={mount} />
+                    <Canvas scene={scene} />
                 </Grid>
             </Grid>
         </>
