@@ -24,7 +24,7 @@ const saveImage = () => {
 const App: FC = () => {
     const classes = useStyles();
     const [time, setTime] = useState(0);
-    const [animate, setAnimate] = useState(false);
+    const [pause, setPause] = useState(true);
     const [scene, setScene] = useState(newScene());
     const [botMeshes, setBotMeshes] = useState<Mesh[]>([]);
     const [groundEdgeMeshes, setGroundEdgeMeshes] = useState<Mesh[]>([]);
@@ -112,10 +112,10 @@ const App: FC = () => {
     }, [time, scene]);
 
     useEffect(() => {
-        if (!animate) return;
+        if (pause) return;
         const t = setInterval(() => setTime(time => time + 1), 10);
         return () => clearInterval(t);
-    }, [animate]);
+    }, [pause]);
 
     return (
         <>
@@ -130,7 +130,7 @@ const App: FC = () => {
                             <SelectExample
                                 onSelect={(ws: World.World, we: World.World) => {
                                     setAnimation([ws, we]);
-                                    setAnimate(false);
+                                    setPause(true);
                                 }}
                             />
                         </Grid>
@@ -153,7 +153,7 @@ const App: FC = () => {
                                                     )
                                                 );
                                                 console.log((Date.now() - t) / 1000);
-                                                setAnimate(true);
+                                                setPause(false);
                                             }}>
                                             Generate animation
                                         </Button>
@@ -168,14 +168,14 @@ const App: FC = () => {
                                         <b>Extra options</b>
                                     </ListItem>
                                     <ListItem>
-                                        <Button variant="contained" onClick={() => setTime(time + 1)}>
-                                            Time: {time}
+                                        <Button variant="contained" onClick={() => setPause(!pause)}>
+                                            paused: {pause ? "yes" : "no"}
                                         </Button>
-                                    </ListItem>
-                                    <ListItem>
-                                        <Button variant="contained" onClick={() => setAnimate(!animate)}>
-                                            Animate: {animate ? "true" : "false"}
-                                        </Button>
+                                        {pause && (
+                                            <Button variant="contained" onClick={() => setTime(time + 1)}>
+                                                Step
+                                            </Button>
+                                        )}
                                     </ListItem>
                                     <ListItem>
                                         <Button variant="contained" onClick={() => saveImage()}>
