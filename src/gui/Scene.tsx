@@ -6,7 +6,7 @@ import { Canvas } from "../gui";
 
 type Props = { world: World.World | undefined };
 
-const App: FC<Props> = props => {
+const Scene: FC<Props> = props => {
     const [scene, setScene] = useState(newScene());
     const [botMeshes, setBotMeshes] = useState<Mesh[]>([]);
     const [groundEdgeMeshes, setGroundEdgeMeshes] = useState<Mesh[]>([]);
@@ -71,4 +71,4 @@ const App: FC<Props> = props => {
     return <Canvas scene={scene} />;
 };
 
-export default App;
+export default Scene;

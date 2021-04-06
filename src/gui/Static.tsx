@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState } from "react";
-import { Paper, List, ListItem, Button } from "@material-ui/core";
+import { List, ListItem, Button } from "@material-ui/core";
 import { World, Animation } from "../core";
 
 type Props = {
@@ -8,7 +8,7 @@ type Props = {
     setWorld: (world: World.World) => void;
 };
 
-const App: FC<Props> = props => {
+const Static: FC<Props> = props => {
     const [time, setTime] = useState(0);
     const [pause, setPause] = useState(true);
     const [animation, setAnimation] = useState<World.World[]>([]);
@@ -43,37 +43,32 @@ const App: FC<Props> = props => {
     }, [pause]);
 
     return (
-        <Paper>
-            <List>
-                <ListItem>
-                    <b>Animation</b>
-                </ListItem>
-                <ListItem>
-                    <Button
-                        variant="contained"
-                        onClick={() => {
-                            if (props.worldStart === undefined || props.worldEnd === undefined) return;
-                            const t = Date.now();
-                            setAnimation(Animation.createAnimation(props.worldStart, props.worldEnd, 7));
-                            console.log((Date.now() - t) / 1000);
-                            setPause(false);
-                        }}>
-                        Generate animation
+        <List>
+            <ListItem>
+                <Button
+                    variant="contained"
+                    onClick={() => {
+                        if (props.worldStart === undefined || props.worldEnd === undefined) return;
+                        const t = Date.now();
+                        setAnimation(Animation.createAnimation(props.worldStart, props.worldEnd, 7));
+                        console.log((Date.now() - t) / 1000);
+                        setPause(false);
+                    }}>
+                    Generate animation
+                </Button>
+            </ListItem>
+            <ListItem>
+                <Button variant="contained" onClick={() => setPause(!pause)}>
+                    paused: {pause ? "yes" : "no"}
+                </Button>
+                {pause && (
+                    <Button variant="contained" onClick={() => setTime(time + 1)}>
+                        Step
                     </Button>
-                </ListItem>
-                <ListItem>
-                    <Button variant="contained" onClick={() => setPause(!pause)}>
-                        paused: {pause ? "yes" : "no"}
-                    </Button>
-                    {pause && (
-                        <Button variant="contained" onClick={() => setTime(time + 1)}>
-                            Step
-                        </Button>
-                    )}
-                </ListItem>
-            </List>
-        </Paper>
+                )}
+            </ListItem>
+        </List>
     );
 };
 
-export default App;
+export default Static;

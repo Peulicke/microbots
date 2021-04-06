@@ -1,7 +1,7 @@
 import React, { FC, useState } from "react";
-import { Grid, Paper, makeStyles, List, ListItem, Button } from "@material-ui/core";
+import { Grid, makeStyles, List, ListItem, Button, FormControlLabel, Switch } from "@material-ui/core";
 import { World } from "./core";
-import { SelectExample, Static, Scene } from "./gui";
+import { SelectExample, Scene, Static, Dynamic } from "./gui";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -24,6 +24,7 @@ const App: FC = () => {
     const [worldStart, setWorldStart] = useState<World.World | undefined>(undefined);
     const [worldEnd, setWorldEnd] = useState<World.World | undefined>(undefined);
     const [world, setWorld] = useState<World.World | undefined>(undefined);
+    const [dynamic, setDynamic] = useState(false);
 
     return (
         <>
@@ -33,7 +34,7 @@ const App: FC = () => {
                     xs={4}
                     style={{ height: window.innerHeight * 0.9, overflowX: "hidden", overflowY: "scroll" }}>
                     <Grid container direction="column">
-                        <b>Microbots</b>
+                        <b style={{ fontSize: 20 }}>Microbots</b>
                         <Grid item className={classes.gridItem}>
                             <SelectExample
                                 onSelect={(ws: World.World, we: World.World) => {
@@ -44,21 +45,27 @@ const App: FC = () => {
                             />
                         </Grid>
                         <Grid item className={classes.gridItem}>
-                            <Static worldStart={worldStart} worldEnd={worldEnd} setWorld={setWorld} />
+                            <b>Animation</b>
+                            <br />
+                            <FormControlLabel
+                                control={<Switch checked={dynamic} onChange={e => setDynamic(e.target.checked)} />}
+                                label="Dynamic"
+                            />
+                            {dynamic ? (
+                                <Dynamic worldEnd={worldEnd} world={world} setWorld={setWorld} />
+                            ) : (
+                                <Static worldStart={worldStart} worldEnd={worldEnd} setWorld={setWorld} />
+                            )}
                         </Grid>
                         <Grid item className={classes.gridItem}>
-                            <Paper>
-                                <List>
-                                    <ListItem>
-                                        <b>Extra options</b>
-                                    </ListItem>
-                                    <ListItem>
-                                        <Button variant="contained" onClick={() => saveImage()}>
-                                            Save screenshot
-                                        </Button>
-                                    </ListItem>
-                                </List>
-                            </Paper>
+                            <b>Extra options</b>
+                            <List>
+                                <ListItem>
+                                    <Button variant="contained" onClick={() => saveImage()}>
+                                        Save screenshot
+                                    </Button>
+                                </ListItem>
+                            </List>
                         </Grid>
                     </Grid>
                 </Grid>

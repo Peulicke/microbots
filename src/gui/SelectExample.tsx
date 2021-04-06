@@ -1,21 +1,19 @@
 import React, { FC, useState } from "react";
-import { Paper, List, ListItem, Button } from "@material-ui/core";
+import { Button } from "@material-ui/core";
 import { Vec3, World } from "../core";
 import Prando from "prando";
 import loadExample, { examples } from "../examples";
 
 type Props = { onSelect: (worldStart: World.World, worldEnd: World.World) => void };
 
-const App: FC<Props> = props => {
+const SelectExample: FC<Props> = props => {
     const [selectedExample, setSelectedExample] = useState<number | undefined>(undefined);
 
     return (
-        <Paper>
-            <List>
-                <ListItem>
-                    <b>Select an example</b>
-                </ListItem>
-            </List>
+        <>
+            <b>Select an example</b>
+            <br />
+            <br />
             {examples.map((example, i) => (
                 <Button
                     key={i}
@@ -38,10 +36,8 @@ const App: FC<Props> = props => {
                     {example.title} ({example.world.bots.length} bots)
                 </Button>
             ))}
-            <br />
-            <br />
-        </Paper>
+        </>
     );
 };
 
-export default App;
+export default SelectExample;
