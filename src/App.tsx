@@ -30,12 +30,15 @@ const App: FC = () => {
     const [groundEdgeMeshes, setGroundEdgeMeshes] = useState<Mesh[]>([]);
     const [edgeMeshes, setEdgeMeshes] = useState<Mesh[][]>([]);
     const [animation, setAnimation] = useState<World.World[]>([]);
+    const [world, setWorld] = useState<World.World | undefined>(undefined);
 
-    const updateWorld = (time: number) => {
-        animation[time].bots.map((bot, i) => {
+    useEffect(() => {
+        if (world === undefined) return;
+        if (botMeshes.length !== world.bots.length) return;
+        world.bots.map((bot, i) => {
             botMeshes[i].position.set(...bot.pos);
         });
-        animation[time].bots.map((bot, i) => {
+        world.bots.map((bot, i) => {
             scene.remove(groundEdgeMeshes[i]);
             const strength = World.edgeStrength(bot.pos[1] + 0.5);
             if (strength < 0.01) return;
@@ -46,8 +49,8 @@ const App: FC = () => {
                 Math.sqrt(strength) * 0.3
             )(groundEdgeMeshes[i]);
         });
-        animation[time].bots.map((from, i) =>
-            animation[time].bots.map((to, j) => {
+        world.bots.map((from, i) =>
+            world.bots.map((to, j) => {
                 if (i >= j) return;
                 scene.remove(edgeMeshes[i][j]);
                 const strength = World.edgeStrength(Vec3.length(Vec3.sub(to.pos, from.pos)));
@@ -56,24 +59,21 @@ const App: FC = () => {
                 updateCylinder(from.pos, to.pos, Math.sqrt(strength) * 0.3)(edgeMeshes[i][j]);
             })
         );
-    };
+    }, [world, botMeshes, edgeMeshes, groundEdgeMeshes]);
 
     useEffect(() => {
-        if (animation.length === 0) return;
+        if (world === undefined) return;
+        if (botMeshes.length === world.bots.length) return;
         setBotMeshes(
-            animation[0].bots.map(bot =>
+            world.bots.map(bot =>
                 newSphere(bot.pos, bot.target(1) === undefined ? new Color(0, 0, 1) : new Color(0, 1, 0))
             )
         );
         setGroundEdgeMeshes(
-            animation[0].bots.map(bot =>
-                newCylinder(bot.pos, Vec3.newVec3(bot.pos[0], 0, bot.pos[2]), 1, new Color(1, 0, 0))
-            )
+            world.bots.map(bot => newCylinder(bot.pos, Vec3.newVec3(bot.pos[0], 0, bot.pos[2]), 1, new Color(1, 0, 0)))
         );
-        setEdgeMeshes(
-            animation[0].bots.map(a => animation[0].bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0))))
-        );
-    }, [animation]);
+        setEdgeMeshes(world.bots.map(a => world.bots.map(b => newCylinder(a.pos, b.pos, 1, new Color(1, 0, 0)))));
+    }, [world, botMeshes]);
 
     useEffect(() => {
         const scn = newScene();
@@ -89,32 +89,32 @@ const App: FC = () => {
     }, [botMeshes, groundEdgeMeshes, edgeMeshes]);
 
     useEffect(() => {
-        if (botMeshes.length === 0) return;
+        if (animation.length === 0) return;
         const pauseFrac = 0.1;
         const pauseFrames = Math.round(pauseFrac * animation.length);
         let t = time % (2 * (animation.length + pauseFrames));
         if (t < pauseFrames) {
-            updateWorld(0);
+            setWorld(animation[0]);
             return;
         }
         t -= pauseFrames;
         if (t < animation.length) {
-            updateWorld(t);
+            setWorld(animation[t]);
             return;
         }
         t -= animation.length;
         if (t < pauseFrames) {
-            updateWorld(animation.length - 1);
+            setWorld(animation[animation.length - 1]);
             return;
         }
         t -= pauseFrames;
-        updateWorld(animation.length - 1 - t);
-    }, [time, scene]);
+        setWorld(animation[animation.length - 1 - t]);
+    }, [animation, time, scene]);
 
     useEffect(() => {
         if (pause) return;
-        const t = setInterval(() => setTime(time => time + 1), 10);
-        return () => clearInterval(t);
+        const i = setInterval(() => setTime(time => time + 1), 1000 / 30);
+        return () => clearInterval(i);
     }, [pause]);
 
     return (
@@ -149,7 +149,7 @@ const App: FC = () => {
                                                     Animation.createAnimation(
                                                         animation[0],
                                                         animation[animation.length - 1],
-                                                        8
+                                                        7
                                                     )
                                                 );
                                                 console.log((Date.now() - t) / 1000);
