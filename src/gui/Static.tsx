@@ -50,7 +50,15 @@ const Static: FC<Props> = props => {
                     onClick={() => {
                         if (props.worldStart === undefined || props.worldEnd === undefined) return;
                         const t = Date.now();
-                        setAnimation(Animation.createAnimation(props.worldStart, props.worldEnd, 7));
+                        setAnimation(
+                            Animation.createAnimation(
+                                props.worldStart,
+                                props.worldStart,
+                                props.worldEnd,
+                                props.worldEnd,
+                                2
+                            )
+                        );
                         console.log((Date.now() - t) / 1000);
                         setPause(false);
                     }}>

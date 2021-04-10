@@ -19,6 +19,7 @@ export default (index: number): [World.World, World.World] => [
         examples[index].world.bots.map((bot: Bot.Bot) => {
             return {
                 pos: bot.target !== undefined ? bot.target(1) || bot.pos : bot.pos,
+                vel: bot.vel,
                 target: bot.target,
                 weight: bot.weight
             };

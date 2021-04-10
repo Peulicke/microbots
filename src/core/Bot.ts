@@ -5,12 +5,14 @@ type Target = (t: number) => Vec3.Vec3 | undefined;
 
 export type Bot = {
     pos: Vec3.Vec3;
+    vel: Vec3.Vec3;
     target: Target;
     weight: number;
 };
 
-export const newBot = (config: { pos?: Vec3.Vec3; target?: Target; weight?: number }): Bot => ({
+export const newBot = (config: { pos?: Vec3.Vec3; vel?: Vec3.Vec3; target?: Target; weight?: number }): Bot => ({
     pos: config.pos || Vec3.newVec3(0, 0, 0),
+    vel: config.vel || Vec3.newVec3(0, 0, 0),
     target: config.target || (() => undefined),
     weight: config.weight || 1
 });

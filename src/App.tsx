@@ -24,6 +24,7 @@ const App: FC = () => {
     const [worldStart, setWorldStart] = useState<World.World | undefined>(undefined);
     const [worldEnd, setWorldEnd] = useState<World.World | undefined>(undefined);
     const [world, setWorld] = useState<World.World | undefined>(undefined);
+    const [worldPrev, setWorldPrev] = useState<World.World | undefined>(undefined);
     const [dynamic, setDynamic] = useState(false);
 
     return (
@@ -41,6 +42,7 @@ const App: FC = () => {
                                     setWorldStart(ws);
                                     setWorldEnd(we);
                                     setWorld(ws);
+                                    setWorldPrev(ws);
                                 }}
                             />
                         </Grid>
@@ -52,7 +54,13 @@ const App: FC = () => {
                                 label="Dynamic"
                             />
                             {dynamic ? (
-                                <Dynamic worldEnd={worldEnd} world={world} setWorld={setWorld} />
+                                <Dynamic
+                                    worldEnd={worldEnd}
+                                    world={world}
+                                    worldPrev={worldPrev}
+                                    setWorld={setWorld}
+                                    setWorldPrev={setWorldPrev}
+                                />
                             ) : (
                                 <Static worldStart={worldStart} worldEnd={worldEnd} setWorld={setWorld} />
                             )}

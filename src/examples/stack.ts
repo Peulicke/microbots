@@ -9,10 +9,11 @@ const world: World.World = {
                     target: t => {
                         if (t > 0.9999) return [0, 0.5 + i, 0];
                     },
-                    weight: 1
+                    weight: 10
                 })
         )
-    ]
+    ],
+    time: 0
 };
 
 const example: { title: string; world: World.World } = {

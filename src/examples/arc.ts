@@ -32,7 +32,8 @@ const world: World.World = {
                 },
                 weight: 1
             })
-    )
+    ),
+    time: 0
 };
 
 const example: { title: string; world: World.World } = {

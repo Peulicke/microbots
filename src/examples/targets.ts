@@ -12,7 +12,8 @@ const world: World.World = {
                 if (Math.abs(t - 1) < 0.03) return [1, 3.5, -1];
             }
         })
-    ]
+    ],
+    time: 0
 };
 
 const example: { title: string; world: World.World } = {
