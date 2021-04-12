@@ -1,14 +1,21 @@
 import * as Vec3 from "./Vec3";
 import * as Bot from "./Bot";
 import * as World from "./World";
-import { estimateTime } from "./Dynamic";
 
-const average = (start: World.World, end: World.World, t1: number, t2: number): World.World => {
+const avgWeight = (a: Bot.Bot, b: Bot.Bot, w: number): Bot.Bot => {
+    const pos = Vec3.add(Vec3.multiplyScalar(a.pos, 1 - w), Vec3.multiplyScalar(b.pos, w));
+    return { ...a, pos: pos };
+};
+
+const averageWeight = (start: World.World, end: World.World, t1: number, t2: number, w: number): World.World => {
     const result = World.newWorld();
-    result.bots = start.bots.map((b, i) => Bot.average(b, end.bots[i], t1, t2));
+    result.bots = start.bots.map((b, i) => avgWeight(b, end.bots[i], w));
     result.time = (start.time + end.time) / 2;
     return result;
 };
+
+const average = (start: World.World, end: World.World, t1: number, t2: number): World.World =>
+    averageWeight(start, end, t1, t2, 0.5);
 
 const gradient = (
     animation: World.World[],
@@ -75,15 +82,44 @@ const optimize = (animation: World.World[], dt: number): void => {
     }
 };
 
-const subdivide = (animation: World.World[]): World.World[] => {
-    const result = [...Array(animation.length * 2 - 3)];
-    result[0] = animation[0];
-    result[result.length - 1] = animation[animation.length - 1];
-    for (let i = 0; i < animation.length - 2; ++i) result[1 + 2 * i] = animation[1 + i];
-    for (let i = 2; i < result.length - 2; i += 2)
-        result[i] = average(result[i - 1], result[i + 1], (i - 2) / (result.length - 3), i / (result.length - 3));
+const subdivideNoBounds = (animation: World.World[]): World.World[] => {
+    const result = [...Array(animation.length * 2 - 1)];
+    for (let i = 0; i < animation.length; ++i) result[2 * i] = animation[i];
+    for (let i = 1; i < result.length - 1; i += 2)
+        result[i] = average(result[i - 1], result[i + 1], (i - 1) / (result.length - 1), (i + 1) / (result.length - 1));
     return result;
 };
+
+const subdivide = (animation: World.World[]): World.World[] => [
+    animation[0],
+    ...subdivideNoBounds(animation.slice(1, animation.length - 1)),
+    animation[animation.length - 1]
+];
+
+const rescaleNoBounds = (animation: World.World[], n: number): World.World[] => {
+    const result = [...Array(n)];
+    const ratio = (animation.length - 1) / (result.length - 1);
+    for (let i = 0; i < result.length; ++i) {
+        const j = i * ratio;
+        const j1 = Math.min(Math.floor(j), animation.length - 2);
+        const j2 = j1 + 1;
+        const w = j - j1;
+        result[i] = averageWeight(
+            animation[j1],
+            animation[j2],
+            j1 / (animation.length - 1),
+            j2 / (animation.length - 1),
+            w
+        );
+    }
+    return result;
+};
+
+const rescale = (animation: World.World[], n: number): World.World[] => [
+    animation[0],
+    ...rescaleNoBounds(animation.slice(1, animation.length - 1), n - 2),
+    animation[animation.length - 1]
+];
 
 const contract = (animation: World.World[], dt: number): void => {
     const n = 1000;
@@ -109,7 +145,7 @@ const contract = (animation: World.World[], dt: number): void => {
                 )
             );
             world.bots.map((a, i) => {
-                a.pos[1] += (0.1 * (0.5 - a.pos[1])) / connections[time][i].length;
+                a.pos[1] += (0.1 * (0.5 - a.pos[1])) / (connections[time][i].length + 1);
                 connections[time][i].map(j => {
                     if (i >= j) return;
                     const b = world.bots[j];
@@ -118,7 +154,7 @@ const contract = (animation: World.World[], dt: number): void => {
                     const l1 = l - 1;
                     const dn = Vec3.multiplyScalar(
                         d,
-                        ((l1 > 0 ? 0.3 / (connections[time][i].length + connections[time][j].length) : 1) * l1) / l
+                        ((l1 > 0 ? 0.3 / (connections[time][i].length + connections[time][j].length + 1) : 1) * l1) / l
                     );
                     const m = a.weight + b.weight;
                     Vec3.addEq(a.pos, Vec3.multiplyScalar(dn, b.weight / m));
@@ -139,28 +175,48 @@ const contract = (animation: World.World[], dt: number): void => {
     }
 };
 
+const avgAcc = (prev: World.World, now: World.World, next: World.World, dt: number): number => {
+    let sum = 0;
+    for (let i = 0; i < now.bots.length; ++i) {
+        const v1 = Vec3.multiplyScalar(Vec3.sub(now.bots[i].pos, prev.bots[i].pos), 1 / dt);
+        const v2 = Vec3.multiplyScalar(Vec3.sub(next.bots[i].pos, now.bots[i].pos), 1 / dt);
+        const a = Vec3.multiplyScalar(Vec3.sub(v2, v1), 1 / dt);
+        sum += Vec3.dot(a, a);
+    }
+    return Math.sqrt(sum / now.bots.length);
+};
+
+const maxAvgAcc = (animation: World.World[], dt: number): number =>
+    Math.max(
+        ...animation.slice(1, animation.length - 1).map((world, i) => avgAcc(animation[i], world, animation[i + 2], dt))
+    );
+
 export const createAnimation = (
     beforeBefore: World.World,
     before: World.World,
     after: World.World,
-    afterAfter: World.World,
-    resolution: number
+    afterAfter: World.World
 ): World.World[] => {
     let result = [beforeBefore, before, after, afterAfter];
-    let dt = estimateTime(beforeBefore, before, after, afterAfter);
-    dt = 30;
-    const change = after.time - dt - before.time;
-    before.time += change;
-    beforeBefore.time += change;
-    const m = resolution * dt;
-    const n = Math.log2(m);
-    for (let i = 0; i < n; ++i) {
-        console.log(`${i} subdivisions`);
-        dt /= 2;
+    const dt = 1;
+    const maxAvgAccLimit = 0.1;
+    let lower = result.length;
+    let upper = result.length;
+    for (let iter = 0; iter < 10 && maxAvgAcc(result, dt) > maxAvgAccLimit; ++iter) {
+        lower = result.length;
+        console.log(iter);
         result = subdivide(result);
         contract(result, dt);
         optimize(result, dt);
+        upper = result.length;
     }
+    while (upper - lower >= 2) {
+        const middle = Math.round((lower + upper) / 2);
+        const res = rescale(result, middle);
+        if (maxAvgAcc(res, dt) > maxAvgAccLimit) lower = middle;
+        else upper = middle;
+    }
+    result = rescale(result, upper);
     console.log("done");
     return result.slice(1, result.length - 1);
 };

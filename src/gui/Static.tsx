@@ -55,8 +55,7 @@ const Static: FC<Props> = props => {
                                 props.worldStart,
                                 props.worldStart,
                                 props.worldEnd,
-                                props.worldEnd,
-                                2
+                                props.worldEnd
                             )
                         );
                         console.log((Date.now() - t) / 1000);

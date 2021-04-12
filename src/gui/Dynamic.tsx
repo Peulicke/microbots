@@ -29,7 +29,7 @@ const Dynamic: FC<Props> = props => {
                 .map(v => Vec3.dot(v, v))
                 .reduce((sum, value) => sum + value, 0) > 0.00001
         ) {
-            setPath(Animation.createAnimation(props.worldPrev, props.world, props.worldEnd, props.worldEnd, 1));
+            setPath(Animation.createAnimation(props.worldPrev, props.world, props.worldEnd, props.worldEnd));
             return;
         }
         let p = path;
