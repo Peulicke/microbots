@@ -58,12 +58,12 @@ const optimize = (animation: World.World[], dt: number): void => {
     const n = 200;
     const maxIter = Math.floor(n / animation.length);
     if (maxIter === 0) return;
-    const acc = 1 / animation.length;
+    const acc = 0.2 / animation.length;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
     const connections = animation.map(world => World.connections(world));
     const neighbors = animation.map((world, i) => world.bots.map((_, j) => World.neighbors(world, connections[i], j)));
     for (let iter = 0; iter < maxIter; ++iter) {
-        World.setOffset(1 + 40 / ((1 + iter / maxIter) * animation.length));
+        World.setOffset(1.5);
         let g = gradient(animation, dt, connections, neighbors);
         g = g.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.map((world, i) => {
@@ -121,55 +121,91 @@ const rescale = (animation: World.World[], n: number): World.World[] => [
     animation[animation.length - 1]
 ];
 
-const contract = (animation: World.World[], dt: number): void => {
-    const n = 1000;
-    const maxIter = Math.floor(n / animation.length);
-    if (maxIter === 0) return;
-    const connections = animation.map(world => World.connections(world));
-    for (let iter = 0; iter < maxIter; ++iter) {
-        for (let time = 2; time < animation.length - 2; ++time) {
-            const beforeBefore = animation[time - 2];
-            const before = animation[time - 1];
-            const world = animation[time];
-            const after = animation[time + 1];
-            const afterAfter = animation[time + 2];
-            const originalPos = world.bots.map((bot, i) =>
-                Bot.interpolate(
-                    bot,
-                    (time - 1) / (animation.length - 3),
-                    dt,
-                    beforeBefore.bots[i].pos,
-                    before.bots[i].pos,
-                    after.bots[i].pos,
-                    afterAfter.bots[i].pos
-                )
-            );
-            world.bots.map((a, i) => {
-                a.pos[1] += (0.1 * (0.5 - a.pos[1])) / (connections[time][i].length + 1);
-                connections[time][i].map(j => {
-                    if (i >= j) return;
-                    const b = world.bots[j];
-                    const d = Vec3.sub(b.pos, a.pos);
-                    const l = Vec3.length(d);
-                    const l1 = l - 1;
-                    const dn = Vec3.multiplyScalar(
-                        d,
-                        ((l1 > 0 ? 0.3 / (connections[time][i].length + connections[time][j].length + 1) : 1) * l1) / l
-                    );
-                    const m = a.weight + b.weight;
-                    Vec3.addEq(a.pos, Vec3.multiplyScalar(dn, b.weight / m));
-                    Vec3.subEq(b.pos, Vec3.multiplyScalar(dn, a.weight / m));
-                });
+const dist = (a: Bot.Bot, b: Bot.Bot): number => Vec3.length(Vec3.sub(b.pos, a.pos));
+
+const isValidConnection = (
+    world: World.World,
+    connections: number[][],
+    neighbors: number[][],
+    i: number,
+    j: number
+): boolean => {
+    for (let k = 0; k < world.bots.length; ++k) {
+        if (k === i) continue;
+        if (k === j) continue;
+        if (
+            dist(world.bots[i], world.bots[k]) < 5 &&
+            dist(world.bots[i], world.bots[j]) > dist(world.bots[k], world.bots[j])
+        )
+            return false;
+        if (
+            dist(world.bots[j], world.bots[k]) < 5 &&
+            dist(world.bots[i], world.bots[j]) > dist(world.bots[i], world.bots[k])
+        )
+            return false;
+    }
+    return true;
+};
+
+const resolveOverlap = (world: World.World): void => {
+    const connections = World.connections(world);
+    for (let iter = 0; iter < 10; ++iter) {
+        world.bots.forEach(bot => {
+            bot.pos[1] = Math.max(bot.pos[1], 0.5);
+        });
+        connections.forEach((list, i) => {
+            list.forEach(j => {
+                if (i >= j) return;
+                const d = Vec3.sub(world.bots[j].pos, world.bots[i].pos);
+                const dLength = Vec3.length(d);
+                if (dLength > 1) return;
+                const n = Vec3.multiplyScalar(d, (1 - dLength) / dLength / 2);
+                Vec3.subEq(world.bots[i].pos, n);
+                Vec3.addEq(world.bots[j].pos, n);
             });
-            world.bots.map((bot, i) => {
-                const target = bot.target((time - 1) / (animation.length - 3));
-                if (target !== undefined) {
-                    bot.pos = Vec3.clone(target);
-                    return;
-                }
-                const w = Math.pow(0, bot.weight / dt);
-                bot.pos = Vec3.multiplyScalar(bot.pos, w);
-                Vec3.addEq(bot.pos, Vec3.multiplyScalar(originalPos[i], 1 - w));
+        });
+    }
+};
+
+const contract = (world: World.World): void => {
+    const frac = 0.1;
+    for (let iter = 0; iter < 5; ++iter) {
+        const connections = World.connections(world);
+        const neighbors = world.bots.map((_, i) => World.neighbors(world, connections, i));
+        const validConnections: [number, number][] = [];
+        connections.forEach((list, i) => {
+            list.forEach(j => {
+                if (i >= j) return;
+                if (!isValidConnection(world, connections, neighbors, i, j)) return;
+                validConnections.push([i, j]);
+            });
+        });
+        validConnections.forEach(([i, j]) => {
+            const d = Vec3.sub(world.bots[j].pos, world.bots[i].pos);
+            const dLength = Vec3.length(d);
+            if (dLength < 1) return;
+            const n = Vec3.multiplyScalar(d, frac * ((1 - dLength) / dLength / 2));
+            Vec3.subEq(world.bots[i].pos, n);
+            Vec3.addEq(world.bots[j].pos, n);
+        });
+    }
+};
+
+const minimizeAcceleration = (animation: World.World[], dt: number): void => {
+    const frac = 0.5;
+    for (let iter = 0; iter < 10; ++iter) {
+        for (let i = 2; i < animation.length - 2; ++i) {
+            animation[i].bots.forEach((bot, j) => {
+                const p = Bot.interpolate(
+                    bot,
+                    (i - 1) / (animation.length - 3),
+                    dt,
+                    animation[i - 2].bots[j].pos,
+                    animation[i - 1].bots[j].pos,
+                    animation[i + 1].bots[j].pos,
+                    animation[i + 2].bots[j].pos
+                );
+                bot.pos = Vec3.add(Vec3.multiplyScalar(bot.pos, frac), Vec3.multiplyScalar(p, 1 - frac));
             });
         }
     }
@@ -202,12 +238,14 @@ export const createAnimation = (
     const maxAvgAccLimit = 0.1;
     let lower = result.length;
     let upper = result.length;
-    for (let iter = 0; iter < 10 && maxAvgAcc(result, dt) > maxAvgAccLimit; ++iter) {
+    for (let iter = 0; iter < 8 && maxAvgAcc(result, dt) > maxAvgAccLimit; ++iter) {
         lower = result.length;
         console.log(iter);
         result = subdivide(result);
-        contract(result, dt);
+        for (let i = 2; i < result.length - 2; ++i) contract(result[i]);
         optimize(result, dt);
+        minimizeAcceleration(result, dt);
+        result.map(world => resolveOverlap(world));
         upper = result.length;
     }
     while (upper - lower >= 2) {
