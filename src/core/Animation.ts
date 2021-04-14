@@ -7,15 +7,14 @@ const avgWeight = (a: Bot.Bot, b: Bot.Bot, w: number): Bot.Bot => {
     return { ...a, pos: pos };
 };
 
-const averageWeight = (start: World.World, end: World.World, t1: number, t2: number, w: number): World.World => {
+const averageWeight = (start: World.World, end: World.World, w: number): World.World => {
     const result = World.newWorld();
     result.bots = start.bots.map((b, i) => avgWeight(b, end.bots[i], w));
     result.time = (start.time + end.time) / 2;
     return result;
 };
 
-const average = (start: World.World, end: World.World, t1: number, t2: number): World.World =>
-    averageWeight(start, end, t1, t2, 0.5);
+const average = (start: World.World, end: World.World): World.World => averageWeight(start, end, 0.5);
 
 const gradient = (
     animation: World.World[],
@@ -82,45 +81,6 @@ const optimize = (animation: World.World[], dt: number): void => {
     }
 };
 
-const subdivideNoBounds = (animation: World.World[]): World.World[] => {
-    const result = [...Array(animation.length * 2 - 1)];
-    for (let i = 0; i < animation.length; ++i) result[2 * i] = animation[i];
-    for (let i = 1; i < result.length - 1; i += 2)
-        result[i] = average(result[i - 1], result[i + 1], (i - 1) / (result.length - 1), (i + 1) / (result.length - 1));
-    return result;
-};
-
-const subdivide = (animation: World.World[]): World.World[] => [
-    animation[0],
-    ...subdivideNoBounds(animation.slice(1, animation.length - 1)),
-    animation[animation.length - 1]
-];
-
-const rescaleNoBounds = (animation: World.World[], n: number): World.World[] => {
-    const result = [...Array(n)];
-    const ratio = (animation.length - 1) / (result.length - 1);
-    for (let i = 0; i < result.length; ++i) {
-        const j = i * ratio;
-        const j1 = Math.min(Math.floor(j), animation.length - 2);
-        const j2 = j1 + 1;
-        const w = j - j1;
-        result[i] = averageWeight(
-            animation[j1],
-            animation[j2],
-            j1 / (animation.length - 1),
-            j2 / (animation.length - 1),
-            w
-        );
-    }
-    return result;
-};
-
-const rescale = (animation: World.World[], n: number): World.World[] => [
-    animation[0],
-    ...rescaleNoBounds(animation.slice(1, animation.length - 1), n - 2),
-    animation[animation.length - 1]
-];
-
 const dist = (a: Bot.Bot, b: Bot.Bot): number => Vec3.length(Vec3.sub(b.pos, a.pos));
 
 const isValidConnection = (
@@ -134,12 +94,17 @@ const isValidConnection = (
         if (k === i) continue;
         if (k === j) continue;
         if (
-            dist(world.bots[i], world.bots[k]) < 5 &&
+            dist(world.bots[i], world.bots[j]) > world.bots[i].pos[1] + 0.5 &&
+            dist(world.bots[i], world.bots[j]) > world.bots[j].pos[1] + 0.5
+        )
+            return false;
+        if (
+            dist(world.bots[i], world.bots[j]) > dist(world.bots[i], world.bots[k]) &&
             dist(world.bots[i], world.bots[j]) > dist(world.bots[k], world.bots[j])
         )
             return false;
         if (
-            dist(world.bots[j], world.bots[k]) < 5 &&
+            dist(world.bots[i], world.bots[j]) > dist(world.bots[j], world.bots[k]) &&
             dist(world.bots[i], world.bots[j]) > dist(world.bots[i], world.bots[k])
         )
             return false;
@@ -168,8 +133,19 @@ const resolveOverlap = (world: World.World): void => {
 };
 
 const contract = (world: World.World): void => {
-    const frac = 0.1;
-    for (let iter = 0; iter < 5; ++iter) {
+    const frac = 0.2;
+    for (let iter = 0; iter < 10; ++iter) {
+        world.bots.forEach((a, i) => {
+            if (
+                world.bots.some((b, j) => {
+                    if (i === j) return false;
+                    if (a.pos[1] + 0.5 > b.pos[1] + 0.5 && a.pos[1] + 0.5 > dist(a, b)) return true;
+                    return false;
+                })
+            )
+                return;
+            a.pos[1] += frac * (0.5 - a.pos[1]);
+        });
         const connections = World.connections(world);
         const neighbors = world.bots.map((_, i) => World.neighbors(world, connections, i));
         const validConnections: [number, number][] = [];
@@ -193,7 +169,7 @@ const contract = (world: World.World): void => {
 
 const minimizeAcceleration = (animation: World.World[], dt: number): void => {
     const frac = 0.5;
-    for (let iter = 0; iter < 10; ++iter) {
+    for (let iter = 0; iter < 40; ++iter) {
         for (let i = 2; i < animation.length - 2; ++i) {
             animation[i].bots.forEach((bot, j) => {
                 const p = Bot.interpolate(
@@ -222,11 +198,6 @@ const avgAcc = (prev: World.World, now: World.World, next: World.World, dt: numb
     return Math.sqrt(sum / now.bots.length);
 };
 
-const maxAvgAcc = (animation: World.World[], dt: number): number =>
-    Math.max(
-        ...animation.slice(1, animation.length - 1).map((world, i) => avgAcc(animation[i], world, animation[i + 2], dt))
-    );
-
 export const createAnimation = (
     beforeBefore: World.World,
     before: World.World,
@@ -236,25 +207,25 @@ export const createAnimation = (
     let result = [beforeBefore, before, after, afterAfter];
     const dt = 1;
     const maxAvgAccLimit = 0.1;
-    let lower = result.length;
-    let upper = result.length;
-    for (let iter = 0; iter < 8 && maxAvgAcc(result, dt) > maxAvgAccLimit; ++iter) {
-        lower = result.length;
-        console.log(iter);
-        result = subdivide(result);
+    for (let iter = 0; iter < 10; ++iter) {
+        const tooFast = result.map((world, i) => {
+            if (i <= 1 || i >= result.length - 1) return false;
+            return avgAcc(result[i - 1], world, result[i + 1], dt) > maxAvgAccLimit;
+        });
+        if (!tooFast.some(x => x)) break;
+        const resultPrev = [...result];
+        result = [result[0]];
+        tooFast.forEach((tf, i) => {
+            if (i === 0) return;
+            if (tf) result.push(average(result[result.length - 1], resultPrev[i]));
+            result.push(resultPrev[i]);
+        });
+        console.log(iter, result.length);
         for (let i = 2; i < result.length - 2; ++i) contract(result[i]);
         optimize(result, dt);
         minimizeAcceleration(result, dt);
         result.map(world => resolveOverlap(world));
-        upper = result.length;
     }
-    while (upper - lower >= 2) {
-        const middle = Math.round((lower + upper) / 2);
-        const res = rescale(result, middle);
-        if (maxAvgAcc(res, dt) > maxAvgAccLimit) lower = middle;
-        else upper = middle;
-    }
-    result = rescale(result, upper);
     console.log("done");
     return result.slice(1, result.length - 1);
 };
