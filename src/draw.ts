@@ -10,12 +10,39 @@ import {
     Mesh,
     MeshPhongMaterial,
     CylinderGeometry,
-    Object3D
+    Object3D,
+    TextureLoader,
+    MeshBasicMaterial,
+    BackSide,
+    BoxGeometry,
+    PlaneBufferGeometry,
+    RepeatWrapping
 } from "three";
 import * as Vec3 from "./core/Vec3";
 
+import px from "./assets/skyboxes/px.png";
+import nx from "./assets/skyboxes/nx.png";
+import py from "./assets/skyboxes/py.png";
+import ny from "./assets/skyboxes/ny.png";
+import pz from "./assets/skyboxes/pz.png";
+import nz from "./assets/skyboxes/nz.png";
+import grass from "./assets/grass.jpg";
+
 export const newScene = (): Scene => {
     const scene = new Scene();
+
+    const geo = new PlaneBufferGeometry(2000, 2000, 8, 8);
+    const texture_grass = new TextureLoader().load(grass);
+    texture_grass.wrapS = RepeatWrapping;
+    texture_grass.wrapT = RepeatWrapping;
+    texture_grass.repeat.set(100, 100);
+    const mat = new MeshPhongMaterial({ map: texture_grass });
+    const plane = new Mesh(geo, mat);
+    plane.rotateX(-Math.PI / 2);
+    plane.castShadow = false;
+    plane.receiveShadow = true;
+    scene.add(plane);
+
     scene.add(new AmbientLight(0xffffff, 0.4));
     const light = new DirectionalLight(0xffffff, 0.4);
     light.position.set(10, 50, 10);
@@ -27,6 +54,27 @@ export const newScene = (): Scene => {
     light.shadowMapWidth = 1024;
     light.shadowMapHeight = 1024;
     scene.add(light);
+
+    const materialArray = [];
+    const texture_px = new TextureLoader().load(px);
+    const texture_nx = new TextureLoader().load(nx);
+    const texture_py = new TextureLoader().load(py);
+    const texture_ny = new TextureLoader().load(ny);
+    const texture_pz = new TextureLoader().load(pz);
+    const texture_nz = new TextureLoader().load(nz);
+
+    materialArray.push(new MeshBasicMaterial({ map: texture_px, fog: false }));
+    materialArray.push(new MeshBasicMaterial({ map: texture_nx, fog: false }));
+    materialArray.push(new MeshBasicMaterial({ map: texture_py, fog: false }));
+    materialArray.push(new MeshBasicMaterial({ map: texture_ny, fog: false }));
+    materialArray.push(new MeshBasicMaterial({ map: texture_pz, fog: false }));
+    materialArray.push(new MeshBasicMaterial({ map: texture_nz, fog: false }));
+
+    for (let i = 0; i < 6; i++) materialArray[i].side = BackSide;
+    const skyboxGeo = new BoxGeometry(1000, 1000, 1000);
+    const skybox = new Mesh(skyboxGeo, materialArray);
+    scene.add(skybox);
+
     return scene;
 };
 
