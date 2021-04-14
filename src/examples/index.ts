@@ -8,8 +8,20 @@ import stack from "./stack";
 import towers from "./towers";
 import transformer from "./transformer";
 import transport from "./transport";
+import verticalTransport from "./verticalTransport";
 
-export const examples = [arc, bigArc, bigCube, crane, cube, stack, towers, transformer, transport].sort((a, b) => {
+export const examples = [
+    arc,
+    bigArc,
+    bigCube,
+    crane,
+    cube,
+    stack,
+    towers,
+    transformer,
+    transport,
+    verticalTransport
+].sort((a, b) => {
     const d = a.world.bots.length - b.world.bots.length;
     if (d === 0) return a.title > b.title ? 1 : -1;
     return d;
