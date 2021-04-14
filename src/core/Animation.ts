@@ -134,7 +134,11 @@ const contract = (world: World.World): void => {
             if (
                 world.bots.some((b, j) => {
                     if (i === j) return false;
-                    if (a.pos[1] + 0.5 > b.pos[1] + 0.5 && a.pos[1] + 0.5 > dist(a, b)) return true;
+                    const d = Vec3.sub(a.pos, b.pos);
+                    const hD = Vec3.newVec3(d[0], 0, d[2]);
+                    const hDistSqr = Vec3.dot(hD, hD);
+                    const vDist = d[1];
+                    if (a.pos[1] + 0.5 > b.pos[1] + 0.5 && 10 * vDist > hDistSqr) return true;
                     return false;
                 })
             )
@@ -182,15 +186,15 @@ const minimizeAcceleration = (animation: World.World[], dt: number): void => {
     }
 };
 
-const avgAcc = (prev: World.World, now: World.World, next: World.World, dt: number): number => {
-    let sum = 0;
+const maxAcc = (prev: World.World, now: World.World, next: World.World, dt: number): number => {
+    let result = 0;
     for (let i = 0; i < now.bots.length; ++i) {
         const v1 = Vec3.multiplyScalar(Vec3.sub(now.bots[i].pos, prev.bots[i].pos), 1 / dt);
         const v2 = Vec3.multiplyScalar(Vec3.sub(next.bots[i].pos, now.bots[i].pos), 1 / dt);
         const a = Vec3.multiplyScalar(Vec3.sub(v2, v1), 1 / dt);
-        sum += Vec3.dot(a, a);
+        result = Math.max(result, Vec3.length(a));
     }
-    return Math.sqrt(sum / now.bots.length);
+    return result;
 };
 
 export const createAnimation = (
@@ -201,11 +205,11 @@ export const createAnimation = (
 ): World.World[] => {
     let result = [beforeBefore, before, after, afterAfter];
     const dt = 1;
-    const maxAvgAccLimit = 0.1;
+    const maxAccLimit = 0.2;
     for (let iter = 0; iter < 10; ++iter) {
         const tooFast = result.map((world, i) => {
             if (i <= 1 || i >= result.length - 1) return false;
-            return avgAcc(result[i - 1], world, result[i + 1], dt) > maxAvgAccLimit;
+            return maxAcc(result[i - 1], world, result[i + 1], dt) > maxAccLimit;
         });
         if (!tooFast.some(x => x)) break;
         const resultPrev = [...result];
