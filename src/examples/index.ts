@@ -5,8 +5,9 @@ import bigCube from "./bigCube";
 import cube from "./cube";
 import stack from "./stack";
 import towers from "./towers";
+import transformer from "./transformer";
 
-export const examples = [stack, towers, arc, bigArc, cube, bigCube].sort((a, b) => {
+export const examples = [stack, towers, arc, bigArc, cube, bigCube, transformer].sort((a, b) => {
     const d = a.world.bots.length - b.world.bots.length;
     if (d === 0) return a.title > b.title ? 1 : -1;
     return d;
