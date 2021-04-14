@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useRef, useState } from "react";
-import { PerspectiveCamera, WebGLRenderer } from "three";
+import { PerspectiveCamera, WebGLRenderer, PCFSoftShadowMap } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { useWindowSize } from "@react-hook/window-size";
 import { Scene } from "three";
@@ -28,6 +28,8 @@ const Canvas: FC<Props> = props => {
         const ren = new WebGLRenderer({ antialias: true });
         ren.setClearColor("#87ceeb");
         ren.setSize(width, height);
+        ren.shadowMapEnabled = true;
+        ren.shadowMapType = PCFSoftShadowMap;
         mc.appendChild(ren.domElement);
         setRenderer(ren);
         // Controls

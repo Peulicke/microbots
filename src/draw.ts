@@ -18,7 +18,14 @@ export const newScene = (): Scene => {
     const scene = new Scene();
     scene.add(new AmbientLight(0xffffff, 0.4));
     const light = new DirectionalLight(0xffffff, 0.4);
-    light.position.set(0, 1, 0);
+    light.position.set(10, 50, 10);
+    light.castShadow = true;
+    light.shadowCameraRight = 50;
+    light.shadowCameraLeft = -50;
+    light.shadowCameraTop = 50;
+    light.shadowCameraBottom = -50;
+    light.shadowMapWidth = 1024;
+    light.shadowMapHeight = 1024;
     scene.add(light);
     return scene;
 };
@@ -33,6 +40,8 @@ export const newSphere = (pos: Vec3.Vec3, color: Color): Mesh => {
     mesh.geometry = bg;
     mesh.position.set(...pos);
     mesh.scale.set(0.5, 0.5, 0.5);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
     return mesh;
 };
 
