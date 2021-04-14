@@ -68,11 +68,6 @@ const optimize = (animation: World.World[], dt: number): void => {
         animation.map((world, i) => {
             if (i <= 1 || i >= animation.length - 2) return;
             world.bots.map((bot, j) => {
-                const target = bot.target(i / (animation.length - 1));
-                if (target !== undefined) {
-                    bot.pos = Vec3.clone(target);
-                    return;
-                }
                 vel[i][j] = Vec3.add(vel[i][j], g[i][j]);
                 vel[i][j] = Vec3.multiplyScalar(vel[i][j], 0.9);
                 bot.pos = Vec3.add(bot.pos, vel[i][j]);

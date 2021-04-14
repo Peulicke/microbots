@@ -27,9 +27,7 @@ const world: World.World = {
         (pos, i): Bot.Bot =>
             Bot.newBot({
                 pos: pos,
-                target: t => {
-                    if (t > 0.9999) return arc[i];
-                },
+                target: arc[i],
                 weight: 1
             })
     ),

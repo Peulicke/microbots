@@ -47,7 +47,7 @@ const Scene: FC<Props> = props => {
         if (w === undefined) return;
         if (botMeshes.length === w.bots.length) return;
         setBotMeshes(
-            w.bots.map(bot => newSphere(bot.pos, bot.target(1) === undefined ? new Color(0, 0, 1) : new Color(0, 1, 0)))
+            w.bots.map(bot => newSphere(bot.pos, bot.target === undefined ? new Color(0, 0, 1) : new Color(0, 1, 0)))
         );
         setGroundEdgeMeshes(
             w.bots.map(bot => newCylinder(bot.pos, Vec3.newVec3(bot.pos[0], 0, bot.pos[2]), 1, new Color(1, 0, 0)))
