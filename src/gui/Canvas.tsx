@@ -26,7 +26,7 @@ const Canvas: FC<Props> = props => {
         setCamera(cam);
         // Renderer
         const ren = new WebGLRenderer({ antialias: true });
-        ren.setClearColor("#000000");
+        ren.setClearColor("#87ceeb");
         ren.setSize(width, height);
         mc.appendChild(ren.domElement);
         setRenderer(ren);

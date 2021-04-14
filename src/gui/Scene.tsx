@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState } from "react";
-import { Color, Mesh } from "three";
+import { Color, Mesh, PlaneBufferGeometry, MeshBasicMaterial } from "three";
 import { World } from "../core";
 import { newScene, newSphere } from "../draw";
 import { Canvas } from "../gui";
@@ -24,12 +24,20 @@ const Scene: FC<Props> = props => {
         if (w === undefined) return;
         if (botMeshes.length === w.bots.length) return;
         setBotMeshes(
-            w.bots.map(bot => newSphere(bot.pos, bot.target === undefined ? new Color(0, 0, 1) : new Color(0, 1, 0)))
+            w.bots.map(bot =>
+                newSphere(bot.pos, bot.target === undefined ? new Color("#0000ff") : new Color("#fa8072"))
+            )
         );
     }, [props.world, botMeshes]);
 
     useEffect(() => {
         const scn = newScene();
+        const geo = new PlaneBufferGeometry(2000, 2000, 8, 8);
+        const mat = new MeshBasicMaterial({ color: "#41980a" });
+        const plane = new Mesh(geo, mat);
+        plane.rotateX(-Math.PI / 2);
+        scn.add(plane);
+
         botMeshes.forEach(mesh => scn.add(mesh));
         setScene(scn);
     }, [botMeshes]);
