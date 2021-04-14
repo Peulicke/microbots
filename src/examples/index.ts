@@ -5,6 +5,7 @@ import bigCube from "./bigCube";
 import crane from "./crane";
 import cube from "./cube";
 import floorTransport from "./floorTransport";
+import frameTransport from "./frameTransport";
 import stack from "./stack";
 import towers from "./towers";
 import transformer from "./transformer";
@@ -18,6 +19,7 @@ export const examples = [
     crane,
     cube,
     floorTransport,
+    frameTransport,
     stack,
     towers,
     transformer,
