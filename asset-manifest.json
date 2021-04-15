@@ -1,17 +1,24 @@
 {
   "files": {
-    "main.js": "/microbots/static/js/main.2db01bac.chunk.js",
-    "main.js.map": "/microbots/static/js/main.2db01bac.chunk.js.map",
+    "main.js": "/microbots/static/js/main.1e104f8f.chunk.js",
+    "main.js.map": "/microbots/static/js/main.1e104f8f.chunk.js.map",
     "runtime-main.js": "/microbots/static/js/runtime-main.698d5b35.js",
     "runtime-main.js.map": "/microbots/static/js/runtime-main.698d5b35.js.map",
-    "static/js/2.8ba4ec9f.chunk.js": "/microbots/static/js/2.8ba4ec9f.chunk.js",
-    "static/js/2.8ba4ec9f.chunk.js.map": "/microbots/static/js/2.8ba4ec9f.chunk.js.map",
+    "static/js/2.f2a951e9.chunk.js": "/microbots/static/js/2.f2a951e9.chunk.js",
+    "static/js/2.f2a951e9.chunk.js.map": "/microbots/static/js/2.f2a951e9.chunk.js.map",
     "index.html": "/microbots/index.html",
-    "static/js/2.8ba4ec9f.chunk.js.LICENSE.txt": "/microbots/static/js/2.8ba4ec9f.chunk.js.LICENSE.txt"
+    "static/js/2.f2a951e9.chunk.js.LICENSE.txt": "/microbots/static/js/2.f2a951e9.chunk.js.LICENSE.txt",
+    "static/media/grass.75422b3f.jpg": "/microbots/static/media/grass.75422b3f.jpg",
+    "static/media/nx.484e0aff.png": "/microbots/static/media/nx.484e0aff.png",
+    "static/media/ny.6a6662a7.png": "/microbots/static/media/ny.6a6662a7.png",
+    "static/media/nz.ed736547.png": "/microbots/static/media/nz.ed736547.png",
+    "static/media/px.c6e24cee.png": "/microbots/static/media/px.c6e24cee.png",
+    "static/media/py.a67deb40.png": "/microbots/static/media/py.a67deb40.png",
+    "static/media/pz.39034444.png": "/microbots/static/media/pz.39034444.png"
   },
   "entrypoints": [
     "static/js/runtime-main.698d5b35.js",
-    "static/js/2.8ba4ec9f.chunk.js",
-    "static/js/main.2db01bac.chunk.js"
+    "static/js/2.f2a951e9.chunk.js",
+    "static/js/main.1e104f8f.chunk.js"
   ]
 }
