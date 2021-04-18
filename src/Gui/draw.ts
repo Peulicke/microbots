@@ -1,16 +1,12 @@
 import {
-    Vector3,
     Scene,
     AmbientLight,
     DirectionalLight,
-    Matrix4,
     SphereGeometry,
     Color,
     BufferGeometry,
     Mesh,
     MeshPhongMaterial,
-    CylinderGeometry,
-    Object3D,
     TextureLoader,
     MeshBasicMaterial,
     BackSide,
@@ -91,21 +87,4 @@ export const newSphere = (pos: Vec3.Vec3, color: Color): Mesh => {
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     return mesh;
-};
-
-export const updateCylinder = (from: Vec3.Vec3, to: Vec3.Vec3, radius: number) => (cylinder: Mesh): Mesh => {
-    const orientation = new Matrix4();
-    orientation.lookAt(new Vector3(...from), new Vector3(...to), new Object3D().up);
-    orientation.multiply(new Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1));
-    cylinder.setRotationFromMatrix(orientation);
-    cylinder.scale.set(radius, Vec3.length(Vec3.sub(to, from)), radius);
-    const pos = Vec3.multiplyScalar(Vec3.add(from, to), 1 / 2);
-    cylinder.position.set(pos[0], pos[1], pos[2]);
-    return cylinder;
-};
-
-export const newCylinder = (from: Vec3.Vec3, to: Vec3.Vec3, radius: number, color: Color): Mesh => {
-    const edgeGeometry = new CylinderGeometry(1, 1, 1, 8, 1);
-    const cylinder = new Mesh(edgeGeometry, new MeshPhongMaterial({ color: color }));
-    return updateCylinder(from, to, radius)(cylinder);
 };
