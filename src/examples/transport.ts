@@ -1,4 +1,5 @@
-import { Vec3, Bot, World } from "../core";
+import { Vec3 } from "../core";
+import { coordsToWorld } from "./utils";
 
 const pillar = (pos: Vec3.Vec3) => {
     const list: Vec3.Vec3[] = [
@@ -34,28 +35,8 @@ const e: Vec3.Vec3[] = [
     [space * 2, 4.5, -space * 2]
 ];
 
-const start: World.World = {
-    bots: s.map(
-        (pos): Bot.Bot =>
-            Bot.newBot({
-                pos: pos
-            })
-    )
-};
-
-const end: World.World = {
-    bots: e.map(
-        (pos): Bot.Bot =>
-            Bot.newBot({
-                pos: pos
-            })
-    )
-};
-
-const example: { title: string; start: World.World; end: World.World } = {
+export default {
     title: "Transport",
-    start: start,
-    end: end
+    start: coordsToWorld(s),
+    end: coordsToWorld(e)
 };
-
-export default example;

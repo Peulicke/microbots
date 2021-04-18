@@ -1,31 +1,12 @@
-import { Bot, World } from "../core";
+import { Vec3 } from "../core";
+import { coordsToWorld } from "./utils";
 
-const start: World.World = {
-    bots: [
-        ...[...Array(5)].map(
-            (_, i): Bot.Bot =>
-                Bot.newBot({
-                    pos: [i, 0.5, 0]
-                })
-        )
-    ]
-};
+const s = [...[...Array(5)].map((_, i): Vec3.Vec3 => [i, 0.5, 0])];
 
-const end: World.World = {
-    bots: [
-        ...[...Array(5)].map(
-            (_, i): Bot.Bot =>
-                Bot.newBot({
-                    pos: [0, 0.5 + i, 0]
-                })
-        )
-    ]
-};
+const e = [...[...Array(5)].map((_, i): Vec3.Vec3 => [0, 0.5 + i, 0])];
 
-const example: { title: string; start: World.World; end: World.World } = {
+export default {
     title: "Stack",
-    start: start,
-    end: end
+    start: coordsToWorld(s),
+    end: coordsToWorld(e)
 };
-
-export default example;

@@ -1,4 +1,5 @@
-import { Vec3, Bot, World } from "../core";
+import { Vec3 } from "../core";
+import { coordsToWorld } from "./utils";
 
 const n = 10;
 
@@ -22,28 +23,8 @@ const s = [
     ...[...Array(n)].map((_, i) => Vec3.newVec3(-i - 1, 0.5, 0))
 ];
 
-const start: World.World = {
-    bots: s.map(
-        (pos): Bot.Bot =>
-            Bot.newBot({
-                pos: pos
-            })
-    )
-};
-
-const end: World.World = {
-    bots: arc.map(
-        (pos): Bot.Bot =>
-            Bot.newBot({
-                pos: pos
-            })
-    )
-};
-
-const example: { title: string; start: World.World; end: World.World } = {
+export default {
     title: "Arc",
-    start: start,
-    end: end
+    start: coordsToWorld(s),
+    end: coordsToWorld(arc)
 };
-
-export default example;

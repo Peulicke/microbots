@@ -1,4 +1,5 @@
-import { Vec3, Bot, World } from "../core";
+import { Vec3 } from "../core";
+import { coordsToWorld } from "./utils";
 
 const r = 6;
 const h = 3;
@@ -24,28 +25,8 @@ const e: Vec3.Vec3[] = [
     [r, h + 1.5, -r]
 ];
 
-const start: World.World = {
-    bots: s.map(
-        (pos): Bot.Bot =>
-            Bot.newBot({
-                pos: pos
-            })
-    )
-};
-
-const end: World.World = {
-    bots: e.map(
-        (pos): Bot.Bot =>
-            Bot.newBot({
-                pos: pos
-            })
-    )
-};
-
-const example: { title: string; start: World.World; end: World.World } = {
+export default {
     title: "Floor transport",
-    start: start,
-    end: end
+    start: coordsToWorld(s),
+    end: coordsToWorld(e)
 };
-
-export default example;
