@@ -51,22 +51,9 @@ export const newScene = (): Scene => {
     light.shadowMapHeight = 1024;
     scene.add(light);
 
-    const materialArray = [];
-    const texture_px = new TextureLoader().load(px);
-    const texture_nx = new TextureLoader().load(nx);
-    const texture_py = new TextureLoader().load(py);
-    const texture_ny = new TextureLoader().load(ny);
-    const texture_pz = new TextureLoader().load(pz);
-    const texture_nz = new TextureLoader().load(nz);
-
-    materialArray.push(new MeshBasicMaterial({ map: texture_px, fog: false }));
-    materialArray.push(new MeshBasicMaterial({ map: texture_nx, fog: false }));
-    materialArray.push(new MeshBasicMaterial({ map: texture_py, fog: false }));
-    materialArray.push(new MeshBasicMaterial({ map: texture_ny, fog: false }));
-    materialArray.push(new MeshBasicMaterial({ map: texture_pz, fog: false }));
-    materialArray.push(new MeshBasicMaterial({ map: texture_nz, fog: false }));
-
-    for (let i = 0; i < 6; i++) materialArray[i].side = BackSide;
+    const materialArray = [px, nx, py, ny, pz, nz]
+        .map(t => new TextureLoader().load(t))
+        .map(t => new MeshBasicMaterial({ map: t, fog: false, side: BackSide }));
     const skyboxGeo = new BoxGeometry(1000, 1000, 1000);
     const skybox = new Mesh(skyboxGeo, materialArray);
     scene.add(skybox);
