@@ -1,7 +1,10 @@
 import React, { FC, useState } from "react";
 import { Grid, makeStyles, List, ListItem, Button, FormControlLabel, Switch } from "@material-ui/core";
-import { World } from "./core";
-import { SelectExample, Scene, Static, Dynamic } from "./gui";
+import { World } from "../core";
+import SelectExample from "./SelectExample";
+import Scene from "./Scene";
+import Static from "./Static";
+import Dynamic from "./Dynamic";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {

@@ -18,15 +18,15 @@ import {
     PlaneBufferGeometry,
     RepeatWrapping
 } from "three";
-import * as Vec3 from "./core/Vec3";
+import * as Vec3 from "../core/Vec3";
 
-import px from "./assets/skyboxes/px.png";
-import nx from "./assets/skyboxes/nx.png";
-import py from "./assets/skyboxes/py.png";
-import ny from "./assets/skyboxes/ny.png";
-import pz from "./assets/skyboxes/pz.png";
-import nz from "./assets/skyboxes/nz.png";
-import grass from "./assets/grass.jpg";
+import px from "../assets/skyboxes/px.png";
+import nx from "../assets/skyboxes/nx.png";
+import py from "../assets/skyboxes/py.png";
+import ny from "../assets/skyboxes/ny.png";
+import pz from "../assets/skyboxes/pz.png";
+import nz from "../assets/skyboxes/nz.png";
+import grass from "../assets/grass.jpg";
 
 export const newScene = (): Scene => {
     const scene = new Scene();
