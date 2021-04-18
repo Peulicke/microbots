@@ -38,8 +38,7 @@ const start: World.World = {
     bots: s.map(
         (pos): Bot.Bot =>
             Bot.newBot({
-                pos: pos,
-                weight: 1
+                pos: pos
             })
     ),
     time: 0
@@ -49,8 +48,7 @@ const end: World.World = {
     bots: e.map(
         (pos): Bot.Bot =>
             Bot.newBot({
-                pos: pos,
-                weight: 1
+                pos: pos
             })
     ),
     time: 0

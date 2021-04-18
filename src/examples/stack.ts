@@ -5,8 +5,7 @@ const start: World.World = {
         ...[...Array(5)].map(
             (_, i): Bot.Bot =>
                 Bot.newBot({
-                    pos: [i, 0.5, 0],
-                    weight: 10
+                    pos: [i, 0.5, 0]
                 })
         )
     ],
@@ -18,8 +17,7 @@ const end: World.World = {
         ...[...Array(5)].map(
             (_, i): Bot.Bot =>
                 Bot.newBot({
-                    pos: [0, 0.5 + i, 0],
-                    weight: 10
+                    pos: [0, 0.5 + i, 0]
                 })
         )
     ],

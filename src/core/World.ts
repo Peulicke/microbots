@@ -95,14 +95,14 @@ const stiffnessMatrix = (world: World, con: number[][], neigh: number[][]): Spar
     return result;
 };
 
-const forceMatrix = (before: World, after: World, dt: number, world: World): number[] => {
+const forceMatrix = (before: World, after: World, dt: number, g: number, m: number, world: World): number[] => {
     const result = [...Array(world.bots.length * 3)].map(() => 0);
     world.bots.forEach((bot, i) => {
         for (let j = 0; j < 3; ++j) {
             const v1 = (world.bots[i].pos[j] - before.bots[i].pos[j]) / dt;
             const v2 = (after.bots[i].pos[j] - world.bots[i].pos[j]) / dt;
             const acc = (v2 - v1) / dt;
-            result[3 * i + j] = ((j === 1 ? -1 : 0) - acc) * bot.weight;
+            result[3 * i + j] = ((j === 1 ? -1 : 0) - acc) * g * m;
         }
     });
     return result;
@@ -112,11 +112,13 @@ export const displacement = (
     before: World,
     after: World,
     dt: number,
+    g: number,
+    m: number,
     world: World,
     con: number[][],
     neigh: number[][]
 ): number[] => {
-    const f = forceMatrix(before, after, dt, world);
+    const f = forceMatrix(before, after, dt, g, m, world);
     const k = stiffnessMatrix(world, con, neigh);
     return ldiv(k, f);
 };

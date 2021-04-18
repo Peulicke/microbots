@@ -19,6 +19,8 @@ const average = (start: World.World, end: World.World): World.World => averageWe
 const gradient = (
     animation: World.World[],
     dt: number,
+    g: number,
+    m: number,
     connections: number[][][],
     neighbors: number[][][]
 ): Vec3.Vec3[][] => {
@@ -29,7 +31,7 @@ const gradient = (
     for (let i = 0; i < animation.length; ++i) {
         const before = animation[Math.max(i - 1, 0)];
         const after = animation[Math.min(i + 1, animation.length - 1)];
-        displacements[i] = World.displacement(before, after, dt, animation[i], connections[i], neighbors[i]);
+        displacements[i] = World.displacement(before, after, dt, g, m, animation[i], connections[i], neighbors[i]);
     }
     for (let i = 1; i < animation.length; ++i) {
         const beforeBefore = animation[Math.max(i - 2, 0)];
@@ -53,7 +55,7 @@ const gradient = (
     return result;
 };
 
-const optimize = (animation: World.World[], dt: number): void => {
+const optimize = (animation: World.World[], dt: number, g: number, m: number): void => {
     const n = 200;
     const maxIter = Math.floor(n / animation.length);
     if (maxIter === 0) return;
@@ -63,12 +65,12 @@ const optimize = (animation: World.World[], dt: number): void => {
     const neighbors = animation.map((world, i) => world.bots.map((_, j) => World.neighbors(world, connections[i], j)));
     for (let iter = 0; iter < maxIter; ++iter) {
         World.setOffset(1.5);
-        let g = gradient(animation, dt, connections, neighbors);
-        g = g.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
+        let grad = gradient(animation, dt, g, m, connections, neighbors);
+        grad = grad.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.map((world, i) => {
             if (i <= 1 || i >= animation.length - 2) return;
             world.bots.map((bot, j) => {
-                vel[i][j] = Vec3.add(vel[i][j], g[i][j]);
+                vel[i][j] = Vec3.add(vel[i][j], grad[i][j]);
                 vel[i][j] = Vec3.multiplyScalar(vel[i][j], 0.9);
                 bot.pos = Vec3.add(bot.pos, vel[i][j]);
             });
@@ -205,6 +207,8 @@ export const createAnimation = (
 ): World.World[] => {
     let result = [beforeBefore, before, after, afterAfter];
     const dt = 1;
+    const g = 1;
+    const m = 1;
     const maxAccLimit = 0.2;
     for (let iter = 0; iter < 10; ++iter) {
         const tooFast = result.map((world, i) => {
@@ -221,7 +225,7 @@ export const createAnimation = (
         });
         console.log(iter, result.length);
         for (let i = 2; i < result.length - 2; ++i) contract(result[i]);
-        optimize(result, dt);
+        optimize(result, dt, g, m);
         minimizeAcceleration(result, dt);
         result.map(world => resolveOverlap(world));
     }

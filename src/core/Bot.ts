@@ -3,14 +3,10 @@ import { minAcc } from "./utils";
 
 export type Bot = {
     pos: Vec3.Vec3;
-    vel: Vec3.Vec3;
-    weight: number;
 };
 
-export const newBot = (config: { pos?: Vec3.Vec3; vel?: Vec3.Vec3; weight?: number }): Bot => ({
-    pos: config.pos || Vec3.newVec3(0, 0, 0),
-    vel: config.vel || Vec3.newVec3(0, 0, 0),
-    weight: config.weight || 1
+export const newBot = (config: { pos?: Vec3.Vec3 }): Bot => ({
+    pos: config.pos || Vec3.newVec3(0, 0, 0)
 });
 
 export const average = (a: Bot, b: Bot, t1: number, t2: number): Bot => {
