@@ -1,30 +1,19 @@
 import * as Vec3 from "./Vec3";
 import { Spacetime, minAcc } from "./utils";
 
-type Target = Vec3.Vec3 | undefined;
-
 export type Bot = {
     pos: Vec3.Vec3;
     vel: Vec3.Vec3;
-    target: Target;
     weight: number;
 };
 
-export const newBot = (config: { pos?: Vec3.Vec3; vel?: Vec3.Vec3; target?: Target; weight?: number }): Bot => ({
+export const newBot = (config: { pos?: Vec3.Vec3; vel?: Vec3.Vec3; weight?: number }): Bot => ({
     pos: config.pos || Vec3.newVec3(0, 0, 0),
     vel: config.vel || Vec3.newVec3(0, 0, 0),
-    target: config.target,
     weight: config.weight || 1
 });
 
 const findTarget = (bot: Bot, t: number, limit: Spacetime): Spacetime => {
-    const dir = limit.time > t ? 1 : -1;
-    const dt = 0.01;
-    let target, time;
-    for (time = t; (limit.time - time) * dir <= 0; time += dt * dir) {
-        target = bot.target;
-        if (target !== undefined) return { pos: target, time: time };
-    }
     return limit;
 };
 

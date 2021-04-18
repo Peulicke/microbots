@@ -18,7 +18,7 @@ const frame = (pos: Vec3.Vec3) =>
         .map(p => Vec3.newVec3(p[0], p[1] + 0.5 + r, p[2]))
         .map(p => Vec3.add(p, pos));
 
-const start: Vec3.Vec3[] = [
+const s: Vec3.Vec3[] = [
     ...frame([0, 0, d]),
     ...frame([0, 2 * r + 1, d]),
     ...frame([-d, 0, d]),
@@ -26,7 +26,7 @@ const start: Vec3.Vec3[] = [
     ...frame([-d, 2 * r + 1, d])
 ];
 
-const end: Vec3.Vec3[] = [
+const e: Vec3.Vec3[] = [
     ...frame([0, 0, d]),
     ...frame([0, 2 * r + 1, d]),
     ...frame([-d, 0, -d]),
@@ -34,21 +34,32 @@ const end: Vec3.Vec3[] = [
     ...frame([d, 2 * r + 1, d])
 ];
 
-const world: World.World = {
-    bots: start.map(
-        (pos, i): Bot.Bot =>
+const start: World.World = {
+    bots: s.map(
+        (pos): Bot.Bot =>
             Bot.newBot({
                 pos: pos,
-                target: end[i],
                 weight: 1
             })
     ),
     time: 0
 };
 
-const example: { title: string; world: World.World } = {
+const end: World.World = {
+    bots: e.map(
+        (pos): Bot.Bot =>
+            Bot.newBot({
+                pos: pos,
+                weight: 1
+            })
+    ),
+    time: 0
+};
+
+const example: { title: string; start: World.World; end: World.World } = {
     title: "Frame transport",
-    world: world
+    start: start,
+    end: end
 };
 
 export default example;

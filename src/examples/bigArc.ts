@@ -17,26 +17,37 @@ const m = Math.min(...arc.map(p => p[1]));
 
 arc.forEach((_, i) => (arc[i][1] = arc[i][1] - m + 0.5));
 
-const start = [
+const s = [
     ...[...Array(n + 1)].map((_, i) => Vec3.newVec3(i + 15, 0.5, 0)),
     ...[...Array(n)].map((_, i) => Vec3.newVec3(-i - 1 - 15, 0.5, 0))
 ];
 
-const world: World.World = {
-    bots: start.map(
-        (pos, i): Bot.Bot =>
+const start: World.World = {
+    bots: s.map(
+        (pos): Bot.Bot =>
             Bot.newBot({
                 pos: pos,
-                target: arc[i],
                 weight: 1
             })
     ),
     time: 0
 };
 
-const example: { title: string; world: World.World } = {
+const end: World.World = {
+    bots: arc.map(
+        (pos): Bot.Bot =>
+            Bot.newBot({
+                pos: pos,
+                weight: 1
+            })
+    ),
+    time: 0
+};
+
+const example: { title: string; start: World.World; end: World.World } = {
     title: "Big arc",
-    world: world
+    start: start,
+    end: end
 };
 
 export default example;

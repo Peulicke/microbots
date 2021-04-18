@@ -10,35 +10,46 @@ const floor = () =>
         .flat()
         .filter(p => Math.abs(p[0] + p[2]) < w);
 
-const start: Vec3.Vec3[] = [
+const s: Vec3.Vec3[] = [
     ...floor(),
     ...[...Array(h)].map((_, i): [number, number, number] => [-r, i + 1.5, r]),
     ...[...Array(h)].map((_, i): [number, number, number] => [r, i + 1.5, -r]),
     [-r, h + 1.5, r]
 ];
 
-const end: Vec3.Vec3[] = [
+const e: Vec3.Vec3[] = [
     ...floor(),
     ...[...Array(h)].map((_, i): [number, number, number] => [-r, i + 1.5, r]),
     ...[...Array(h)].map((_, i): [number, number, number] => [r, i + 1.5, -r]),
     [r, h + 1.5, -r]
 ];
 
-const world: World.World = {
-    bots: start.map(
-        (pos, i): Bot.Bot =>
+const start: World.World = {
+    bots: s.map(
+        (pos): Bot.Bot =>
             Bot.newBot({
                 pos: pos,
-                target: end[i],
                 weight: 1
             })
     ),
     time: 0
 };
 
-const example: { title: string; world: World.World } = {
+const end: World.World = {
+    bots: e.map(
+        (pos): Bot.Bot =>
+            Bot.newBot({
+                pos: pos,
+                weight: 1
+            })
+    ),
+    time: 0
+};
+
+const example: { title: string; start: World.World; end: World.World } = {
     title: "Floor transport",
-    world: world
+    start: start,
+    end: end
 };
 
 export default example;

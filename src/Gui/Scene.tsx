@@ -23,11 +23,7 @@ const Scene: FC<Props> = props => {
         const w = props.world;
         if (w === undefined) return;
         if (botMeshes.length === w.bots.length) return;
-        setBotMeshes(
-            w.bots.map(bot =>
-                newSphere(bot.pos, bot.target === undefined ? new Color("#0000ff") : new Color("#fa8072"))
-            )
-        );
+        setBotMeshes(w.bots.map(bot => newSphere(bot.pos, new Color("#fa8072"))));
     }, [props.world, botMeshes]);
 
     useEffect(() => {

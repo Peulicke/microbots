@@ -33,7 +33,7 @@ const SelectExample: FC<Props> = props => {
                         props.onSelect(ws, we);
                         setSelectedExample(i);
                     }}>
-                    {example.title} ({example.world.bots.length} bots)
+                    {example.title} ({example.start.bots.length} bots)
                 </Button>
             ))}
         </>

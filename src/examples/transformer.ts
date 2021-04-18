@@ -1,6 +1,6 @@
 import { Vec3, Bot, World } from "../core";
 
-const start: Vec3.Vec3[] = [
+const s: Vec3.Vec3[] = [
     [0, 0.5, 1],
     [0, 0.5, -1],
 
@@ -23,7 +23,8 @@ const start: Vec3.Vec3[] = [
     [3, 0.5, 1],
     [3, 0.5, -1]
 ];
-const end: Vec3.Vec3[] = [
+
+const e: Vec3.Vec3[] = [
     [0, 0.5, 1],
     [0, 0.5, -1],
 
@@ -47,21 +48,32 @@ const end: Vec3.Vec3[] = [
     [0, 3.7, -2]
 ];
 
-const world: World.World = {
-    bots: start.map(
-        (pos, i): Bot.Bot =>
+const start: World.World = {
+    bots: s.map(
+        (pos): Bot.Bot =>
             Bot.newBot({
                 pos: pos,
-                target: end[i],
                 weight: 1
             })
     ),
     time: 0
 };
 
-const example: { title: string; world: World.World } = {
+const end: World.World = {
+    bots: e.map(
+        (pos): Bot.Bot =>
+            Bot.newBot({
+                pos: pos,
+                weight: 1
+            })
+    ),
+    time: 0
+};
+
+const example: { title: string; start: World.World; end: World.World } = {
     title: "Transformer",
-    world: world
+    start: start,
+    end: end
 };
 
 export default example;

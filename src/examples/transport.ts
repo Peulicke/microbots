@@ -16,7 +16,7 @@ const pillar = (pos: Vec3.Vec3) => {
 
 const space = 3;
 
-const start: Vec3.Vec3[] = [
+const s: Vec3.Vec3[] = [
     ...pillar([space * 2, 0.5, -space * 2]),
     ...pillar([space, 0.5, -space]),
     ...pillar([0, 0.5, 0]),
@@ -25,7 +25,7 @@ const start: Vec3.Vec3[] = [
     [-space * 2, 4.5, space * 2]
 ];
 
-const end: Vec3.Vec3[] = [
+const e: Vec3.Vec3[] = [
     ...pillar([space * 2, 0.5, -space * 2]),
     ...pillar([space, 0.5, -space]),
     ...pillar([0, 0.5, 0]),
@@ -34,21 +34,32 @@ const end: Vec3.Vec3[] = [
     [space * 2, 4.5, -space * 2]
 ];
 
-const world: World.World = {
-    bots: start.map(
-        (pos, i): Bot.Bot =>
+const start: World.World = {
+    bots: s.map(
+        (pos): Bot.Bot =>
             Bot.newBot({
                 pos: pos,
-                target: end[i],
                 weight: 1
             })
     ),
     time: 0
 };
 
-const example: { title: string; world: World.World } = {
+const end: World.World = {
+    bots: e.map(
+        (pos): Bot.Bot =>
+            Bot.newBot({
+                pos: pos,
+                weight: 1
+            })
+    ),
+    time: 0
+};
+
+const example: { title: string; start: World.World; end: World.World } = {
     title: "Transport",
-    world: world
+    start: start,
+    end: end
 };
 
 export default example;
