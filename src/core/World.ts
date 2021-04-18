@@ -6,9 +6,9 @@ import * as Bot from "./Bot";
 import delaunay from "./delaunay";
 import Prando from "prando";
 
-export type World = { bots: Bot.Bot[]; time: number };
+export type World = { bots: Bot.Bot[] };
 
-export const newWorld = (): World => ({ bots: [], time: 0 });
+export const newWorld = (): World => ({ bots: [] });
 
 export const setBots = (bots: Bot.Bot[]) => (world: World): World => {
     world.bots = bots;

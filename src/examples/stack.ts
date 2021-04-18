@@ -8,8 +8,7 @@ const start: World.World = {
                     pos: [i, 0.5, 0]
                 })
         )
-    ],
-    time: 0
+    ]
 };
 
 const end: World.World = {
@@ -20,8 +19,7 @@ const end: World.World = {
                     pos: [0, 0.5 + i, 0]
                 })
         )
-    ],
-    time: 0
+    ]
 };
 
 const example: { title: string; start: World.World; end: World.World } = {

@@ -10,7 +10,6 @@ const avgWeight = (a: Bot.Bot, b: Bot.Bot, w: number): Bot.Bot => {
 const averageWeight = (start: World.World, end: World.World, w: number): World.World => {
     const result = World.newWorld();
     result.bots = start.bots.map((b, i) => avgWeight(b, end.bots[i], w));
-    result.time = (start.time + end.time) / 2;
     return result;
 };
 

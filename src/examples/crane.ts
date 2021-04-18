@@ -31,8 +31,7 @@ const start: World.World = {
             Bot.newBot({
                 pos: pos
             })
-    ),
-    time: 0
+    )
 };
 
 const end: World.World = {
@@ -41,8 +40,7 @@ const end: World.World = {
             Bot.newBot({
                 pos: pos
             })
-    ),
-    time: 0
+    )
 };
 
 const example: { title: string; start: World.World; end: World.World } = {

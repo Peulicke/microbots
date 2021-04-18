@@ -1,7 +1,7 @@
 import * as Vec3 from "./Vec3";
 import * as Mat3 from "./Mat3";
 
-export type Spacetime = {
+type Spacetime = {
     pos: Vec3.Vec3;
     time: number;
 };
