@@ -10,22 +10,17 @@ export type World = { bots: Bot.Bot[] };
 
 export const newWorld = (): World => ({ bots: [] });
 
-export const setBots = (bots: Bot.Bot[]) => (world: World): World => {
-    world.bots = bots;
-    return world;
-};
-
 const offset = 1.5;
 const slack = 2;
 const friction = 0.1;
 
-export const edgeStrength = (d: number): number => {
+const edgeStrength = (d: number): number => {
     if (d < offset - slack / 2) return 1;
     if (d > offset + slack / 2) return 0;
     return (2 * (d + slack - offset) * (offset + slack / 2 - d) ** 2) / slack ** 3;
 };
 
-export const edgeStrengthGround = (d: number): number => edgeStrength(d) + 1e-4;
+const edgeStrengthGround = (d: number): number => edgeStrength(d) + 1e-4;
 
 const stiffness = (d: Vec3.Vec3): Mat3.Mat3 => {
     const l = Vec3.length(d);
