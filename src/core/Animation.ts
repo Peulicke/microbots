@@ -1,10 +1,10 @@
-import * as Vec3 from "./Vec3";
 import * as Bot from "./Bot";
+import * as Vec3 from "./Vec3";
 import * as World from "./World";
 
 const avgWeight = (a: Bot.Bot, b: Bot.Bot, w: number): Bot.Bot => {
     const pos = Vec3.add(Vec3.multiplyScalar(a.pos, 1 - w), Vec3.multiplyScalar(b.pos, w));
-    return { ...a, pos: pos };
+    return { ...a, pos };
 };
 
 const averageWeight = (start: World.World, end: World.World, w: number): World.World => {
@@ -30,7 +30,7 @@ const gradient = (
     for (let i = 0; i < animation.length; ++i) {
         const before = animation[Math.max(i - 1, 0)];
         const after = animation[Math.min(i + 1, animation.length - 1)];
-        displacements[i] = World.displacement(before, after, dt, g, m, animation[i], connections[i], neighbors[i]);
+        displacements[i] = World.displacement(before, after, dt, g, m, animation[i], neighbors[i]);
     }
     for (let i = 1; i < animation.length; ++i) {
         const beforeBefore = animation[Math.max(i - 2, 0)];
@@ -65,9 +65,9 @@ const optimize = (animation: World.World[], dt: number, g: number, m: number): v
     for (let iter = 0; iter < maxIter; ++iter) {
         let grad = gradient(animation, dt, g, m, connections, neighbors);
         grad = grad.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
-        animation.map((world, i) => {
+        animation.forEach((world, i) => {
             if (i <= 1 || i >= animation.length - 2) return;
-            world.bots.map((bot, j) => {
+            world.bots.forEach((bot, j) => {
                 vel[i][j] = Vec3.add(vel[i][j], grad[i][j]);
                 vel[i][j] = Vec3.multiplyScalar(vel[i][j], 0.9);
                 bot.pos = Vec3.add(bot.pos, vel[i][j]);

@@ -1,6 +1,6 @@
+import Gui from "./Gui";
 import React from "react";
 import ReactDOM from "react-dom";
-import Gui from "./Gui";
 
 ReactDOM.render(
     <React.StrictMode>

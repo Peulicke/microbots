@@ -1,10 +1,12 @@
-import * as Vec3 from "./Vec3";
-import * as Mat3 from "./Mat3";
-import { outerProduct } from "./utils";
-import { SparseSymmetric, ldiv } from "./conjugateGradientSparse";
 import * as Bot from "./Bot";
-import delaunay from "./delaunay";
+import * as Mat3 from "./Mat3";
+import * as Vec3 from "./Vec3";
+
+import { SparseSymmetric, ldiv } from "./conjugateGradientSparse";
+
 import Prando from "prando";
+import delaunay from "./delaunay";
+import { outerProduct } from "./utils";
 
 export type World = { bots: Bot.Bot[] };
 
@@ -24,8 +26,8 @@ const edgeStrengthGround = (d: number): number => edgeStrength(d) + 1e-4;
 
 const stiffness = (d: Vec3.Vec3): Mat3.Mat3 => {
     const l = Vec3.length(d);
-    d = Vec3.multiplyScalar(d, Math.sqrt(edgeStrength(l)) / l);
-    return outerProduct(d, d);
+    const s = Vec3.multiplyScalar(d, Math.sqrt(edgeStrength(l)) / l);
+    return outerProduct(s, s);
 };
 
 const stiffnessGround = (d: Vec3.Vec3): Mat3.Mat3 => {
@@ -56,7 +58,7 @@ const stiffnessPair = (a: Bot.Bot, b: Bot.Bot): Mat3.Mat3 => {
 const stiffnessPairDerivative = (a: Bot.Bot, dim: number, b: Bot.Bot): Mat3.Mat3 =>
     stiffnessDerivative(dim, Vec3.sub(a.pos, b.pos));
 
-const stiffnessMatrix = (world: World, con: number[][], neigh: number[][]): SparseSymmetric => {
+const stiffnessMatrix = (world: World, neigh: number[][]): SparseSymmetric => {
     const result: SparseSymmetric = [...Array(world.bots.length * 3)].map(() => []);
     for (let i = 0; i < world.bots.length; ++i) {
         const sx = stiffnessGround(Vec3.newVec3(world.bots[i].pos[1] + 0.5, 0, 0));
@@ -104,11 +106,10 @@ export const displacement = (
     g: number,
     m: number,
     world: World,
-    con: number[][],
     neigh: number[][]
 ): number[] => {
     const f = forceMatrix(before, after, dt, g, m, world);
-    const k = stiffnessMatrix(world, con, neigh);
+    const k = stiffnessMatrix(world, neigh);
     return ldiv(k, f);
 };
 

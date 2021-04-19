@@ -81,7 +81,7 @@ const orient = (m: number[][]) =>
                     -m[4][3])));
 
 //Ranks a pair of cells up to permutation
-function compareCells(a: number[], b: number[]) {
+const compareCells = (a: number[], b: number[]) => {
     const l1 = a[0] + a[1];
     const m1 = b[0] + b[1];
     let d = l1 + a[2] - (m1 + b[2]);
@@ -91,7 +91,7 @@ function compareCells(a: number[], b: number[]) {
     d = Math.min(l0, a[2]) - Math.min(m0, b[2]);
     if (d) return d;
     return Math.min(l0 + a[2], l1) - Math.min(m0 + b[2], m1);
-}
+};
 
 class Simplex {
     vertices: number[];
@@ -148,8 +148,7 @@ class Triangulation {
         while (toVisit.length > 0) {
             const c = toVisit.pop();
             if (c === undefined) break;
-            cell = c;
-            const cellAdj = cell.adjacent;
+            const cellAdj = c.adjacent;
             for (let i = 0; i <= d; ++i) {
                 const neighbor = cellAdj[i];
                 if (!neighbor.boundary || neighbor.lastVisited <= -n) continue;
@@ -167,18 +166,18 @@ class Triangulation {
         }
         return null;
     }
-    walk(point: number[], random: boolean) {
+    walk(point: number[]) {
         //Alias local properties
         const n = this.vertices.length - 1;
         const verts = this.vertices;
         const tuple = this.tuple;
 
         //Compute initial jump cell
-        const initIndex = random ? (this.interior.length * Math.random()) | 0 : this.interior.length - 1;
+        const initIndex = this.interior.length - 1;
         let cell = this.interior[initIndex];
 
         //Start walking
-        outerLoop: while (!cell.boundary) {
+        while (!cell.boundary) {
             const cellVerts = cell.vertices;
             const cellAdj = cell.adjacent;
 
@@ -197,12 +196,11 @@ class Triangulation {
                 tuple[i] = prev;
                 if (o < 0) {
                     cell = neighbor;
-                    continue outerLoop;
+                    break;
                 }
-                if (!neighbor.boundary) neighbor.lastVisited = n;
-                else neighbor.lastVisited = -n;
+                if (neighbor.boundary) neighbor.lastVisited = -n;
+                else neighbor.lastVisited = n;
             }
-            return;
         }
 
         return cell;
@@ -231,9 +229,8 @@ class Triangulation {
             const c = tovisit.pop();
             if (c === undefined) break;
             //Pop off peak and walk over adjacent cells
-            cell = c;
-            const cellVerts = cell.vertices;
-            const cellAdj = cell.adjacent;
+            const cellVerts = c.vertices;
+            const cellAdj = c.adjacent;
             const indexOfN = cellVerts.indexOf(n);
             if (indexOfN < 0) continue;
 
@@ -279,7 +276,7 @@ class Triangulation {
                 simplices.push(ncell);
 
                 //Connect to neighbor
-                const opposite = na.indexOf(cell);
+                const opposite = na.indexOf(c);
                 if (opposite < 0) continue;
 
                 na[opposite] = ncell;
@@ -287,7 +284,7 @@ class Triangulation {
 
                 //Connect to cell
                 vverts[i] = -1;
-                vadj[i] = cell;
+                vadj[i] = c;
                 cellAdj[i] = ncell;
 
                 //Flip facet
@@ -322,12 +319,12 @@ class Triangulation {
             b.cell.adjacent[b.index] = a.cell;
         }
     }
-    insert(point: number[], random: boolean) {
+    insert(point: number[]) {
         //Add point
         const verts = this.vertices;
         verts.push(point);
 
-        let cell = this.walk(point, random);
+        let cell = this.walk(point);
         if (!cell) return;
 
         //Alias local properties
@@ -366,10 +363,10 @@ class Triangulation {
                     if (cv[j] >= 0) {
                         bcell[ptr++] = cv[j];
                     } else {
-                        parity = j & 1;
+                        parity = j && 1;
                     }
                 }
-                if (parity === (d & 1)) {
+                if (parity === (d && 1)) {
                     const t = bcell[0];
                     bcell[0] = bcell[1];
                     bcell[1] = t;
@@ -381,7 +378,7 @@ class Triangulation {
     }
 }
 
-function incrementalConvexHull(points: number[][], randomSearch: boolean) {
+const incrementalConvexHull = (points: number[][]) => {
     const n = points.length;
     if (n === 0) {
         throw new Error("Must have at least d+1 points");
@@ -391,7 +388,6 @@ function incrementalConvexHull(points: number[][], randomSearch: boolean) {
         throw new Error("Must input at least d+1 points");
     }
 
-    //FIXME: This could be degenerate, but need to select d+1 non-coplanar points to bootstrap process
     const initialSimplex = points.slice(0, d + 1);
 
     //Make sure initial simplex is positively oriented
@@ -446,14 +442,13 @@ function incrementalConvexHull(points: number[][], randomSearch: boolean) {
     const triangles = new Triangulation(initialSimplex, list);
 
     //Insert remaining points
-    const useRandom = !!randomSearch;
     for (let i = d + 1; i < n; ++i) {
-        triangles.insert(points[i], useRandom);
+        triangles.insert(points[i]);
     }
 
     //Extract boundary cells
     return triangles.boundary();
-}
+};
 
 class LiftedPoint {
     point: number[];
@@ -464,7 +459,7 @@ class LiftedPoint {
     }
 }
 
-function triangulate(points: number[][]) {
+const triangulate = (points: number[][]) => {
     let n = points.length;
     if (n === 0) return [];
 
@@ -525,8 +520,8 @@ function triangulate(points: number[][]) {
     }
 
     //Construct convex hull
-    let hull = incrementalConvexHull(dpoints, false);
-    hull = hull.filter(function (cell) {
+    let hull = incrementalConvexHull(dpoints);
+    hull = hull.filter(cell => {
         for (let i = 0; i <= 3; ++i) {
             const v = dindex[cell[i]];
             if (v < 0) {
@@ -545,7 +540,7 @@ function triangulate(points: number[][]) {
     }
 
     return hull;
-}
+};
 
 type Connection = {
     [key: number]: boolean;
@@ -554,7 +549,7 @@ type Connection = {
 export default (points: number[][]): number[][] => {
     const tri = triangulate(points);
     const connections: Connection[] = points.map(() => ({}));
-    tri.map(t => {
+    tri.forEach(t => {
         for (let i = 0; i < 4; ++i) {
             for (let j = i + 1; j < 4; ++j) {
                 connections[t[i]][t[j]] = true;

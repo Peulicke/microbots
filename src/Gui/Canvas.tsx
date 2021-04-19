@@ -1,8 +1,8 @@
+import { PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from "three";
 import React, { FC, useEffect, useRef, useState } from "react";
-import { PerspectiveCamera, WebGLRenderer, PCFSoftShadowMap } from "three";
+
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { useWindowSize } from "@react-hook/window-size";
-import { Scene } from "three";
 
 type Props = { scene: Scene };
 
@@ -18,7 +18,7 @@ const Canvas: FC<Props> = props => {
 
     useEffect(() => {
         const mc = mount.current;
-        if (!mc) return;
+        if (!mc) return undefined;
         // Camera
         const cam = new PerspectiveCamera(fov, width / height, 0.1, 1000);
         cam.position.set(10, 10, 10);
@@ -44,7 +44,7 @@ const Canvas: FC<Props> = props => {
     }, [mount, width, height]);
 
     useEffect(() => {
-        if (!controls || !renderer || !camera || !props.scene) return;
+        if (!controls || !renderer || !camera || !props.scene) return undefined;
         const i = window.setInterval(() => {
             controls.update();
             renderer.render(props.scene, camera);

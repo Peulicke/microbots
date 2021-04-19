@@ -1,8 +1,9 @@
-import React, { FC, useEffect, useState } from "react";
 import { Color, Mesh } from "three";
-import { World } from "../core";
+import React, { FC, useEffect, useState } from "react";
 import { newScene, newSphere } from "./draw";
+
 import Canvas from "./Canvas";
+import { World } from "../core";
 
 type Props = { world: World.World | undefined };
 

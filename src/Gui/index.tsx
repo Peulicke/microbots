@@ -1,10 +1,11 @@
+import { Button, FormControlLabel, Grid, List, ListItem, Switch, makeStyles } from "@material-ui/core";
 import React, { FC, useState } from "react";
-import { Grid, makeStyles, List, ListItem, Button, FormControlLabel, Switch } from "@material-ui/core";
-import { World } from "../core";
-import SelectExample from "./SelectExample";
-import Scene from "./Scene";
-import Static from "./Static";
+
 import Dynamic from "./Dynamic";
+import Scene from "./Scene";
+import SelectExample from "./SelectExample";
+import Static from "./Static";
+import { World } from "../core";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -17,7 +18,7 @@ const saveImage = () => {
     const canvas = document.getElementsByTagName("canvas")[0];
     const image = canvas.toDataURL("image/png");
     const a = document.createElement("a");
-    a.href = image.replace(/^data:image\/[^;]/, "data:application/octet-stream");
+    a.href = image.replace(/^data:image\/[^;]/u, "data:application/octet-stream");
     a.download = "image.png";
     a.click();
 };

@@ -1,8 +1,9 @@
+import { Animation, Vec3, World } from "../core";
+import { Button, List, ListItem } from "@material-ui/core";
 import React, { FC, useEffect, useState } from "react";
-import { List, ListItem, Button } from "@material-ui/core";
-import update from "immutability-helper";
+
 import Prando from "prando";
-import { Vec3, World, Animation } from "../core";
+import update from "immutability-helper";
 
 const rng = new Prando(123);
 
@@ -40,7 +41,7 @@ const Dynamic: FC<Props> = props => {
     };
 
     useEffect(() => {
-        if (pause) return;
+        if (pause) return undefined;
         const i = setInterval(step, 1000 / 30);
         return () => clearInterval(i);
     }, [props, pause, path]);

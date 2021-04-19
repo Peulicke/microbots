@@ -1,5 +1,5 @@
-import * as Vec3 from "./Vec3";
 import * as Mat3 from "./Mat3";
+import * as Vec3 from "./Vec3";
 
 type Spacetime = {
     pos: Vec3.Vec3;

@@ -1,6 +1,6 @@
+import { Animation, World } from "../core";
+import { Button, List, ListItem } from "@material-ui/core";
 import React, { FC, useEffect, useState } from "react";
-import { List, ListItem, Button } from "@material-ui/core";
-import { World, Animation } from "../core";
 
 type Props = {
     worldStart: World.World | undefined;
@@ -37,8 +37,8 @@ const Static: FC<Props> = props => {
     }, [animation, time]);
 
     useEffect(() => {
-        if (pause) return;
-        const i = setInterval(() => setTime(time => time + 1), 1000 / 30);
+        if (pause) return undefined;
+        const i = setInterval(() => setTime(t => t + 1), 1000 / 30);
         return () => clearInterval(i);
     }, [pause]);
 

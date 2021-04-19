@@ -1,38 +1,39 @@
-import {
-    Scene,
-    AmbientLight,
-    DirectionalLight,
-    SphereGeometry,
-    Color,
-    BufferGeometry,
-    Mesh,
-    MeshPhongMaterial,
-    TextureLoader,
-    MeshBasicMaterial,
-    BackSide,
-    BoxGeometry,
-    PlaneBufferGeometry,
-    RepeatWrapping
-} from "three";
 import * as Vec3 from "../core/Vec3";
 
-import px from "../assets/skyboxes/px.png";
-import nx from "../assets/skyboxes/nx.png";
-import py from "../assets/skyboxes/py.png";
-import ny from "../assets/skyboxes/ny.png";
-import pz from "../assets/skyboxes/pz.png";
-import nz from "../assets/skyboxes/nz.png";
+import {
+    AmbientLight,
+    BackSide,
+    BoxGeometry,
+    BufferGeometry,
+    Color,
+    DirectionalLight,
+    Mesh,
+    MeshBasicMaterial,
+    MeshPhongMaterial,
+    PlaneBufferGeometry,
+    RepeatWrapping,
+    Scene,
+    SphereGeometry,
+    TextureLoader
+} from "three";
+
 import grass from "../assets/grass.jpg";
+import nx from "../assets/skyboxes/nx.png";
+import ny from "../assets/skyboxes/ny.png";
+import nz from "../assets/skyboxes/nz.png";
+import px from "../assets/skyboxes/px.png";
+import py from "../assets/skyboxes/py.png";
+import pz from "../assets/skyboxes/pz.png";
 
 export const newScene = (): Scene => {
     const scene = new Scene();
 
     const geo = new PlaneBufferGeometry(2000, 2000, 8, 8);
-    const texture_grass = new TextureLoader().load(grass);
-    texture_grass.wrapS = RepeatWrapping;
-    texture_grass.wrapT = RepeatWrapping;
-    texture_grass.repeat.set(100, 100);
-    const mat = new MeshPhongMaterial({ map: texture_grass });
+    const textureGrass = new TextureLoader().load(grass);
+    textureGrass.wrapS = RepeatWrapping;
+    textureGrass.wrapT = RepeatWrapping;
+    textureGrass.repeat.set(100, 100);
+    const mat = new MeshPhongMaterial({ map: textureGrass });
     const plane = new Mesh(geo, mat);
     plane.rotateX(-Math.PI / 2);
     plane.castShadow = false;
@@ -67,7 +68,7 @@ export const newSphere = (pos: Vec3.Vec3, color: Color): Mesh => {
     geom.faces.forEach(face => (face.vertexColors = new Array(3).fill(true).map(() => color)));
     const bg = new BufferGeometry().fromGeometry(geom);
     delete bg.attributes.uv;
-    const mesh = new Mesh(bg, new MeshPhongMaterial({ color: color }));
+    const mesh = new Mesh(bg, new MeshPhongMaterial({ color }));
     mesh.geometry = bg;
     mesh.position.set(...pos);
     mesh.scale.set(0.5, 0.5, 0.5);

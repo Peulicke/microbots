@@ -1,8 +1,9 @@
 import React, { FC, useState } from "react";
-import { Button } from "@material-ui/core";
 import { Vec3, World } from "../core";
-import Prando from "prando";
 import loadExample, { examples } from "../examples";
+
+import { Button } from "@material-ui/core";
+import Prando from "prando";
 
 type Props = { onSelect: (worldStart: World.World, worldEnd: World.World) => void };
 
