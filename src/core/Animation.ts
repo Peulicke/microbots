@@ -78,13 +78,7 @@ const optimize = (animation: World.World[], dt: number, g: number, m: number): v
 
 const dist = (a: Bot.Bot, b: Bot.Bot): number => Vec3.length(Vec3.sub(b.pos, a.pos));
 
-const isValidConnection = (
-    world: World.World,
-    connections: number[][],
-    neighbors: number[][],
-    i: number,
-    j: number
-): boolean => {
+const isValidConnection = (world: World.World, connections: number[][], i: number, j: number): boolean => {
     for (let k = 0; k < world.bots.length; ++k) {
         if (k === i) continue;
         if (k === j) continue;
@@ -146,12 +140,11 @@ const contract = (world: World.World): void => {
             a.pos[1] += frac * (0.5 - a.pos[1]);
         });
         const connections = World.connections(world);
-        const neighbors = world.bots.map((_, i) => World.neighbors(world, connections, i));
         const validConnections: [number, number][] = [];
         connections.forEach((list, i) => {
             list.forEach(j => {
                 if (i >= j) return;
-                if (!isValidConnection(world, connections, neighbors, i, j)) return;
+                if (!isValidConnection(world, connections, i, j)) return;
                 validConnections.push([i, j]);
             });
         });

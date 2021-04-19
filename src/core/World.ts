@@ -114,7 +114,7 @@ export const displacement = (
 
 export const neighbors = (world: World, con: number[][], n: number): number[] =>
     con[n]
-        .filter(i => i !== n)
+        .filter(i => i > n)
         .filter(i => {
             const d = Vec3.dist(world.bots[n].pos, world.bots[i].pos);
             return d < 2;
