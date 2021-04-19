@@ -63,7 +63,6 @@ const optimize = (animation: World.World[], dt: number, g: number, m: number): v
     const connections = animation.map(world => World.connections(world));
     const neighbors = animation.map((world, i) => world.bots.map((_, j) => World.neighbors(world, connections[i], j)));
     for (let iter = 0; iter < maxIter; ++iter) {
-        World.setOffset(1.5);
         let grad = gradient(animation, dt, g, m, connections, neighbors);
         grad = grad.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.map((world, i) => {

@@ -15,14 +15,8 @@ export const setBots = (bots: Bot.Bot[]) => (world: World): World => {
     return world;
 };
 
-let offset = 1.5;
-let slack = 2;
-export const setSlack = (s: number): void => {
-    slack = s;
-};
-export const setOffset = (o: number): void => {
-    offset = o;
-};
+const offset = 1.5;
+const slack = 2;
 const friction = 0.1;
 
 export const edgeStrength = (d: number): number => {
