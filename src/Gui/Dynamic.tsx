@@ -20,6 +20,14 @@ type Props = {
     resolveOverlapIterations: number;
     contractIterations: number;
     minimizeAccelerationIterations: number;
+    offset: number;
+    slack: number;
+    friction: number;
+    neighborRadius: number;
+    overlapPenalty: number;
+    gravity: number;
+    botMass: number;
+    dt: number;
 };
 
 const Dynamic: FC<Props> = props => {
@@ -37,6 +45,14 @@ const Dynamic: FC<Props> = props => {
         ) {
             setPath(
                 Animation.createAnimation(
+                    props.offset,
+                    props.slack,
+                    props.friction,
+                    props.overlapPenalty,
+                    props.neighborRadius,
+                    props.gravity,
+                    props.botMass,
+                    props.dt,
                     props.worldPrev,
                     props.world,
                     props.worldEnd,

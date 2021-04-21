@@ -28,6 +28,14 @@ const optimizeIterations = 10;
 const resolveOverlapIterations = 10;
 const contractIterations = 10;
 const minimizeAccelerationIterations = 40;
+const offset = 1.5;
+const slack = 2;
+const friction = 0.1;
+const neighborRadius = 2;
+const overlapPenalty = 1000;
+const gravity = 1;
+const botMass = 1;
+const dt = 1;
 
 const App: FC = () => {
     const classes = useStyles();
@@ -70,6 +78,14 @@ const App: FC = () => {
                                     worldPrev={worldPrev}
                                     setWorld={setWorld}
                                     setWorldPrev={setWorldPrev}
+                                    offset={offset}
+                                    slack={slack}
+                                    friction={friction}
+                                    overlapPenalty={overlapPenalty}
+                                    neighborRadius={neighborRadius}
+                                    gravity={gravity}
+                                    botMass={botMass}
+                                    dt={dt}
                                     subdivideIterations={subdivideIterations}
                                     optimizeIterations={optimizeIterations}
                                     resolveOverlapIterations={resolveOverlapIterations}
@@ -81,6 +97,14 @@ const App: FC = () => {
                                     worldStart={worldStart}
                                     worldEnd={worldEnd}
                                     setWorld={setWorld}
+                                    offset={offset}
+                                    slack={slack}
+                                    friction={friction}
+                                    overlapPenalty={overlapPenalty}
+                                    neighborRadius={neighborRadius}
+                                    gravity={gravity}
+                                    botMass={botMass}
+                                    dt={dt}
                                     subdivideIterations={subdivideIterations}
                                     optimizeIterations={optimizeIterations}
                                     resolveOverlapIterations={resolveOverlapIterations}

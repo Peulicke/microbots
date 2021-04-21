@@ -16,6 +16,10 @@ const averageWeight = (start: World.World, end: World.World, w: number): World.W
 const average = (start: World.World, end: World.World): World.World => averageWeight(start, end, 0.5);
 
 const gradient = (
+    offset: number,
+    slack: number,
+    friction: number,
+    overlapPenalty: number,
     animation: World.World[],
     dt: number,
     g: number,
@@ -30,7 +34,18 @@ const gradient = (
     for (let i = 0; i < animation.length; ++i) {
         const before = animation[Math.max(i - 1, 0)];
         const after = animation[Math.min(i + 1, animation.length - 1)];
-        displacements[i] = World.displacement(before, after, dt, g, m, animation[i], neighbors[i]);
+        displacements[i] = World.displacement(
+            offset,
+            slack,
+            friction,
+            before,
+            after,
+            dt,
+            g,
+            m,
+            animation[i],
+            neighbors[i]
+        );
     }
     for (let i = 1; i < animation.length; ++i) {
         const beforeBefore = animation[Math.max(i - 2, 0)];
@@ -38,6 +53,10 @@ const gradient = (
         const after = animation[Math.min(i + 1, animation.length - 1)];
         const afterAfter = animation[Math.min(i + 2, animation.length - 1)];
         result[i] = World.gradient(
+            offset,
+            slack,
+            friction,
+            overlapPenalty,
             displacements[i - 1],
             displacements[i],
             displacements[Math.min(i + 1, animation.length - 1)],
@@ -54,13 +73,26 @@ const gradient = (
     return result;
 };
 
-const optimize = (animation: World.World[], dt: number, g: number, m: number, iterations: number): void => {
+const optimize = (
+    offset: number,
+    slack: number,
+    friction: number,
+    overlapPenalty: number,
+    neighborRadius: number,
+    animation: World.World[],
+    dt: number,
+    g: number,
+    m: number,
+    iterations: number
+): void => {
     const acc = 0.2 / animation.length;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
     const connections = animation.map(world => World.connections(world));
-    const neighbors = animation.map((world, i) => world.bots.map((_, j) => World.neighbors(world, connections[i], j)));
+    const neighbors = animation.map((world, i) =>
+        world.bots.map((_, j) => World.neighbors(neighborRadius, world, connections[i], j))
+    );
     for (let iter = 0; iter < iterations; ++iter) {
-        let grad = gradient(animation, dt, g, m, connections, neighbors);
+        let grad = gradient(offset, slack, friction, overlapPenalty, animation, dt, g, m, connections, neighbors);
         grad = grad.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.forEach((world, i) => {
             if (i <= 1 || i >= animation.length - 2) return;
@@ -188,6 +220,14 @@ const maxAcc = (prev: World.World, now: World.World, next: World.World, dt: numb
 };
 
 export const createAnimation = (
+    offset: number,
+    slack: number,
+    friction: number,
+    overlapPenalty: number,
+    neighborRadius: number,
+    gravity: number,
+    botMass: number,
+    dt: number,
     beforeBefore: World.World,
     before: World.World,
     after: World.World,
@@ -199,9 +239,6 @@ export const createAnimation = (
     minimizeAccelerationIterations: number
 ): World.World[] => {
     let result = [beforeBefore, before, after, afterAfter];
-    const dt = 1;
-    const g = 1;
-    const m = 1;
     const maxAccLimit = 0.2;
     for (let iter = 0; iter < subdivideIterations; ++iter) {
         const tooFast = result.map((world, i) => {
@@ -218,7 +255,18 @@ export const createAnimation = (
         });
         console.log(iter, result.length);
         for (let i = 2; i < result.length - 2; ++i) contract(result[i], contractIterations);
-        optimize(result, dt, g, m, optimizeIterations);
+        optimize(
+            offset,
+            slack,
+            friction,
+            overlapPenalty,
+            neighborRadius,
+            result,
+            dt,
+            gravity,
+            botMass,
+            optimizeIterations
+        );
         minimizeAcceleration(result, dt, minimizeAccelerationIterations);
         result.map(world => resolveOverlap(world, resolveOverlapIterations));
     }

@@ -11,6 +11,14 @@ type Props = {
     resolveOverlapIterations: number;
     contractIterations: number;
     minimizeAccelerationIterations: number;
+    offset: number;
+    slack: number;
+    friction: number;
+    neighborRadius: number;
+    overlapPenalty: number;
+    gravity: number;
+    botMass: number;
+    dt: number;
 };
 
 const Static: FC<Props> = props => {
@@ -57,6 +65,14 @@ const Static: FC<Props> = props => {
                         const t = Date.now();
                         setAnimation(
                             Animation.createAnimation(
+                                props.offset,
+                                props.slack,
+                                props.friction,
+                                props.overlapPenalty,
+                                props.neighborRadius,
+                                props.gravity,
+                                props.botMass,
+                                props.dt,
                                 props.worldStart,
                                 props.worldStart,
                                 props.worldEnd,
