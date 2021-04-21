@@ -1,4 +1,4 @@
-import { Button, FormControlLabel, Grid, List, ListItem, Switch, makeStyles } from "@material-ui/core";
+import { Button, FormControlLabel, Grid, List, ListItem, Switch, TextField, makeStyles } from "@material-ui/core";
 import React, { FC, useState } from "react";
 
 import Dynamic from "./Dynamic";
@@ -6,6 +6,7 @@ import Scene from "./Scene";
 import SelectExample from "./SelectExample";
 import Static from "./Static";
 import { World } from "../core";
+import update from "immutability-helper";
 
 const useStyles = makeStyles(theme => ({
     gridItem: {
@@ -23,20 +24,6 @@ const saveImage = () => {
     a.click();
 };
 
-const subdivideIterations = 10;
-const optimizeIterations = 10;
-const resolveOverlapIterations = 10;
-const contractIterations = 10;
-const minimizeAccelerationIterations = 40;
-const offset = 1.5;
-const slack = 2;
-const friction = 0.1;
-const neighborRadius = 2;
-const overlapPenalty = 1000;
-const gravity = 1;
-const botMass = 1;
-const dt = 1;
-
 const App: FC = () => {
     const classes = useStyles();
     const [worldStart, setWorldStart] = useState<World.World | undefined>(undefined);
@@ -44,6 +31,22 @@ const App: FC = () => {
     const [world, setWorld] = useState<World.World | undefined>(undefined);
     const [worldPrev, setWorldPrev] = useState<World.World | undefined>(undefined);
     const [dynamic, setDynamic] = useState(false);
+
+    const [options, setOptions] = useState({
+        subdivideIterations: 10,
+        optimizeIterations: 10,
+        resolveOverlapIterations: 10,
+        contractIterations: 10,
+        minimizeAccelerationIterations: 40,
+        offset: 1.5,
+        slack: 2,
+        friction: 0.1,
+        neighborRadius: 2,
+        overlapPenalty: 1000,
+        gravity: 1,
+        botMass: 1,
+        dt: 1
+    });
 
     return (
         <>
@@ -78,43 +81,32 @@ const App: FC = () => {
                                     worldPrev={worldPrev}
                                     setWorld={setWorld}
                                     setWorldPrev={setWorldPrev}
-                                    offset={offset}
-                                    slack={slack}
-                                    friction={friction}
-                                    overlapPenalty={overlapPenalty}
-                                    neighborRadius={neighborRadius}
-                                    gravity={gravity}
-                                    botMass={botMass}
-                                    dt={dt}
-                                    subdivideIterations={subdivideIterations}
-                                    optimizeIterations={optimizeIterations}
-                                    resolveOverlapIterations={resolveOverlapIterations}
-                                    contractIterations={contractIterations}
-                                    minimizeAccelerationIterations={minimizeAccelerationIterations}
+                                    {...options}
                                 />
                             ) : (
-                                <Static
-                                    worldStart={worldStart}
-                                    worldEnd={worldEnd}
-                                    setWorld={setWorld}
-                                    offset={offset}
-                                    slack={slack}
-                                    friction={friction}
-                                    overlapPenalty={overlapPenalty}
-                                    neighborRadius={neighborRadius}
-                                    gravity={gravity}
-                                    botMass={botMass}
-                                    dt={dt}
-                                    subdivideIterations={subdivideIterations}
-                                    optimizeIterations={optimizeIterations}
-                                    resolveOverlapIterations={resolveOverlapIterations}
-                                    contractIterations={contractIterations}
-                                    minimizeAccelerationIterations={minimizeAccelerationIterations}
-                                />
+                                <Static worldStart={worldStart} worldEnd={worldEnd} setWorld={setWorld} {...options} />
                             )}
                         </Grid>
                         <Grid item className={classes.gridItem}>
                             <b>Extra options</b>
+                            <List>
+                                {Object.entries(options).map(([key, value]) => (
+                                    <ListItem key={key}>
+                                        <TextField
+                                            type="number"
+                                            label={key}
+                                            value={value}
+                                            onChange={e =>
+                                                setOptions(
+                                                    update(options, {
+                                                        [key]: { $set: Math.max(parseFloat(e.target.value), 0) }
+                                                    })
+                                                )
+                                            }
+                                        />
+                                    </ListItem>
+                                ))}
+                            </List>
                             <List>
                                 <ListItem>
                                     <Button variant="contained" onClick={() => saveImage()}>
