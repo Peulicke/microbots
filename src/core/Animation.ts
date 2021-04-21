@@ -54,15 +54,12 @@ const gradient = (
     return result;
 };
 
-const optimize = (animation: World.World[], dt: number, g: number, m: number): void => {
-    const n = 200;
-    const maxIter = Math.floor(n / animation.length);
-    if (maxIter === 0) return;
+const optimize = (animation: World.World[], dt: number, g: number, m: number, iterations: number): void => {
     const acc = 0.2 / animation.length;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
     const connections = animation.map(world => World.connections(world));
     const neighbors = animation.map((world, i) => world.bots.map((_, j) => World.neighbors(world, connections[i], j)));
-    for (let iter = 0; iter < maxIter; ++iter) {
+    for (let iter = 0; iter < iterations; ++iter) {
         let grad = gradient(animation, dt, g, m, connections, neighbors);
         grad = grad.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.forEach((world, i) => {
@@ -101,9 +98,9 @@ const isValidConnection = (world: World.World, connections: number[][], i: numbe
     return true;
 };
 
-const resolveOverlap = (world: World.World): void => {
+const resolveOverlap = (world: World.World, iterations: number): void => {
     const connections = World.connections(world);
-    for (let iter = 0; iter < 10; ++iter) {
+    for (let iter = 0; iter < iterations; ++iter) {
         world.bots.forEach(bot => {
             bot.pos[1] = Math.max(bot.pos[1], 0.5);
         });
@@ -121,9 +118,9 @@ const resolveOverlap = (world: World.World): void => {
     }
 };
 
-const contract = (world: World.World): void => {
+const contract = (world: World.World, iterations: number): void => {
     const frac = 0.2;
-    for (let iter = 0; iter < 10; ++iter) {
+    for (let iter = 0; iter < iterations; ++iter) {
         world.bots.forEach((a, i) => {
             if (
                 world.bots.some((b, j) => {
@@ -159,9 +156,9 @@ const contract = (world: World.World): void => {
     }
 };
 
-const minimizeAcceleration = (animation: World.World[], dt: number): void => {
+const minimizeAcceleration = (animation: World.World[], dt: number, iterations: number): void => {
     const frac = 0.5;
-    for (let iter = 0; iter < 40; ++iter) {
+    for (let iter = 0; iter < iterations; ++iter) {
         for (let i = 2; i < animation.length - 2; ++i) {
             animation[i].bots.forEach((bot, j) => {
                 const p = Bot.interpolate(
@@ -194,14 +191,19 @@ export const createAnimation = (
     beforeBefore: World.World,
     before: World.World,
     after: World.World,
-    afterAfter: World.World
+    afterAfter: World.World,
+    subdivideIterations: number,
+    optimizeIterations: number,
+    resolveOverlapIterations: number,
+    contractIterations: number,
+    minimizeAccelerationIterations: number
 ): World.World[] => {
     let result = [beforeBefore, before, after, afterAfter];
     const dt = 1;
     const g = 1;
     const m = 1;
     const maxAccLimit = 0.2;
-    for (let iter = 0; iter < 10; ++iter) {
+    for (let iter = 0; iter < subdivideIterations; ++iter) {
         const tooFast = result.map((world, i) => {
             if (i <= 1 || i >= result.length - 1) return false;
             return maxAcc(result[i - 1], world, result[i + 1], dt) > maxAccLimit;
@@ -215,10 +217,10 @@ export const createAnimation = (
             result.push(resultPrev[i]);
         });
         console.log(iter, result.length);
-        for (let i = 2; i < result.length - 2; ++i) contract(result[i]);
-        optimize(result, dt, g, m);
-        minimizeAcceleration(result, dt);
-        result.map(world => resolveOverlap(world));
+        for (let i = 2; i < result.length - 2; ++i) contract(result[i], contractIterations);
+        optimize(result, dt, g, m, optimizeIterations);
+        minimizeAcceleration(result, dt, minimizeAccelerationIterations);
+        result.map(world => resolveOverlap(world, resolveOverlapIterations));
     }
     console.log("done");
     return result.slice(1, result.length - 1);

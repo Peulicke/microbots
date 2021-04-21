@@ -6,6 +6,11 @@ type Props = {
     worldStart: World.World | undefined;
     worldEnd: World.World | undefined;
     setWorld: (world: World.World) => void;
+    subdivideIterations: number;
+    optimizeIterations: number;
+    resolveOverlapIterations: number;
+    contractIterations: number;
+    minimizeAccelerationIterations: number;
 };
 
 const Static: FC<Props> = props => {
@@ -55,7 +60,12 @@ const Static: FC<Props> = props => {
                                 props.worldStart,
                                 props.worldStart,
                                 props.worldEnd,
-                                props.worldEnd
+                                props.worldEnd,
+                                props.subdivideIterations,
+                                props.optimizeIterations,
+                                props.resolveOverlapIterations,
+                                props.contractIterations,
+                                props.minimizeAccelerationIterations
                             )
                         );
                         console.log((Date.now() - t) / 1000);

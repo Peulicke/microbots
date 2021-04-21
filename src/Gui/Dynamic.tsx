@@ -15,6 +15,11 @@ type Props = {
     setWorld: (world: World.World) => void;
     setWorldPrev: (world: World.World) => void;
     worldEnd: World.World | undefined;
+    subdivideIterations: number;
+    optimizeIterations: number;
+    resolveOverlapIterations: number;
+    contractIterations: number;
+    minimizeAccelerationIterations: number;
 };
 
 const Dynamic: FC<Props> = props => {
@@ -30,7 +35,19 @@ const Dynamic: FC<Props> = props => {
                 .map(v => Vec3.dot(v, v))
                 .reduce((sum, value) => sum + value, 0) > 0.00001
         ) {
-            setPath(Animation.createAnimation(props.worldPrev, props.world, props.worldEnd, props.worldEnd));
+            setPath(
+                Animation.createAnimation(
+                    props.worldPrev,
+                    props.world,
+                    props.worldEnd,
+                    props.worldEnd,
+                    props.subdivideIterations,
+                    props.optimizeIterations,
+                    props.resolveOverlapIterations,
+                    props.contractIterations,
+                    props.minimizeAccelerationIterations
+                )
+            );
             return;
         }
         let p = path;
