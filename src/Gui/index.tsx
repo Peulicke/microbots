@@ -1,11 +1,22 @@
-import { Button, FormControlLabel, Grid, List, ListItem, Switch, TextField, makeStyles } from "@material-ui/core";
+import { Animation, World } from "../core";
+import {
+    Button,
+    FormControlLabel,
+    Grid,
+    List,
+    ListItem,
+    MenuItem,
+    Select,
+    Switch,
+    TextField,
+    makeStyles
+} from "@material-ui/core";
 import React, { FC, useState } from "react";
 
 import Dynamic from "./Dynamic";
 import Scene from "./Scene";
 import SelectExample from "./SelectExample";
 import Static from "./Static";
-import { World } from "../core";
 import update from "immutability-helper";
 
 const useStyles = makeStyles(theme => ({
@@ -36,6 +47,7 @@ const App: FC = () => {
         subdivideIterations: 10,
         optimizeIterations: 10,
         resolveOverlapIterations: 10,
+        contractionType: Animation.ContractionType.Fibers,
         contractIterations: 10,
         minimizeAccelerationIterations: 40,
         offset: 1.5,
@@ -92,18 +104,38 @@ const App: FC = () => {
                             <List>
                                 {Object.entries(options).map(([key, value]) => (
                                     <ListItem key={key}>
-                                        <TextField
-                                            type="number"
-                                            label={key}
-                                            value={value}
-                                            onChange={e =>
-                                                setOptions(
-                                                    update(options, {
-                                                        [key]: { $set: Math.max(parseFloat(e.target.value), 0) }
-                                                    })
-                                                )
-                                            }
-                                        />
+                                        {key === "contractionType" ? (
+                                            <Select
+                                                value={value}
+                                                onChange={e => {
+                                                    setOptions(
+                                                        update(options, {
+                                                            [key]: { $set: e.target.value as Animation.ContractionType }
+                                                        })
+                                                    );
+                                                }}>
+                                                {Object.entries(Animation.ContractionType)
+                                                    .filter(([k]) => isNaN(Number(k)))
+                                                    .map(([k, v]) => (
+                                                        <MenuItem key={k} value={v}>
+                                                            {k}
+                                                        </MenuItem>
+                                                    ))}
+                                            </Select>
+                                        ) : (
+                                            <TextField
+                                                type="number"
+                                                label={key}
+                                                value={value}
+                                                onChange={e =>
+                                                    setOptions(
+                                                        update(options, {
+                                                            [key]: { $set: Math.max(parseFloat(e.target.value), 0) }
+                                                        })
+                                                    )
+                                                }
+                                            />
+                                        )}
                                     </ListItem>
                                 ))}
                             </List>

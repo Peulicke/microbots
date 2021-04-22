@@ -107,7 +107,39 @@ const optimize = (
 
 const dist = (a: Bot.Bot, b: Bot.Bot): number => Vec3.length(Vec3.sub(b.pos, a.pos));
 
-const isValidConnection = (world: World.World, connections: number[][], i: number, j: number): boolean => {
+export enum ContractionType {
+    Mst,
+    Fibers,
+    Delaunay
+}
+
+const isValidConnection = (
+    world: World.World,
+    connections: number[][],
+    i: number,
+    j: number,
+    type: ContractionType
+): boolean => {
+    if (type === ContractionType.Delaunay) return true;
+    if (type === ContractionType.Mst) {
+        const d = Vec3.dist(world.bots[i].pos, world.bots[j].pos);
+        const checked = [...Array(world.bots.length)].map(() => false);
+        const check: number[] = [];
+        for (let k = 0; k < world.bots.length; ++k) {
+            if (world.bots[k].pos[1] + 0.5 < d) check.push(k);
+        }
+        while (check.length > 0) {
+            const k = check.shift();
+            if (k === undefined) break;
+            if (checked[k]) continue;
+            checked[k] = true;
+            for (let c = 0; c < connections[k].length; ++c) {
+                const l = connections[k][c];
+                if (Vec3.dist(world.bots[k].pos, world.bots[l].pos) < d) check.push(l);
+            }
+        }
+        return !(checked[i] && checked[j]);
+    }
     for (let k = 0; k < world.bots.length; ++k) {
         if (k === i) continue;
         if (k === j) continue;
@@ -150,7 +182,7 @@ const resolveOverlap = (world: World.World, iterations: number): void => {
     }
 };
 
-const contract = (world: World.World, iterations: number): void => {
+const contract = (world: World.World, iterations: number, type: ContractionType): void => {
     const frac = 0.2;
     for (let iter = 0; iter < iterations; ++iter) {
         world.bots.forEach((a, i) => {
@@ -173,7 +205,7 @@ const contract = (world: World.World, iterations: number): void => {
         connections.forEach((list, i) => {
             list.forEach(j => {
                 if (i >= j) return;
-                if (!isValidConnection(world, connections, i, j)) return;
+                if (!isValidConnection(world, connections, i, j, type)) return;
                 validConnections.push([i, j]);
             });
         });
@@ -235,6 +267,7 @@ export const createAnimation = (
     subdivideIterations: number,
     optimizeIterations: number,
     resolveOverlapIterations: number,
+    contractionType: ContractionType,
     contractIterations: number,
     minimizeAccelerationIterations: number
 ): World.World[] => {
@@ -254,7 +287,7 @@ export const createAnimation = (
             result.push(resultPrev[i]);
         });
         console.log(iter, result.length);
-        for (let i = 2; i < result.length - 2; ++i) contract(result[i], contractIterations);
+        for (let i = 2; i < result.length - 2; ++i) contract(result[i], contractIterations, contractionType);
         optimize(
             offset,
             slack,
