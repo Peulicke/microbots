@@ -1,5 +1,5 @@
 import { Vec3 } from "../core";
-import { coordsToWorld } from "./utils";
+import { createExample } from "./utils";
 
 const n = 10;
 
@@ -23,8 +23,4 @@ const s = [
     ...[...Array(n)].map((_, i) => Vec3.newVec3(-i - 1, 0.5, 0))
 ];
 
-export default {
-    title: "Arc",
-    start: coordsToWorld(s),
-    end: coordsToWorld(arc)
-};
+export default createExample("Arc", [], s, arc);

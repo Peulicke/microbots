@@ -5,7 +5,10 @@ import { newScene, newSphere } from "./draw";
 import Canvas from "./Canvas";
 import { World } from "../core";
 
-type Props = { world: World.World | undefined };
+type Props = {
+    worldStart: World.World | undefined;
+    world: World.World | undefined;
+};
 
 const Scene: FC<Props> = props => {
     const [scene, setScene] = useState(newScene());
@@ -21,15 +24,13 @@ const Scene: FC<Props> = props => {
     }, [props.world, botMeshes]);
 
     useEffect(() => {
-        const w = props.world;
+        const w = props.worldStart;
         if (w === undefined) return;
-        if (botMeshes.length === w.bots.length) return;
-        setBotMeshes(w.bots.map(bot => newSphere(bot.pos, new Color("#fa8072"))));
-    }, [props.world, botMeshes]);
+        setBotMeshes(w.bots.map(bot => newSphere(bot.pos, new Color(bot.fixed ? "#808080" : "#fa8072"))));
+    }, [props.worldStart]);
 
     useEffect(() => {
         const scn = newScene();
-
         botMeshes.forEach(mesh => scn.add(mesh));
         setScene(scn);
     }, [botMeshes]);

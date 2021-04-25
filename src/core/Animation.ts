@@ -302,6 +302,11 @@ export const createAnimation = (
         );
         minimizeAcceleration(result, dt, minimizeAccelerationIterations);
         result.map(world => resolveOverlap(world, resolveOverlapIterations));
+        result.forEach(world =>
+            world.bots.forEach((bot, i) => {
+                if (bot.fixed) bot.pos = Vec3.clone(result[0].bots[i].pos);
+            })
+        );
     }
     console.log("done");
     return result.slice(1, result.length - 1);

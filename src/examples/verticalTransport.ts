@@ -1,5 +1,5 @@
 import { Vec3 } from "../core";
-import { coordsToWorld } from "./utils";
+import { createExample } from "./utils";
 
 const s: Vec3.Vec3[] = [
     [-3, 0.5, 0],
@@ -99,8 +99,4 @@ const e: Vec3.Vec3[] = [
     [0, 12.5, 0]
 ];
 
-export default {
-    title: "Vertical transport",
-    start: coordsToWorld(s),
-    end: coordsToWorld(e)
-};
+export default createExample("Vertical transport", [], s, e);

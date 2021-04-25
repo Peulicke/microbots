@@ -1,5 +1,5 @@
 import { Vec3 } from "../core";
-import { coordsToWorld } from "./utils";
+import { createExample } from "./utils";
 
 const s = [...Array(8)].map((_, i) => [...Array(8)].map((_, j) => Vec3.newVec3(i - 3.5, 0.5, j - 3.5))).flat();
 const e = [...Array(4)]
@@ -7,8 +7,4 @@ const e = [...Array(4)]
     .flat()
     .flat();
 
-export default {
-    title: "Big cube",
-    start: coordsToWorld(s),
-    end: coordsToWorld(e)
-};
+export default createExample("Big cube", [], s, e);

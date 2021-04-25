@@ -1,5 +1,5 @@
 import { Vec3 } from "../core";
-import { coordsToWorld } from "./utils";
+import { createExample } from "./utils";
 
 const r = 6;
 const h = 3;
@@ -25,8 +25,4 @@ const e: Vec3.Vec3[] = [
     [r, h + 1.5, -r]
 ];
 
-export default {
-    title: "Floor transport",
-    start: coordsToWorld(s),
-    end: coordsToWorld(e)
-};
+export default createExample("Floor transport", [], s, e);

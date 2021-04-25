@@ -56,6 +56,12 @@ const Static: FC<Props> = props => {
         return () => clearInterval(i);
     }, [pause]);
 
+    useEffect(() => {
+        setPause(true);
+        if (props.worldStart === undefined) return;
+        props.setWorld(props.worldStart);
+    }, [props.worldStart]);
+
     return (
         <List>
             <ListItem>

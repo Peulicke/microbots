@@ -1,5 +1,5 @@
 import { Vec3 } from "../core";
-import { coordsToWorld } from "./utils";
+import { createExample } from "./utils";
 
 const s: Vec3.Vec3[] = [
     [-1.5, 0.5, -1.5],
@@ -39,8 +39,4 @@ const e: Vec3.Vec3[] = [
     [-0.5, 3.5, 0.5]
 ];
 
-export default {
-    title: "Cube",
-    start: coordsToWorld(s),
-    end: coordsToWorld(e)
-};
+export default createExample("Cube", [], s, e);

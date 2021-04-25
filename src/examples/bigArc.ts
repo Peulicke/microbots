@@ -1,5 +1,5 @@
 import { Vec3 } from "../core";
-import { coordsToWorld } from "./utils";
+import { createExample } from "./utils";
 
 const n = 20;
 
@@ -23,8 +23,4 @@ const s = [
     ...[...Array(n)].map((_, i) => Vec3.newVec3(-i - 1 - 15, 0.5, 0))
 ];
 
-export default {
-    title: "Big arc",
-    start: coordsToWorld(s),
-    end: coordsToWorld(arc)
-};
+export default createExample("Big arc", [], s, arc);

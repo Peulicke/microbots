@@ -88,6 +88,7 @@ const App: FC = () => {
                             />
                             {dynamic ? (
                                 <Dynamic
+                                    worldStart={worldStart}
                                     worldEnd={worldEnd}
                                     world={world}
                                     worldPrev={worldPrev}
@@ -150,7 +151,7 @@ const App: FC = () => {
                     </Grid>
                 </Grid>
                 <Grid item xs={5}>
-                    <Scene world={world} />
+                    <Scene worldStart={worldStart} world={world} />
                 </Grid>
             </Grid>
         </>

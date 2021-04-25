@@ -10,6 +10,7 @@ const rng = new Prando(123);
 const rand = () => Vec3.multiplyScalar(Vec3.newVec3(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5), 2);
 
 type Props = {
+    worldStart: World.World | undefined;
     world: World.World | undefined;
     worldPrev: World.World | undefined;
     setWorld: (world: World.World) => void;
@@ -80,6 +81,13 @@ const Dynamic: FC<Props> = props => {
         const i = setInterval(step, 1000 / 30);
         return () => clearInterval(i);
     }, [props, pause, path]);
+
+    useEffect(() => {
+        setPause(true);
+        if (props.worldStart === undefined) return;
+        props.setWorld(props.worldStart);
+        setPath([]);
+    }, [props.worldStart]);
 
     return (
         <List>

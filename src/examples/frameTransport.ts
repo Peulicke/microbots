@@ -1,5 +1,5 @@
 import { Vec3 } from "../core";
-import { coordsToWorld } from "./utils";
+import { createExample } from "./utils";
 
 const r = 1;
 const d = 5;
@@ -35,8 +35,4 @@ const e: Vec3.Vec3[] = [
     ...frame([d, 2 * r + 1, d])
 ];
 
-export default {
-    title: "Frame transport",
-    start: coordsToWorld(s),
-    end: coordsToWorld(e)
-};
+export default createExample("Frame transport", [], s, e);

@@ -1,5 +1,5 @@
 import { Vec3 } from "../core";
-import { coordsToWorld } from "./utils";
+import { createExample } from "./utils";
 
 const pillar = (pos: Vec3.Vec3) => {
     const list: Vec3.Vec3[] = [
@@ -35,8 +35,4 @@ const e: Vec3.Vec3[] = [
     [space * 2, 4.5, -space * 2]
 ];
 
-export default {
-    title: "Transport",
-    start: coordsToWorld(s),
-    end: coordsToWorld(e)
-};
+export default createExample("Transport", [], s, e);

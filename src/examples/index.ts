@@ -4,6 +4,7 @@ import bigArc from "./bigArc";
 import bigCube from "./bigCube";
 import crane from "./crane";
 import cube from "./cube";
+import fixed from "./fixed";
 import floorTransport from "./floorTransport";
 import frameTransport from "./frameTransport";
 import stack from "./stack";
@@ -18,6 +19,7 @@ export const examples = [
     bigCube,
     crane,
     cube,
+    fixed,
     floorTransport,
     frameTransport,
     stack,
@@ -31,4 +33,7 @@ export const examples = [
     return d;
 });
 
-export default (index: number): [World.World, World.World] => [examples[index].start, examples[index].end];
+export default (index: number): [World.World, World.World] => [
+    World.clone(examples[index].start),
+    World.clone(examples[index].end)
+];

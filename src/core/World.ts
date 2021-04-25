@@ -12,6 +12,8 @@ export type World = { bots: Bot.Bot[] };
 
 export const newWorld = (): World => ({ bots: [] });
 
+export const clone = (world: World): World => ({ bots: world.bots.map(bot => Bot.clone(bot)) });
+
 const edgeStrength = (offset: number, slack: number, d: number): number => {
     if (d < offset - slack / 2) return 1;
     if (d > offset + slack / 2) return 0;

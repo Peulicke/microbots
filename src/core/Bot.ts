@@ -4,7 +4,10 @@ import { minAcc } from "./utils";
 
 export type Bot = {
     pos: Vec3.Vec3;
+    fixed: boolean;
 };
+
+export const clone = (bot: Bot): Bot => ({ pos: Vec3.clone(bot.pos), fixed: bot.fixed });
 
 export const interpolate = (
     bot: Bot,
