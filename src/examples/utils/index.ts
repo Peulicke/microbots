@@ -1,6 +1,6 @@
 import { Bot, Vec3, World } from "../../core";
 
-type Example = {
+export type Example = {
     title: string;
     start: World.World;
     end: World.World;

@@ -1,3 +1,4 @@
+import { Example as ExampleType } from "./utils";
 import { World } from "../core";
 import arc from "./arc";
 import bigArc from "./bigArc";
@@ -14,6 +15,7 @@ import transformer from "./transformer";
 import transport from "./transport";
 import verticalTransport from "./verticalTransport";
 import wall from "./wall";
+export type Example = ExampleType;
 
 export const examples = [
     arc,
@@ -37,7 +39,4 @@ export const examples = [
     return d;
 });
 
-export default (index: number): [World.World, World.World] => [
-    World.clone(examples[index].start),
-    World.clone(examples[index].end)
-];
+export default (example: Example): [World.World, World.World] => [World.clone(example.start), World.clone(example.end)];
