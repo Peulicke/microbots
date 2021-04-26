@@ -4,14 +4,16 @@ import bigArc from "./bigArc";
 import bigCube from "./bigCube";
 import crane from "./crane";
 import cube from "./cube";
-import fixed from "./fixed";
 import floorTransport from "./floorTransport";
 import frameTransport from "./frameTransport";
+import platform from "./platform";
+import platforms from "./platforms";
 import stack from "./stack";
 import towers from "./towers";
 import transformer from "./transformer";
 import transport from "./transport";
 import verticalTransport from "./verticalTransport";
+import wall from "./wall";
 
 export const examples = [
     arc,
@@ -19,14 +21,16 @@ export const examples = [
     bigCube,
     crane,
     cube,
-    fixed,
     floorTransport,
     frameTransport,
+    platform,
+    platforms,
     stack,
     towers,
     transformer,
     transport,
-    verticalTransport
+    verticalTransport,
+    wall
 ].sort((a, b) => {
     const d = a.start.bots.length - b.start.bots.length;
     if (d === 0) return a.title > b.title ? 1 : -1;
