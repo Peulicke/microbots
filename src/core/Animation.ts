@@ -2,18 +2,18 @@ import * as Bot from "./Bot";
 import * as Vec3 from "./Vec3";
 import * as World from "./World";
 
-const avgWeight = (a: Bot.Bot, b: Bot.Bot, w: number): Bot.Bot => {
-    const pos = Vec3.add(Vec3.multiplyScalar(a.pos, 1 - w), Vec3.multiplyScalar(b.pos, w));
-    return { ...a, pos };
-};
+import aStar, { Grid, botsToGrid } from "./aStar";
 
-const averageWeight = (start: World.World, end: World.World, w: number): World.World => {
+const average = (grid: Grid, start: World.World, end: World.World): World.World => {
+    const avg = (a: Bot.Bot, b: Bot.Bot): Bot.Bot => {
+        const result = Bot.clone(a);
+        result.pos = aStar(grid, a.pos, b.pos);
+        return result;
+    };
     const result = World.newWorld();
-    result.bots = start.bots.map((b, i) => avgWeight(b, end.bots[i], w));
+    result.bots = start.bots.map((b, i) => avg(b, end.bots[i]));
     return result;
 };
-
-const average = (start: World.World, end: World.World): World.World => averageWeight(start, end, 0.5);
 
 const gradient = (
     offset: number,
@@ -162,24 +162,22 @@ const isValidConnection = (
     return true;
 };
 
-const resolveOverlap = (world: World.World, iterations: number): void => {
+const resolveOverlap = (world: World.World): void => {
     const connections = World.connections(world);
-    for (let iter = 0; iter < iterations; ++iter) {
-        world.bots.forEach(bot => {
-            bot.pos[1] = Math.max(bot.pos[1], 0.5);
+    world.bots.forEach(bot => {
+        bot.pos[1] = Math.max(bot.pos[1], 0.5);
+    });
+    connections.forEach((list, i) => {
+        list.forEach(j => {
+            if (i >= j) return;
+            const d = Vec3.sub(world.bots[j].pos, world.bots[i].pos);
+            const dLength = Vec3.length(d);
+            if (dLength > 1) return;
+            const n = Vec3.multiplyScalar(d, (1 - dLength) / dLength / 2);
+            Vec3.subEq(world.bots[i].pos, n);
+            Vec3.addEq(world.bots[j].pos, n);
         });
-        connections.forEach((list, i) => {
-            list.forEach(j => {
-                if (i >= j) return;
-                const d = Vec3.sub(world.bots[j].pos, world.bots[i].pos);
-                const dLength = Vec3.length(d);
-                if (dLength > 1) return;
-                const n = Vec3.multiplyScalar(d, (1 - dLength) / dLength / 2);
-                Vec3.subEq(world.bots[i].pos, n);
-                Vec3.addEq(world.bots[j].pos, n);
-            });
-        });
-    }
+    });
 };
 
 const contract = (world: World.World, iterations: number, type: ContractionType): void => {
@@ -220,23 +218,21 @@ const contract = (world: World.World, iterations: number, type: ContractionType)
     }
 };
 
-const minimizeAcceleration = (animation: World.World[], dt: number, iterations: number): void => {
+const minimizeAcceleration = (animation: World.World[], dt: number): void => {
     const frac = 0.5;
-    for (let iter = 0; iter < iterations; ++iter) {
-        for (let i = 2; i < animation.length - 2; ++i) {
-            animation[i].bots.forEach((bot, j) => {
-                const p = Bot.interpolate(
-                    bot,
-                    (i - 1) / (animation.length - 3),
-                    dt,
-                    animation[i - 2].bots[j].pos,
-                    animation[i - 1].bots[j].pos,
-                    animation[i + 1].bots[j].pos,
-                    animation[i + 2].bots[j].pos
-                );
-                bot.pos = Vec3.add(Vec3.multiplyScalar(bot.pos, frac), Vec3.multiplyScalar(p, 1 - frac));
-            });
-        }
+    for (let i = 2; i < animation.length - 2; ++i) {
+        animation[i].bots.forEach((bot, j) => {
+            const p = Bot.interpolate(
+                bot,
+                (i - 1) / (animation.length - 3),
+                dt,
+                animation[i - 2].bots[j].pos,
+                animation[i - 1].bots[j].pos,
+                animation[i + 1].bots[j].pos,
+                animation[i + 2].bots[j].pos
+            );
+            bot.pos = Vec3.add(Vec3.multiplyScalar(bot.pos, frac), Vec3.multiplyScalar(p, 1 - frac));
+        });
     }
 };
 
@@ -273,6 +269,8 @@ export const createAnimation = (
 ): World.World[] => {
     let result = [beforeBefore, before, after, afterAfter];
     const maxAccLimit = 0.2;
+    const fixed = before.bots.filter(bot => bot.fixed);
+    const grid = botsToGrid(fixed);
     for (let iter = 0; iter < subdivideIterations; ++iter) {
         const tooFast = result.map((world, i) => {
             if (i <= 1 || i >= result.length - 1) return false;
@@ -283,11 +281,14 @@ export const createAnimation = (
         result = [result[0]];
         tooFast.forEach((tf, i) => {
             if (i === 0) return;
-            if (tf) result.push(average(result[result.length - 1], resultPrev[i]));
+            if (tf) result.push(average(grid, result[result.length - 1], resultPrev[i]));
             result.push(resultPrev[i]);
         });
         console.log(iter, result.length);
-        for (let i = 2; i < result.length - 2; ++i) contract(result[i], contractIterations, contractionType);
+        for (let j = 0; j < contractIterations; ++j) {
+            for (let i = 2; i < result.length - 2; ++i) contract(result[i], 1, contractionType);
+            result.map(world => resolveOverlap(world));
+        }
         optimize(
             offset,
             slack,
@@ -300,8 +301,11 @@ export const createAnimation = (
             botMass,
             optimizeIterations
         );
-        minimizeAcceleration(result, dt, minimizeAccelerationIterations);
-        result.map(world => resolveOverlap(world, resolveOverlapIterations));
+        if (iter > 3)
+            for (let i = 0; i < minimizeAccelerationIterations; ++i) {
+                minimizeAcceleration(result, dt);
+                result.map(world => resolveOverlap(world));
+            }
         result.forEach(world =>
             world.bots.forEach((bot, i) => {
                 if (bot.fixed) bot.pos = Vec3.clone(result[0].bots[i].pos);
