@@ -3,6 +3,7 @@ import * as Vec3 from "./Vec3";
 import * as World from "./World";
 
 import aStar, { Grid, botsToGrid } from "./aStar";
+import resolveOverlap from "./resolveOverlap";
 
 const average = (grid: Grid, start: World.World, end: World.World): World.World => {
     const avg = (a: Bot.Bot, b: Bot.Bot): Bot.Bot => {
@@ -162,24 +163,6 @@ const isValidConnection = (
     return true;
 };
 
-const resolveOverlap = (world: World.World): void => {
-    const connections = World.connections(world);
-    world.bots.forEach(bot => {
-        bot.pos[1] = Math.max(bot.pos[1], 0.5);
-    });
-    connections.forEach((list, i) => {
-        list.forEach(j => {
-            if (i >= j) return;
-            const d = Vec3.sub(world.bots[j].pos, world.bots[i].pos);
-            const dLength = Vec3.length(d);
-            if (dLength > 1) return;
-            const n = Vec3.multiplyScalar(d, (1 - dLength) / dLength / 2);
-            Vec3.subEq(world.bots[i].pos, n);
-            Vec3.addEq(world.bots[j].pos, n);
-        });
-    });
-};
-
 const contract = (world: World.World, iterations: number, type: ContractionType): void => {
     const frac = 0.2;
     for (let iter = 0; iter < iterations; ++iter) {
@@ -285,9 +268,10 @@ export const createAnimation = (
             result.push(resultPrev[i]);
         });
         console.log(iter, result.length);
+        const ro = result.map(world => resolveOverlap(world.bots));
         for (let j = 0; j < contractIterations; ++j) {
             for (let i = 2; i < result.length - 2; ++i) contract(result[i], 1, contractionType);
-            result.map(world => resolveOverlap(world));
+            result.map((world, k) => ro[k]());
         }
         optimize(
             offset,
@@ -304,7 +288,7 @@ export const createAnimation = (
         if (iter > 3)
             for (let i = 0; i < minimizeAccelerationIterations; ++i) {
                 minimizeAcceleration(result, dt);
-                result.map(world => resolveOverlap(world));
+                result.map((world, k) => ro[k]());
             }
         result.forEach(world =>
             world.bots.forEach((bot, i) => {

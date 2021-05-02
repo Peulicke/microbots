@@ -1,22 +1,24 @@
-type Compare = (a: any, b: any) => number;
+type Element<Type> = Type;
 
-type Element = any;
+type Compare<Type> = (a: Element<Type>, b: Element<Type>) => number;
 
-class PriorityQueue {
-    comparator: Compare;
-    elements: Element;
-    constructor(comparator: Compare) {
+class PriorityQueue<Type> {
+    comparator: Compare<Type>;
+    elements: Element<Type>[];
+    constructor(comparator: Compare<Type>) {
         this.comparator = comparator;
         this.elements = [];
     }
 
-    peek(): Element {
+    peek(): Element<Type> | undefined {
         return this.elements[0];
     }
 
-    pop(): Element {
+    pop(): Element<Type> | undefined {
         const first = this.peek();
+        if (first === undefined) return undefined;
         const last = this.elements.pop();
+        if (last === undefined) return undefined;
         const size = this.size();
 
         if (size === 0) return first;
@@ -46,7 +48,7 @@ class PriorityQueue {
         return first;
     }
 
-    push(element: Element): void {
+    push(element: Element<Type>): void {
         const size = this.elements.push(element);
         let current = size - 1;
 
@@ -58,19 +60,17 @@ class PriorityQueue {
             this.swap(parent, current);
             current = parent;
         }
-
-        return size;
     }
 
     size(): number {
         return this.elements.length;
     }
 
-    compare(a: Element, b: Element): number {
+    compare(a: number, b: number): number {
         return this.comparator(this.elements[a], this.elements[b]);
     }
 
-    swap(a: Element, b: Element): void {
+    swap(a: number, b: number): void {
         const aux = this.elements[a];
         this.elements[a] = this.elements[b];
         this.elements[b] = aux;

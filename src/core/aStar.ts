@@ -50,11 +50,12 @@ const midpoint = (grid: Grid, s: Vec3, e: Vec3): Vec3 => {
     const start = round(s);
     const end = round(e);
     const checked: Solution = {};
-    const check = new PriorityQueue((a: Cell, b: Cell): number => b.distEstimate - a.distEstimate);
-    check.push({ dist: 0, distEstimate: 0, pos: start, prevPos: start });
+    const check = new PriorityQueue<Cell>((a: Cell, b: Cell): number => b.distEstimate - a.distEstimate);
+    check.push({ dist: 0, distEstimate: 0, pos: start, prev: undefined });
     let iter = 0;
-    for (; iter < 10000 && check.size() > 0; ) {
+    for (; iter < 10000; ) {
         const c = check.pop();
+        if (c === undefined) break;
         const [x, y, z] = c.pos;
         if (y < 0.5 * resolution) continue;
         if (((grid[x] || {})[y] || {})[z] === true) continue;
