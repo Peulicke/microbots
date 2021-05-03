@@ -3,6 +3,7 @@ import { World } from "../core";
 import arc from "./arc";
 import bigArc from "./bigArc";
 import bigCube from "./bigCube";
+import brachiation from "./brachiation";
 import crane from "./crane";
 import cube from "./cube";
 import floorTransport from "./floorTransport";
@@ -21,6 +22,7 @@ export const examples = [
     arc,
     bigArc,
     bigCube,
+    brachiation,
     crane,
     cube,
     floorTransport,
