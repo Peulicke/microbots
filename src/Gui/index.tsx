@@ -46,7 +46,6 @@ const App: FC = () => {
     const [options, setOptions] = useState({
         subdivideIterations: 10,
         optimizeIterations: 10,
-        resolveOverlapIterations: 10,
         contractionType: Animation.ContractionType.Fibers,
         contractIterations: 10,
         minimizeAccelerationIterations: 40,

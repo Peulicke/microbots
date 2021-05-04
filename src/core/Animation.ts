@@ -25,7 +25,6 @@ const gradient = (
     dt: number,
     g: number,
     m: number,
-    connections: number[][][],
     neighbors: number[][][]
 ): Vec3.Vec3[][] => {
     const result = [...Array(animation.length)].map(() =>
@@ -93,7 +92,7 @@ const optimize = (
         world.bots.map((_, j) => World.neighbors(neighborRadius, world, connections[i], j))
     );
     for (let iter = 0; iter < iterations; ++iter) {
-        let grad = gradient(offset, slack, friction, overlapPenalty, animation, dt, g, m, connections, neighbors);
+        let grad = gradient(offset, slack, friction, overlapPenalty, animation, dt, g, m, neighbors);
         grad = grad.map(world => world.map(v => Vec3.multiplyScalar(v, -acc / (1e-4 + Vec3.length(v)))));
         animation.forEach((world, i) => {
             if (i <= 1 || i >= animation.length - 2) return;
@@ -206,7 +205,6 @@ const minimizeAcceleration = (animation: World.World[], dt: number): void => {
     for (let i = 2; i < animation.length - 2; ++i) {
         animation[i].bots.forEach((bot, j) => {
             const p = Bot.interpolate(
-                bot,
                 (i - 1) / (animation.length - 3),
                 dt,
                 animation[i - 2].bots[j].pos,
@@ -245,7 +243,6 @@ export const createAnimation = (
     afterAfter: World.World,
     subdivideIterations: number,
     optimizeIterations: number,
-    resolveOverlapIterations: number,
     contractionType: ContractionType,
     contractIterations: number,
     minimizeAccelerationIterations: number
@@ -271,7 +268,7 @@ export const createAnimation = (
         const ro = result.map(world => resolveOverlap(world.bots));
         for (let j = 0; j < contractIterations; ++j) {
             for (let i = 2; i < result.length - 2; ++i) contract(result[i], 1, contractionType);
-            result.map((world, k) => ro[k]());
+            result.map((_, k) => ro[k]());
         }
         optimize(
             offset,
@@ -288,7 +285,7 @@ export const createAnimation = (
         if (iter > 3)
             for (let i = 0; i < minimizeAccelerationIterations; ++i) {
                 minimizeAcceleration(result, dt);
-                result.map((world, k) => ro[k]());
+                result.map((_, k) => ro[k]());
             }
         result.forEach(world =>
             world.bots.forEach((bot, i) => {

@@ -92,7 +92,7 @@ const stiffnessMatrix = (
 
 const forceMatrix = (before: World, after: World, dt: number, g: number, m: number, world: World): number[] => {
     const result = [...Array(world.bots.length * 3)].map(() => 0);
-    world.bots.forEach((bot, i) => {
+    world.bots.forEach((_, i) => {
         for (let j = 0; j < 3; ++j) {
             const v1 = (world.bots[i].pos[j] - before.bots[i].pos[j]) / dt;
             const v2 = (after.bots[i].pos[j] - world.bots[i].pos[j]) / dt;
@@ -193,7 +193,6 @@ export const gradient = (
     }
     for (let i = 0; i < world.bots.length; ++i) {
         const dest = Bot.interpolate(
-            world.bots[i],
             t,
             dt,
             beforeBefore.bots[i].pos,

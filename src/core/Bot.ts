@@ -10,7 +10,6 @@ export type Bot = {
 export const clone = (bot: Bot): Bot => ({ pos: Vec3.clone(bot.pos), fixed: bot.fixed });
 
 export const interpolate = (
-    bot: Bot,
     t: number,
     dt: number,
     p1: Vec3.Vec3,

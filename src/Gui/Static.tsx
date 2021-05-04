@@ -8,7 +8,6 @@ type Props = {
     setWorld: (world: World.World) => void;
     subdivideIterations: number;
     optimizeIterations: number;
-    resolveOverlapIterations: number;
     contractionType: Animation.ContractionType;
     contractIterations: number;
     minimizeAccelerationIterations: number;
@@ -86,7 +85,6 @@ const Static: FC<Props> = props => {
                                 props.worldEnd,
                                 props.subdivideIterations,
                                 props.optimizeIterations,
-                                props.resolveOverlapIterations,
                                 props.contractionType,
                                 props.contractIterations,
                                 props.minimizeAccelerationIterations
