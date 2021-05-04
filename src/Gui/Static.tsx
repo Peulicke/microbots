@@ -6,19 +6,7 @@ type Props = {
     worldStart: World.World | undefined;
     worldEnd: World.World | undefined;
     setWorld: (world: World.World) => void;
-    subdivideIterations: number;
-    optimizeIterations: number;
-    contractionType: Animation.ContractionType;
-    contractIterations: number;
-    minimizeAccelerationIterations: number;
-    offset: number;
-    slack: number;
-    friction: number;
-    neighborRadius: number;
-    overlapPenalty: number;
-    gravity: number;
-    botMass: number;
-    dt: number;
+    config: Animation.Config;
 };
 
 const Static: FC<Props> = props => {
@@ -71,23 +59,11 @@ const Static: FC<Props> = props => {
                         const t = Date.now();
                         setAnimation(
                             Animation.createAnimation(
-                                props.offset,
-                                props.slack,
-                                props.friction,
-                                props.overlapPenalty,
-                                props.neighborRadius,
-                                props.gravity,
-                                props.botMass,
-                                props.dt,
                                 props.worldStart,
                                 props.worldStart,
                                 props.worldEnd,
                                 props.worldEnd,
-                                props.subdivideIterations,
-                                props.optimizeIterations,
-                                props.contractionType,
-                                props.contractIterations,
-                                props.minimizeAccelerationIterations
+                                props.config
                             )
                         );
                         console.log((Date.now() - t) / 1000);

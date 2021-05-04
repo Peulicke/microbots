@@ -228,33 +228,37 @@ const maxAcc = (prev: World.World, now: World.World, next: World.World, dt: numb
     return result;
 };
 
+export type Config = {
+    subdivideIterations: number;
+    optimizeIterations: number;
+    contractionType: ContractionType;
+    contractIterations: number;
+    minimizeAccelerationIterations: number;
+    offset: number;
+    slack: number;
+    friction: number;
+    neighborRadius: number;
+    overlapPenalty: number;
+    gravity: number;
+    botMass: number;
+    dt: number;
+};
+
 export const createAnimation = (
-    offset: number,
-    slack: number,
-    friction: number,
-    overlapPenalty: number,
-    neighborRadius: number,
-    gravity: number,
-    botMass: number,
-    dt: number,
     beforeBefore: World.World,
     before: World.World,
     after: World.World,
     afterAfter: World.World,
-    subdivideIterations: number,
-    optimizeIterations: number,
-    contractionType: ContractionType,
-    contractIterations: number,
-    minimizeAccelerationIterations: number
+    config: Config
 ): World.World[] => {
     let result = [beforeBefore, before, after, afterAfter];
     const maxAccLimit = 0.2;
     const fixed = before.bots.filter(bot => bot.fixed);
     const grid = botsToGrid(fixed);
-    for (let iter = 0; iter < subdivideIterations; ++iter) {
+    for (let iter = 0; iter < config.subdivideIterations; ++iter) {
         const tooFast = result.map((world, i) => {
             if (i <= 1 || i >= result.length - 1) return false;
-            return maxAcc(result[i - 1], world, result[i + 1], dt) > maxAccLimit;
+            return maxAcc(result[i - 1], world, result[i + 1], config.dt) > maxAccLimit;
         });
         if (!tooFast.some(x => x)) break;
         const resultPrev = [...result];
@@ -266,25 +270,25 @@ export const createAnimation = (
         });
         console.log(iter, result.length);
         const ro = result.map(world => resolveOverlap(world.bots));
-        for (let j = 0; j < contractIterations; ++j) {
-            for (let i = 2; i < result.length - 2; ++i) contract(result[i], 1, contractionType);
+        for (let j = 0; j < config.contractIterations; ++j) {
+            for (let i = 2; i < result.length - 2; ++i) contract(result[i], 1, config.contractionType);
             result.map((_, k) => ro[k]());
         }
         optimize(
-            offset,
-            slack,
-            friction,
-            overlapPenalty,
-            neighborRadius,
+            config.offset,
+            config.slack,
+            config.friction,
+            config.overlapPenalty,
+            config.neighborRadius,
             result,
-            dt,
-            gravity,
-            botMass,
-            optimizeIterations
+            config.dt,
+            config.gravity,
+            config.botMass,
+            config.optimizeIterations
         );
         if (iter > 3)
-            for (let i = 0; i < minimizeAccelerationIterations; ++i) {
-                minimizeAcceleration(result, dt);
+            for (let i = 0; i < config.minimizeAccelerationIterations; ++i) {
+                minimizeAcceleration(result, config.dt);
                 result.map((_, k) => ro[k]());
             }
         result.forEach(world =>

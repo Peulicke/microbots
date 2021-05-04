@@ -43,7 +43,7 @@ const App: FC = () => {
     const [worldPrev, setWorldPrev] = useState<World.World | undefined>(undefined);
     const [dynamic, setDynamic] = useState(false);
 
-    const [options, setOptions] = useState({
+    const [config, setConfig] = useState<Animation.Config>({
         subdivideIterations: 10,
         optimizeIterations: 10,
         contractionType: Animation.ContractionType.Fibers,
@@ -93,23 +93,28 @@ const App: FC = () => {
                                     worldPrev={worldPrev}
                                     setWorld={setWorld}
                                     setWorldPrev={setWorldPrev}
-                                    {...options}
+                                    config={config}
                                 />
                             ) : (
-                                <Static worldStart={worldStart} worldEnd={worldEnd} setWorld={setWorld} {...options} />
+                                <Static
+                                    worldStart={worldStart}
+                                    worldEnd={worldEnd}
+                                    setWorld={setWorld}
+                                    config={config}
+                                />
                             )}
                         </Grid>
                         <Grid item className={classes.gridItem}>
                             <b>Extra options</b>
                             <List>
-                                {Object.entries(options).map(([key, value]) => (
+                                {Object.entries(config).map(([key, value]) => (
                                     <ListItem key={key}>
                                         {key === "contractionType" ? (
                                             <Select
                                                 value={value}
                                                 onChange={e => {
-                                                    setOptions(
-                                                        update(options, {
+                                                    setConfig(
+                                                        update(config, {
                                                             [key]: { $set: e.target.value as Animation.ContractionType }
                                                         })
                                                     );
@@ -128,8 +133,8 @@ const App: FC = () => {
                                                 label={key}
                                                 value={value}
                                                 onChange={e =>
-                                                    setOptions(
-                                                        update(options, {
+                                                    setConfig(
+                                                        update(config, {
                                                             [key]: { $set: Math.max(parseFloat(e.target.value), 0) }
                                                         })
                                                     )

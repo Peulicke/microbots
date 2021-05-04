@@ -16,19 +16,7 @@ type Props = {
     setWorld: (world: World.World) => void;
     setWorldPrev: (world: World.World) => void;
     worldEnd: World.World | undefined;
-    subdivideIterations: number;
-    optimizeIterations: number;
-    contractionType: Animation.ContractionType;
-    contractIterations: number;
-    minimizeAccelerationIterations: number;
-    offset: number;
-    slack: number;
-    friction: number;
-    neighborRadius: number;
-    overlapPenalty: number;
-    gravity: number;
-    botMass: number;
-    dt: number;
+    config: Animation.Config;
 };
 
 const Dynamic: FC<Props> = props => {
@@ -45,25 +33,7 @@ const Dynamic: FC<Props> = props => {
                 .reduce((sum, value) => sum + value, 0) > 0.00001
         ) {
             setPath(
-                Animation.createAnimation(
-                    props.offset,
-                    props.slack,
-                    props.friction,
-                    props.overlapPenalty,
-                    props.neighborRadius,
-                    props.gravity,
-                    props.botMass,
-                    props.dt,
-                    props.worldPrev,
-                    props.world,
-                    props.worldEnd,
-                    props.worldEnd,
-                    props.subdivideIterations,
-                    props.optimizeIterations,
-                    props.contractionType,
-                    props.contractIterations,
-                    props.minimizeAccelerationIterations
-                )
+                Animation.createAnimation(props.worldPrev, props.world, props.worldEnd, props.worldEnd, props.config)
             );
             return;
         }
