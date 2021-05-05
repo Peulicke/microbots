@@ -87,7 +87,7 @@ const optimize = (
 ): void => {
     const acc = 0.2 / animation.length;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
-    const connections = animation.map(world => World.connections(world));
+    const connections = animation.map(world => World.connections(world.bots.map(bot => bot.pos)));
     const neighbors = animation.map((world, i) =>
         world.bots.map((_, j) => World.neighbors(neighborRadius, world, connections[i], j))
     );
@@ -122,6 +122,26 @@ const isValidConnection = (
 ): boolean => {
     if (type === ContractionType.Delaunay) return true;
     if (type === ContractionType.Mst) {
+        if (j === -1) {
+            const d = world.bots[i].pos[1] + 0.5;
+            const checked = [...Array(world.bots.length)].map(() => false);
+            const check: number[] = [];
+            for (let k = 0; k < world.bots.length; ++k) {
+                if (world.bots[k].pos[1] + 0.5 < d) check.push(k);
+            }
+            while (check.length > 0) {
+                const k = check.shift();
+                if (k === undefined) break;
+                if (checked[k]) continue;
+                checked[k] = true;
+                for (let c = 0; c < connections[k].length; ++c) {
+                    const l = connections[k][c];
+                    if (l === -1) continue;
+                    if (Vec3.dist(world.bots[k].pos, world.bots[l].pos) < d) check.push(l);
+                }
+            }
+            return !checked[i];
+        }
         const d = Vec3.dist(world.bots[i].pos, world.bots[j].pos);
         const checked = [...Array(world.bots.length)].map(() => false);
         const check: number[] = [];
@@ -135,10 +155,21 @@ const isValidConnection = (
             checked[k] = true;
             for (let c = 0; c < connections[k].length; ++c) {
                 const l = connections[k][c];
+                if (l === -1) continue;
                 if (Vec3.dist(world.bots[k].pos, world.bots[l].pos) < d) check.push(l);
             }
         }
         return !(checked[i] && checked[j]);
+    }
+    if (j === -1) {
+        const a = world.bots[i];
+        return !world.bots.some((b, k) => {
+            if (i === k) return false;
+            return (
+                Vec3.dist(b.pos, [a.pos[0], -0.5, b.pos[2]]) < a.pos[1] + 0.5 &&
+                Vec3.dist(a.pos, b.pos) < a.pos[1] + 0.5
+            );
+        });
     }
     for (let k = 0; k < world.bots.length; ++k) {
         if (k === i) continue;
@@ -165,31 +196,20 @@ const isValidConnection = (
 const contract = (world: World.World, iterations: number, type: ContractionType): void => {
     const frac = 0.2;
     for (let iter = 0; iter < iterations; ++iter) {
-        world.bots.forEach((a, i) => {
-            if (
-                world.bots.some((b, j) => {
-                    if (i === j) return false;
-                    const d = Vec3.sub(a.pos, b.pos);
-                    const hD = Vec3.newVec3(d[0], 0, d[2]);
-                    const hDistSqr = Vec3.dot(hD, hD);
-                    const vDist = d[1];
-                    if (a.pos[1] + 0.5 > b.pos[1] + 0.5 && 10 * vDist > hDistSqr) return true;
-                    return false;
-                })
-            )
-                return;
-            a.pos[1] += frac * (0.5 - a.pos[1]);
-        });
-        const connections = World.connections(world);
+        const connections = World.connections(world.bots.map(bot => bot.pos));
         const validConnections: [number, number][] = [];
         connections.forEach((list, i) => {
             list.forEach(j => {
-                if (i >= j) return;
+                if (j !== -1 && i >= j) return;
                 if (!isValidConnection(world, connections, i, j, type)) return;
                 validConnections.push([i, j]);
             });
         });
         validConnections.forEach(([i, j]) => {
+            if (j === -1) {
+                world.bots[i].pos[1] += frac * (0.5 - world.bots[i].pos[1]);
+                return;
+            }
             const d = Vec3.sub(world.bots[j].pos, world.bots[i].pos);
             const dLength = Vec3.length(d);
             if (dLength < 1) return;

@@ -210,4 +210,9 @@ const rng = new Prando(123);
 
 const rand = () => Vec3.multiplyScalar(Vec3.newVec3(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5), 0.1);
 
-export const connections = (world: World): number[][] => delaunay(world.bots.map(bot => Vec3.add(bot.pos, rand())));
+export const connections = (positions: Vec3.Vec3[]): number[][] =>
+    delaunay(
+        [...positions, ...positions.map((pos): Vec3.Vec3 => [pos[0], -0.5, pos[2]])].map(pos => Vec3.add(pos, rand()))
+    )
+        .map(con => con.map(c => (c >= positions.length ? -1 : c)))
+        .slice(0, positions.length);
