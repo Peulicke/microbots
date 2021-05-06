@@ -35,12 +35,15 @@ const c = (pos: Vec3.Vec3): Vec3.Vec3[] => {
 const platform = (pos: Vec3.Vec3): Vec3.Vec3[] => [
     ...c(pos),
     ...c(Vec3.add(pos, [0, 1, 0])),
-    ...p(Vec3.add(pos, [0, 2, 0]))
+    ...c(Vec3.add(pos, [0, 2, 0])),
+    ...c(Vec3.add(pos, [0, 3, 0])),
+    ...c(Vec3.add(pos, [0, 4, 0])),
+    ...p(Vec3.add(pos, [0, 5, 0]))
 ];
 
 const f: Vec3.Vec3[] = [...platform([-r, 0, 0]), ...platform([r, 0, 0])];
 
-const s: Vec3.Vec3[] = pillar([-r, 3.5, 0], h);
-const e: Vec3.Vec3[] = pillar([r, 3.5, 0], h);
+const s: Vec3.Vec3[] = pillar([-r, 6.5, 0], h);
+const e: Vec3.Vec3[] = pillar([r, 6.5, 0], h);
 
-export default createExample("Platforms", f, s, e);
+export default createExample("Tall platforms", f, s, e);

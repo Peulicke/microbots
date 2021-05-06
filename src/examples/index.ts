@@ -10,6 +10,7 @@ import floorTransport from "./floorTransport";
 import frameTransport from "./frameTransport";
 import platform from "./platform";
 import platforms from "./platforms";
+import platformsTall from "./platformsTall";
 import stack from "./stack";
 import towers from "./towers";
 import transformer from "./transformer";
@@ -29,6 +30,7 @@ export const examples = [
     frameTransport,
     platform,
     platforms,
+    platformsTall,
     stack,
     towers,
     transformer,
