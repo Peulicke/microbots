@@ -19,13 +19,18 @@ const Canvas: FC<Props> = props => {
 
     const saveImage = () => {
         if (camera === undefined) return;
+        const w = 640;
+        const h = 480;
+        const cam = camera.clone();
+        cam.aspect = w / h;
+        cam.updateProjectionMatrix();
         const ren = new WebGLRenderer({ antialias: true });
         ren.setClearColor("#87ceeb");
-        ren.setSize(640, 480);
+        ren.setSize(w, h);
         ren.shadowMapEnabled = true;
         ren.shadowMapType = PCFSoftShadowMap;
         const a = document.createElement("a");
-        ren.render(props.scene, camera);
+        ren.render(props.scene, cam);
         a.href = ren.domElement.toDataURL().replace("image/png", "image/octet-stream");
         a.download = "image.png";
         a.click();
@@ -56,7 +61,15 @@ const Canvas: FC<Props> = props => {
         return () => {
             mc.removeChild(ren.domElement);
         };
-    }, [mount, width, height]);
+    }, [mount]);
+
+    useEffect(() => {
+        if (camera === undefined) return;
+        if (renderer === undefined) return;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+    }, [camera, renderer, width, height]);
 
     useEffect(() => {
         if (!controls || !renderer || !camera || !props.scene) return undefined;
