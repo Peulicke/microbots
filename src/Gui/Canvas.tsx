@@ -1,15 +1,24 @@
-import { Button, TextField } from "@material-ui/core";
+import { Button, FormControlLabel, Switch, TextField } from "@material-ui/core";
 import { PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from "three";
 import React, { FC, useEffect, useRef, useState } from "react";
+import { Vec3, World } from "../core";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { Vec3 } from "../core";
 import { useWindowSize } from "@react-hook/window-size";
 
 type Props = {
     scene: Scene;
     center: Vec3.Vec3;
+    world: World.World | undefined;
 };
+
+const screenshotWidth = 640;
+const screenshotHeight = 480;
+const screenshotRenderer = new WebGLRenderer({ antialias: true });
+screenshotRenderer.setClearColor("#87ceeb");
+screenshotRenderer.setSize(screenshotWidth, screenshotHeight);
+screenshotRenderer.shadowMapEnabled = true;
+screenshotRenderer.shadowMapType = PCFSoftShadowMap;
 
 const Canvas: FC<Props> = props => {
     const [windowWidth, windowHeight] = useWindowSize();
@@ -21,22 +30,16 @@ const Canvas: FC<Props> = props => {
     const [camera, setCamera] = useState<PerspectiveCamera>();
     const [renderer, setRenderer] = useState<WebGLRenderer>();
     const [zoom, setZoom] = useState(10);
+    const [saveScreenshots, setSaveScreenshots] = useState(false);
 
     const saveImage = () => {
         if (camera === undefined) return;
-        const w = 640;
-        const h = 480;
         const cam = camera.clone();
-        cam.aspect = w / h;
+        cam.aspect = screenshotWidth / screenshotHeight;
         cam.updateProjectionMatrix();
-        const ren = new WebGLRenderer({ antialias: true });
-        ren.setClearColor("#87ceeb");
-        ren.setSize(w, h);
-        ren.shadowMapEnabled = true;
-        ren.shadowMapType = PCFSoftShadowMap;
         const a = document.createElement("a");
-        ren.render(props.scene, cam);
-        a.href = ren.domElement.toDataURL().replace("image/png", "image/octet-stream");
+        screenshotRenderer.render(props.scene, cam);
+        a.href = screenshotRenderer.domElement.toDataURL().replace("image/png", "image/octet-stream");
         a.download = "image.png";
         a.click();
     };
@@ -87,6 +90,10 @@ const Canvas: FC<Props> = props => {
         };
     }, [controls, renderer, camera, props.scene]);
 
+    useEffect(() => {
+        if (saveScreenshots) saveImage();
+    }, [props.world]);
+
     return (
         <>
             <div ref={mount} />
@@ -111,7 +118,7 @@ const Canvas: FC<Props> = props => {
                 type="number"
                 label="Zoom level"
                 value={zoom}
-                onChange={e => setZoom(Math.max(parseFloat(e.target.value), 0))}
+                onChange={e => setZoom(Math.max(parseFloat(e.target.value), 1))}
             />
             <Button
                 variant="contained"
@@ -134,9 +141,15 @@ const Canvas: FC<Props> = props => {
                 Align (1,1,1)
             </Button>
             <br />
-            <Button variant="contained" onClick={saveImage}>
-                Save screenshot
-            </Button>
+            <FormControlLabel
+                control={<Switch checked={saveScreenshots} onChange={e => setSaveScreenshots(e.target.checked)} />}
+                label="Save screenshot on every frame"
+            />
+            {!saveScreenshots && (
+                <Button variant="contained" onClick={saveImage}>
+                    Save screenshot for this frame
+                </Button>
+            )}
         </>
     );
 };

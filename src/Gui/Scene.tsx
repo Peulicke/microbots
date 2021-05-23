@@ -36,7 +36,7 @@ const Scene: FC<Props> = props => {
         setScene(scn);
     }, [botMeshes]);
 
-    return <Canvas scene={scene} center={props.center} />;
+    return <Canvas scene={scene} center={props.center} world={props.world} />;
 };
 
 export default Scene;
