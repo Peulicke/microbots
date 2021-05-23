@@ -1,6 +1,5 @@
 import { Animation, World } from "../core";
 import {
-    Button,
     FormControlLabel,
     Grid,
     List,
@@ -25,15 +24,6 @@ const useStyles = makeStyles(theme => ({
         textAlign: "center"
     }
 }));
-
-const saveImage = () => {
-    const canvas = document.getElementsByTagName("canvas")[0];
-    const image = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = image.replace(/^data:image\/[^;]/u, "data:application/octet-stream");
-    a.download = "image.png";
-    a.click();
-};
 
 const App: FC = () => {
     const classes = useStyles();
@@ -143,13 +133,6 @@ const App: FC = () => {
                                         )}
                                     </ListItem>
                                 ))}
-                            </List>
-                            <List>
-                                <ListItem>
-                                    <Button variant="contained" onClick={() => saveImage()}>
-                                        Save screenshot
-                                    </Button>
-                                </ListItem>
                             </List>
                         </Grid>
                     </Grid>

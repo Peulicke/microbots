@@ -232,7 +232,7 @@ const minimizeAcceleration = (animation: World.World[], dt: number): void => {
                 animation[i + 1].bots[j].pos,
                 animation[i + 2].bots[j].pos
             );
-            bot.pos = Vec3.add(Vec3.multiplyScalar(bot.pos, frac), Vec3.multiplyScalar(p, 1 - frac));
+            bot.pos = Vec3.add(Vec3.multiplyScalar(bot.pos, 1 - frac), Vec3.multiplyScalar(p, frac));
         });
     }
 };

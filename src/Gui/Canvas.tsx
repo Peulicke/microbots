@@ -1,6 +1,7 @@
 import { PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from "three";
 import React, { FC, useEffect, useRef, useState } from "react";
 
+import { Button } from "@material-ui/core";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { useWindowSize } from "@react-hook/window-size";
 
@@ -15,6 +16,20 @@ const Canvas: FC<Props> = props => {
     const [controls, setControls] = useState<OrbitControls>();
     const [camera, setCamera] = useState<PerspectiveCamera>();
     const [renderer, setRenderer] = useState<WebGLRenderer>();
+
+    const saveImage = () => {
+        if (camera === undefined) return;
+        const ren = new WebGLRenderer({ antialias: true });
+        ren.setClearColor("#87ceeb");
+        ren.setSize(640, 480);
+        ren.shadowMapEnabled = true;
+        ren.shadowMapType = PCFSoftShadowMap;
+        const a = document.createElement("a");
+        ren.render(props.scene, camera);
+        a.href = ren.domElement.toDataURL().replace("image/png", "image/octet-stream");
+        a.download = "image.png";
+        a.click();
+    };
 
     useEffect(() => {
         const mc = mount.current;
@@ -54,7 +69,14 @@ const Canvas: FC<Props> = props => {
         };
     }, [controls, renderer, camera, props.scene]);
 
-    return <div ref={mount} />;
+    return (
+        <>
+            <div ref={mount} />
+            <Button variant="contained" onClick={() => saveImage()}>
+                Save screenshot
+            </Button>
+        </>
+    );
 };
 
 export default Canvas;
