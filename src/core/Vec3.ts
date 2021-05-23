@@ -31,3 +31,7 @@ export const dist = (a: Vec3, b: Vec3): number => length(sub(a, b));
 export const normalize = (a: Vec3): Vec3 => multiplyScalar(a, 1 / length(a));
 
 export const dir = (a: Vec3, b: Vec3): Vec3 => normalize(sub(a, b));
+
+export const min = (a: Vec3, b: Vec3): Vec3 => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.min(a[2], b[2])];
+
+export const max = (a: Vec3, b: Vec3): Vec3 => [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[2], b[2])];

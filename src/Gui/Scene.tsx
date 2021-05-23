@@ -1,13 +1,14 @@
 import { Color, Mesh } from "three";
 import React, { FC, useEffect, useState } from "react";
+import { Vec3, World } from "../core";
 import { newScene, newSphere } from "./draw";
 
 import Canvas from "./Canvas";
-import { World } from "../core";
 
 type Props = {
     worldStart: World.World | undefined;
     world: World.World | undefined;
+    center: Vec3.Vec3;
 };
 
 const Scene: FC<Props> = props => {
@@ -35,7 +36,7 @@ const Scene: FC<Props> = props => {
         setScene(scn);
     }, [botMeshes]);
 
-    return <Canvas scene={scene} />;
+    return <Canvas scene={scene} center={props.center} />;
 };
 
 export default Scene;

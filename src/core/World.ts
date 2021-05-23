@@ -1,4 +1,5 @@
 import * as Bot from "./Bot";
+import * as BoundingBox from "./BoundingBox";
 import * as Mat3 from "./Mat3";
 import * as Vec3 from "./Vec3";
 
@@ -216,3 +217,16 @@ export const connections = (positions: Vec3.Vec3[]): number[][] =>
     )
         .map(con => con.map(c => (c >= positions.length ? -1 : c)))
         .slice(0, positions.length);
+
+export const boundingBox = (world: World): BoundingBox.BoundingBox => {
+    if (world.bots.length === 0)
+        return {
+            min: [0, 0, 0],
+            max: [0, 0, 0]
+        };
+    let result = Bot.boundingBox(world.bots[0]);
+    world.bots.forEach(bot => {
+        result = BoundingBox.merge(result, Bot.boundingBox(bot));
+    });
+    return result;
+};

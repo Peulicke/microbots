@@ -1,4 +1,4 @@
-import { Animation, World } from "../core";
+import { Animation, BoundingBox, Vec3, World } from "../core";
 import {
     FormControlLabel,
     Grid,
@@ -25,6 +25,11 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
+const worldCenter = (worldStart: World.World, worldEnd: World.World): Vec3.Vec3 => {
+    const boundingBox = BoundingBox.merge(World.boundingBox(worldStart), World.boundingBox(worldEnd));
+    return Vec3.multiplyScalar(Vec3.add(boundingBox.min, boundingBox.max), 0.5);
+};
+
 const App: FC = () => {
     const classes = useStyles();
     const [worldStart, setWorldStart] = useState<World.World | undefined>(undefined);
@@ -49,13 +54,13 @@ const App: FC = () => {
         dt: 1
     });
 
+    const center: Vec3.Vec3 =
+        worldStart === undefined || worldEnd === undefined ? [0, 0, 0] : worldCenter(worldStart, worldEnd);
+
     return (
         <>
             <Grid container item xs={11}>
-                <Grid
-                    item
-                    xs={4}
-                    style={{ height: window.innerHeight * 0.9, overflowX: "hidden", overflowY: "scroll" }}>
+                <Grid item xs={4} style={{ height: "97vh", overflowX: "hidden", overflowY: "scroll" }}>
                     <Grid container direction="column">
                         <b style={{ fontSize: 20 }}>Microbots</b>
                         <Grid item className={classes.gridItem}>
@@ -138,7 +143,7 @@ const App: FC = () => {
                     </Grid>
                 </Grid>
                 <Grid item xs={5}>
-                    <Scene worldStart={worldStart} world={world} />
+                    <Scene worldStart={worldStart} world={world} center={center} />
                 </Grid>
             </Grid>
         </>

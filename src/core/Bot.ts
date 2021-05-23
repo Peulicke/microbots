@@ -1,3 +1,4 @@
+import * as BoundingBox from "./BoundingBox";
 import * as Vec3 from "./Vec3";
 
 import { minAcc } from "./utils";
@@ -24,3 +25,11 @@ export const interpolate = (
         { pos: p5, time: t + 2 * dt },
         t
     );
+
+export const boundingBox = (bot: Bot): BoundingBox.BoundingBox => {
+    const r: Vec3.Vec3 = [0.5, 0.5, 0.5];
+    return {
+        min: Vec3.sub(bot.pos, r),
+        max: Vec3.add(bot.pos, r)
+    };
+};

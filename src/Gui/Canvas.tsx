@@ -1,21 +1,26 @@
+import { Button, TextField } from "@material-ui/core";
 import { PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from "three";
 import React, { FC, useEffect, useRef, useState } from "react";
 
-import { Button } from "@material-ui/core";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { Vec3 } from "../core";
 import { useWindowSize } from "@react-hook/window-size";
 
-type Props = { scene: Scene };
+type Props = {
+    scene: Scene;
+    center: Vec3.Vec3;
+};
 
 const Canvas: FC<Props> = props => {
     const [windowWidth, windowHeight] = useWindowSize();
     const width = windowWidth * 0.55;
-    const height = windowHeight * 0.9;
+    const height = windowHeight * 0.8;
     const fov = 75;
     const mount = useRef<HTMLDivElement>(null);
     const [controls, setControls] = useState<OrbitControls>();
     const [camera, setCamera] = useState<PerspectiveCamera>();
     const [renderer, setRenderer] = useState<WebGLRenderer>();
+    const [zoom, setZoom] = useState(10);
 
     const saveImage = () => {
         if (camera === undefined) return;
@@ -85,7 +90,51 @@ const Canvas: FC<Props> = props => {
     return (
         <>
             <div ref={mount} />
-            <Button variant="contained" onClick={() => saveImage()}>
+            <Button
+                variant="contained"
+                onClick={() => {
+                    if (controls === undefined) return;
+                    const dx = props.center[0] - controls.target.x;
+                    const dy = props.center[1] - controls.target.y;
+                    const dz = props.center[2] - controls.target.z;
+                    controls.object.position.set(
+                        controls.object.position.x + dx,
+                        controls.object.position.y + dy,
+                        controls.object.position.z + dz
+                    );
+                    controls.target.set(props.center[0], props.center[1], props.center[2]);
+                }}>
+                Center camera
+            </Button>
+            <br />
+            <TextField
+                type="number"
+                label="Zoom level"
+                value={zoom}
+                onChange={e => setZoom(Math.max(parseFloat(e.target.value), 0))}
+            />
+            <Button
+                variant="contained"
+                onClick={() => {
+                    if (controls === undefined) return;
+                    controls.object.position.set(controls.target.x, controls.target.y, controls.target.z + zoom);
+                }}>
+                Align (0,0,1)
+            </Button>
+            <Button
+                variant="contained"
+                onClick={() => {
+                    if (controls === undefined) return;
+                    controls.object.position.set(
+                        controls.target.x + zoom / Math.sqrt(3),
+                        controls.target.y + zoom / Math.sqrt(3),
+                        controls.target.z + zoom / Math.sqrt(3)
+                    );
+                }}>
+                Align (1,1,1)
+            </Button>
+            <br />
+            <Button variant="contained" onClick={saveImage}>
                 Save screenshot
             </Button>
         </>
