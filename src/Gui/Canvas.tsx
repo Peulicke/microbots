@@ -1,9 +1,10 @@
-import { Button, FormControlLabel, Switch, TextField } from "@material-ui/core";
+import { Button, FormControlLabel, MenuItem, Select, Switch, TextField } from "@material-ui/core";
 import { PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from "three";
 import React, { FC, useEffect, useRef, useState } from "react";
 import { Vec3, World } from "../core";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import update from "immutability-helper";
 import { useWindowSize } from "@react-hook/window-size";
 
 type Props = {
@@ -24,13 +25,15 @@ const Canvas: FC<Props> = props => {
     const [windowWidth, windowHeight] = useWindowSize();
     const width = windowWidth * 0.55;
     const height = windowHeight * 0.8;
-    const fov = 75;
+    const [fov, setFov] = useState(30);
     const mount = useRef<HTMLDivElement>(null);
     const [controls, setControls] = useState<OrbitControls>();
     const [camera, setCamera] = useState<PerspectiveCamera>();
     const [renderer, setRenderer] = useState<WebGLRenderer>();
     const [zoom, setZoom] = useState(10);
     const [saveScreenshots, setSaveScreenshots] = useState(false);
+
+    const [align, setAlign] = useState<Vec3.Vec3>([0, 0, 1]);
 
     const saveImage = () => {
         if (camera === undefined) return;
@@ -116,29 +119,64 @@ const Canvas: FC<Props> = props => {
             <br />
             <TextField
                 type="number"
-                label="Zoom level"
+                label="Camera distance"
                 value={zoom}
-                onChange={e => setZoom(Math.max(parseFloat(e.target.value), 1))}
+                onChange={e => {
+                    const zoomNew = Math.max(parseFloat(e.target.value), 1);
+                    setZoom(zoomNew);
+                    if (camera === undefined) return;
+                    if (controls === undefined) return;
+                    const p: Vec3.Vec3 = [
+                        controls.object.position.x,
+                        controls.object.position.y,
+                        controls.object.position.z
+                    ];
+                    const t: Vec3.Vec3 = [controls.target.x, controls.target.y, controls.target.z];
+                    const d = Vec3.sub(p, t);
+                    const n = Vec3.normalize(d);
+                    const m = Vec3.multiplyScalar(n, zoomNew);
+                    const pos = Vec3.add(t, m);
+                    controls.object.position.set(pos[0], pos[1], pos[2]);
+                    camera.updateProjectionMatrix();
+                }}
             />
+            <TextField
+                type="number"
+                label="FOV"
+                value={fov}
+                onChange={e => {
+                    const fovNew = Math.min(Math.max(parseFloat(e.target.value), 1), 179);
+                    setFov(fovNew);
+                    if (camera !== undefined) {
+                        camera.fov = fovNew;
+                        camera.updateProjectionMatrix();
+                    }
+                }}
+            />
+            {align.map((value, i) => (
+                <Select
+                    key={i}
+                    value={value}
+                    onChange={e => {
+                        setAlign(update(align, { [i]: { $set: parseFloat(e.target.value as string) } }));
+                    }}>
+                    {[-1, 0, 1].map(v => (
+                        <MenuItem key={v} value={v}>
+                            {v}
+                        </MenuItem>
+                    ))}
+                </Select>
+            ))}
             <Button
                 variant="contained"
                 onClick={() => {
                     if (controls === undefined) return;
-                    controls.object.position.set(controls.target.x, controls.target.y, controls.target.z + zoom);
+                    const t: Vec3.Vec3 = [controls.target.x, controls.target.y, controls.target.z];
+                    const d = Vec3.multiplyScalar(align, zoom);
+                    const pos = Vec3.add(t, d);
+                    controls.object.position.set(pos[0], pos[1], pos[2]);
                 }}>
-                Align (0,0,1)
-            </Button>
-            <Button
-                variant="contained"
-                onClick={() => {
-                    if (controls === undefined) return;
-                    controls.object.position.set(
-                        controls.target.x + zoom / Math.sqrt(3),
-                        controls.target.y + zoom / Math.sqrt(3),
-                        controls.target.z + zoom / Math.sqrt(3)
-                    );
-                }}>
-                Align (1,1,1)
+                Align ({align.join(",")})
             </Button>
             <br />
             <FormControlLabel
