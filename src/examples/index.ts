@@ -11,6 +11,7 @@ import frameTransport from "./frameTransport";
 import platform from "./platform";
 import platforms from "./platforms";
 import platformsTall from "./platformsTall";
+import rollingCube from "./rollingCube";
 import stack from "./stack";
 import towers from "./towers";
 import transformer from "./transformer";
@@ -31,6 +32,7 @@ export const examples = [
     platform,
     platforms,
     platformsTall,
+    rollingCube,
     stack,
     towers,
     transformer,
