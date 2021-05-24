@@ -2,13 +2,10 @@ import * as Vec3 from "../core/Vec3";
 
 import {
     AmbientLight,
-    BackSide,
-    BoxGeometry,
     BufferGeometry,
     Color,
     DirectionalLight,
     Mesh,
-    MeshBasicMaterial,
     MeshPhongMaterial,
     PlaneBufferGeometry,
     RepeatWrapping,
@@ -18,12 +15,6 @@ import {
 } from "three";
 
 import grass from "../assets/grass.jpg";
-import nx from "../assets/skyboxes/nx.png";
-import ny from "../assets/skyboxes/ny.png";
-import nz from "../assets/skyboxes/nz.png";
-import px from "../assets/skyboxes/px.png";
-import py from "../assets/skyboxes/py.png";
-import pz from "../assets/skyboxes/pz.png";
 
 export const newScene = (): Scene => {
     const scene = new Scene();
@@ -51,13 +42,6 @@ export const newScene = (): Scene => {
     light.shadowMapWidth = 1024;
     light.shadowMapHeight = 1024;
     scene.add(light);
-
-    const materialArray = [px, nx, py, ny, pz, nz]
-        .map(t => new TextureLoader().load(t))
-        .map(t => new MeshBasicMaterial({ map: t, fog: false, side: BackSide }));
-    const skyboxGeo = new BoxGeometry(1000, 1000, 1000);
-    const skybox = new Mesh(skyboxGeo, materialArray);
-    scene.add(skybox);
 
     return scene;
 };
