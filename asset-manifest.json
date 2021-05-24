@@ -1,24 +1,18 @@
 {
   "files": {
-    "main.js": "/microbots/static/js/main.2df387d8.chunk.js",
-    "main.js.map": "/microbots/static/js/main.2df387d8.chunk.js.map",
+    "main.js": "/microbots/static/js/main.f80c6147.chunk.js",
+    "main.js.map": "/microbots/static/js/main.f80c6147.chunk.js.map",
     "runtime-main.js": "/microbots/static/js/runtime-main.698d5b35.js",
     "runtime-main.js.map": "/microbots/static/js/runtime-main.698d5b35.js.map",
-    "static/js/2.a72be77e.chunk.js": "/microbots/static/js/2.a72be77e.chunk.js",
-    "static/js/2.a72be77e.chunk.js.map": "/microbots/static/js/2.a72be77e.chunk.js.map",
+    "static/js/2.2bdbdcab.chunk.js": "/microbots/static/js/2.2bdbdcab.chunk.js",
+    "static/js/2.2bdbdcab.chunk.js.map": "/microbots/static/js/2.2bdbdcab.chunk.js.map",
     "index.html": "/microbots/index.html",
-    "static/js/2.a72be77e.chunk.js.LICENSE.txt": "/microbots/static/js/2.a72be77e.chunk.js.LICENSE.txt",
-    "static/media/grass.75422b3f.jpg": "/microbots/static/media/grass.75422b3f.jpg",
-    "static/media/nx.484e0aff.png": "/microbots/static/media/nx.484e0aff.png",
-    "static/media/ny.6a6662a7.png": "/microbots/static/media/ny.6a6662a7.png",
-    "static/media/nz.ed736547.png": "/microbots/static/media/nz.ed736547.png",
-    "static/media/px.c6e24cee.png": "/microbots/static/media/px.c6e24cee.png",
-    "static/media/py.a67deb40.png": "/microbots/static/media/py.a67deb40.png",
-    "static/media/pz.39034444.png": "/microbots/static/media/pz.39034444.png"
+    "static/js/2.2bdbdcab.chunk.js.LICENSE.txt": "/microbots/static/js/2.2bdbdcab.chunk.js.LICENSE.txt",
+    "static/media/grass.75422b3f.jpg": "/microbots/static/media/grass.75422b3f.jpg"
   },
   "entrypoints": [
     "static/js/runtime-main.698d5b35.js",
-    "static/js/2.a72be77e.chunk.js",
-    "static/js/main.2df387d8.chunk.js"
+    "static/js/2.2bdbdcab.chunk.js",
+    "static/js/main.f80c6147.chunk.js"
   ]
 }
