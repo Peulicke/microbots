@@ -14,6 +14,7 @@ type Props = {
 const Scene: FC<Props> = props => {
     const [scene, setScene] = useState(newScene());
     const [botMeshes, setBotMeshes] = useState<Mesh[]>([]);
+    const [renderedWorld, setRenderedWorld] = useState<World.World | undefined>();
 
     useEffect(() => {
         const w = props.world;
@@ -22,6 +23,7 @@ const Scene: FC<Props> = props => {
         w.bots.forEach((bot, i) => {
             botMeshes[i].position.set(...bot.pos);
         });
+        setRenderedWorld(props.world);
     }, [props.world, botMeshes]);
 
     useEffect(() => {
@@ -36,7 +38,7 @@ const Scene: FC<Props> = props => {
         setScene(scn);
     }, [botMeshes]);
 
-    return <Canvas scene={scene} center={props.center} world={props.world} />;
+    return <Canvas scene={scene} center={props.center} world={renderedWorld} />;
 };
 
 export default Scene;
