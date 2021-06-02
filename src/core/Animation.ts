@@ -273,7 +273,7 @@ export const createAnimation = (
     afterAfter: World.World,
     config: Config
 ): World.World[] => {
-    let result = [beforeBefore, before, after, afterAfter];
+    let result = [World.clone(beforeBefore), World.clone(before), World.clone(after), World.clone(afterAfter)];
     const maxAccLimit = 0.2;
     const fixed = before.bots.filter(bot => bot.fixed);
     const grid = botsToGrid(fixed);
@@ -315,7 +315,7 @@ export const createAnimation = (
             }
         result.forEach(world =>
             world.bots.forEach((bot, i) => {
-                if (bot.fixed) bot.pos = Vec3.clone(result[0].bots[i].pos);
+                if (bot.fixed) bot.pos = Vec3.clone(before.bots[i].pos);
             })
         );
     }
