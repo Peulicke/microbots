@@ -6,9 +6,11 @@ import aStar, { Grid, botsToGrid } from "./aStar";
 import resolveOverlap from "./resolveOverlap";
 
 const average = (grid: Grid, start: World.World, end: World.World): World.World => {
+    const anyObstacles = start.bots.some(bot => bot.fixed);
     const avg = (a: Bot.Bot, b: Bot.Bot): Bot.Bot => {
         const result = Bot.clone(a);
-        result.pos = aStar(grid, a.pos, b.pos);
+        if (anyObstacles) result.pos = aStar(grid, a.pos, b.pos);
+        else result.pos = Vec3.multiplyScalar(Vec3.add(a.pos, b.pos), 0.5);
         return result;
     };
     const result = World.newWorld();
