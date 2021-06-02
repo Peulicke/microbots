@@ -43,7 +43,7 @@ const App: FC = () => {
         optimizeIterations: 10,
         contractionType: Animation.ContractionType.Fibers,
         contractIterations: 10,
-        minimizeAccelerationIterations: 40,
+        minimizeAccelerationIterations: 100,
         offset: 1.5,
         slack: 2,
         friction: 0.1,

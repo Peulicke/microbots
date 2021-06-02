@@ -13,8 +13,8 @@ type Props = {
     world: World.World | undefined;
 };
 
-const screenshotWidth = 640;
-const screenshotHeight = 480;
+const screenshotWidth = 1920;
+const screenshotHeight = 1080;
 const screenshotRenderer = new WebGLRenderer({ antialias: true });
 screenshotRenderer.setClearColor("#87ceeb");
 screenshotRenderer.setSize(screenshotWidth, screenshotHeight);
