@@ -74,5 +74,8 @@ export default (bots: Bot[]): (() => void) => {
                 addEq(b.pos, n);
             }
         }
+        for (let i = 0; i < bots.length; ++i) {
+            bots[i].pos[1] = Math.max(bots[i].pos[1], 0.5);
+        }
     };
 };
