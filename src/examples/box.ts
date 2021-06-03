@@ -39,4 +39,4 @@ const e: Vec3.Vec3[] = [
     [-0.5, 3.5, 0.5]
 ];
 
-export default createExample("Cube", [], s, e);
+export default createExample("Box", [], s, e);

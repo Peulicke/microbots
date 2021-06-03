@@ -32,7 +32,7 @@ const e: Vec3.Vec3[] = [
 ];
 
 export default createExample(
-    "Rolling cube",
+    "Rolling box",
     [],
     s.map(v => Vec3.add(v, [0, 0.5, 0])),
     e.map(v => Vec3.add(v, [0, 0.5, 0]))

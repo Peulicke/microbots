@@ -3,15 +3,15 @@ import { World } from "../core";
 import arc from "./arc";
 import bigArc from "./bigArc";
 import bigCube from "./bigCube";
+import box from "./box";
 import brachiation from "./brachiation";
 import crane from "./crane";
-import cube from "./cube";
 import floorTransport from "./floorTransport";
 import frameTransport from "./frameTransport";
 import platform from "./platform";
 import platforms from "./platforms";
 import platformsTall from "./platformsTall";
-import rollingCube from "./rollingCube";
+import rollingBox from "./rollingBox";
 import stack from "./stack";
 import towers from "./towers";
 import transformer from "./transformer";
@@ -24,15 +24,15 @@ export const examples = [
     arc,
     bigArc,
     bigCube,
+    box,
     brachiation,
     crane,
-    cube,
     floorTransport,
     frameTransport,
     platform,
     platforms,
     platformsTall,
-    rollingCube,
+    rollingBox,
     stack,
     towers,
     transformer,
