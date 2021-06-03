@@ -80,7 +80,6 @@ const optimize = (
     slack: number,
     friction: number,
     overlapPenalty: number,
-    neighborRadius: number,
     animation: World.World[],
     dt: number,
     g: number,
@@ -91,7 +90,7 @@ const optimize = (
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
     const connections = animation.map(world => World.connections(world.bots.map(bot => bot.pos)));
     const neighbors = animation.map((world, i) =>
-        world.bots.map((_, j) => World.neighbors(neighborRadius, world, connections[i], j))
+        world.bots.map((_, j) => World.neighbors(offset + slack / 2, world, connections[i], j))
     );
     for (let iter = 0; iter < iterations; ++iter) {
         let grad = gradient(offset, slack, friction, overlapPenalty, animation, dt, g, m, neighbors);
@@ -259,7 +258,6 @@ export type Config = {
     offset: number;
     slack: number;
     friction: number;
-    neighborRadius: number;
     overlapPenalty: number;
     gravity: number;
     botMass: number;
@@ -301,7 +299,6 @@ export const createAnimation = (
             config.slack,
             config.friction,
             config.overlapPenalty,
-            config.neighborRadius,
             result,
             config.dt,
             config.gravity,

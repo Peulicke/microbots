@@ -47,7 +47,6 @@ const App: FC = () => {
         offset: 1.5,
         slack: 2,
         friction: 0.1,
-        neighborRadius: 2,
         overlapPenalty: 1000,
         gravity: 1,
         botMass: 1,
