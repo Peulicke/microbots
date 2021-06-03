@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.js": "/microbots/static/js/main.aee50f15.chunk.js",
-    "main.js.map": "/microbots/static/js/main.aee50f15.chunk.js.map",
+    "main.js": "/microbots/static/js/main.eae11d04.chunk.js",
+    "main.js.map": "/microbots/static/js/main.eae11d04.chunk.js.map",
     "runtime-main.js": "/microbots/static/js/runtime-main.698d5b35.js",
     "runtime-main.js.map": "/microbots/static/js/runtime-main.698d5b35.js.map",
     "static/js/2.2bdbdcab.chunk.js": "/microbots/static/js/2.2bdbdcab.chunk.js",
@@ -13,6 +13,6 @@
   "entrypoints": [
     "static/js/runtime-main.698d5b35.js",
     "static/js/2.2bdbdcab.chunk.js",
-    "static/js/main.aee50f15.chunk.js"
+    "static/js/main.eae11d04.chunk.js"
   ]
 }
