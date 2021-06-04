@@ -13,7 +13,8 @@ import platforms from "./platforms";
 import platformsTall from "./platformsTall";
 import rollingBox from "./rollingBox";
 import stack from "./stack";
-import towers from "./towers";
+import towersShort from "./towersShort";
+import towersTall from "./towersTall";
 import transformer from "./transformer";
 import transport from "./transport";
 import verticalTransport from "./verticalTransport";
@@ -34,7 +35,8 @@ export const examples = [
     platformsTall,
     rollingBox,
     stack,
-    towers,
+    towersShort,
+    towersTall,
     transformer,
     transport,
     verticalTransport,

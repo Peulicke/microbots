@@ -5,7 +5,7 @@ import { Vec3, World } from "../core";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import update from "immutability-helper";
-import { useWindowSize } from "@react-hook/window-size";
+import { useWindowWidth } from "@react-hook/window-size";
 
 type Props = {
     scene: Scene;
@@ -22,9 +22,9 @@ screenshotRenderer.shadowMapEnabled = true;
 screenshotRenderer.shadowMapType = PCFSoftShadowMap;
 
 const Canvas: FC<Props> = props => {
-    const [windowWidth, windowHeight] = useWindowSize();
-    const width = windowWidth * 0.55;
-    const height = windowHeight * 0.8;
+    const windowWidth = useWindowWidth();
+    const width = windowWidth * 0.65;
+    const height = width * (screenshotHeight / screenshotWidth);
     const [fov, setFov] = useState(30);
     const mount = useRef<HTMLDivElement>(null);
     const [controls, setControls] = useState<OrbitControls>();
