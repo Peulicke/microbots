@@ -180,16 +180,16 @@ export const gradient = (
     for (let i = 0; i < world.bots.length; ++i) {
         if (world.bots[i].pos[1] > 0.5) continue;
         const l = world.bots[i].pos[1] + 0.5;
-        result[i][1] += 2 * overlapPenalty * (2 * (l - 2));
+        result[i][1] -= 2 * overlapPenalty * (1 - l);
     }
     for (let i = 0; i < world.bots.length; ++i) {
         neigh[i].forEach(j => {
             let d = Vec3.sub(world.bots[j].pos, world.bots[i].pos);
             const l = Vec3.length(d);
             if (l > 1) return;
-            d = Vec3.multiplyScalar(d, overlapPenalty * ((2 * (l - 2)) / l));
-            Vec3.subEq(result[i], d);
-            Vec3.addEq(result[j], d);
+            d = Vec3.multiplyScalar(d, (overlapPenalty * (1 - l)) / l);
+            Vec3.addEq(result[i], d);
+            Vec3.subEq(result[j], d);
         });
     }
     for (let i = 0; i < world.bots.length; ++i) {
