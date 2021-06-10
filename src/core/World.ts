@@ -30,9 +30,9 @@ const stiffness = (offset: number, slack: number, d: Vec3.Vec3): Mat3.Mat3 => {
 };
 
 const stiffnessGround = (offset: number, slack: number, d: Vec3.Vec3): Mat3.Mat3 => {
-    const result = outerProduct(d, d);
-    Mat3.multiplyScalar(result, edgeStrengthGround(offset, slack, Vec3.length(d)) / Vec3.dot(d, d));
-    return result;
+    const l = Vec3.length(d);
+    const s = Vec3.multiplyScalar(d, Math.sqrt(edgeStrengthGround(offset, slack, l)) / l);
+    return outerProduct(s, s);
 };
 
 const stiffnessDerivative = (offset: number, slack: number, dim: number, d: Vec3.Vec3): Mat3.Mat3 => {
