@@ -1,7 +1,7 @@
 import { Vec3 } from "../core";
 import { createExample } from "./utils";
 
-const r = 6;
+const r = 3;
 const h = 5;
 
 const pillar = (pos: Vec3.Vec3, height: number): Vec3.Vec3[] =>

@@ -40,9 +40,9 @@ const App: FC = () => {
 
     const [config, setConfig] = useState<Animation.Config>({
         subdivideIterations: 10,
-        optimizeIterations: 10,
+        optimizeIterations: 15,
         contractionType: Animation.ContractionType.Fibers,
-        contractIterations: 10,
+        contractIterations: 100,
         minimizeAccelerationIterations: 100,
         offset: 1.5,
         slack: 2,

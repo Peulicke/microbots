@@ -24,7 +24,7 @@ export const newScene = (): Scene => {
     textureGrass.wrapS = RepeatWrapping;
     textureGrass.wrapT = RepeatWrapping;
     textureGrass.repeat.set(100, 100);
-    const mat = new MeshPhongMaterial({ map: textureGrass });
+    const mat = new MeshPhongMaterial({ color: new Color("#ffffff") });
     const plane = new Mesh(geo, mat);
     plane.rotateX(-Math.PI / 2);
     plane.castShadow = false;
@@ -32,13 +32,13 @@ export const newScene = (): Scene => {
     scene.add(plane);
 
     scene.add(new AmbientLight(0xffffff, 0.4));
-    const light = new DirectionalLight(0xffffff, 0.4);
+    const light = new DirectionalLight(0xffffff, 0.62);
     light.position.set(10, 50, 10);
     light.castShadow = true;
-    light.shadowCameraRight = 50;
-    light.shadowCameraLeft = -50;
-    light.shadowCameraTop = 50;
-    light.shadowCameraBottom = -50;
+    light.shadowCameraRight = 100;
+    light.shadowCameraLeft = -100;
+    light.shadowCameraTop = 100;
+    light.shadowCameraBottom = -100;
     light.shadowMapWidth = 1024;
     light.shadowMapHeight = 1024;
     scene.add(light);

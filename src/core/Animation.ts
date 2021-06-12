@@ -86,7 +86,7 @@ const optimize = (
     m: number,
     iterations: number
 ): void => {
-    const acc = 0.2 / animation.length;
+    const acc = 0.01;
     const vel = animation.map(world => world.bots.map(() => Vec3.newVec3(0, 0, 0)));
     const connections = animation.map(world => World.connections(world.bots.map(bot => bot.pos)));
     const neighbors = animation.map((world, i) =>
@@ -98,6 +98,7 @@ const optimize = (
         animation.forEach((world, i) => {
             if (i <= 1 || i >= animation.length - 2) return;
             world.bots.forEach((bot, j) => {
+                if (bot.fixed) return;
                 vel[i][j] = Vec3.add(vel[i][j], grad[i][j]);
                 vel[i][j] = Vec3.multiplyScalar(vel[i][j], 0.9);
                 bot.pos = Vec3.add(bot.pos, vel[i][j]);
@@ -195,17 +196,17 @@ const isValidConnection = (
 };
 
 const contract = (world: World.World, iterations: number, type: ContractionType): void => {
-    const frac = 0.2;
-    for (let iter = 0; iter < iterations; ++iter) {
-        const connections = World.connections(world.bots.map(bot => bot.pos));
-        const validConnections: [number, number][] = [];
-        connections.forEach((list, i) => {
-            list.forEach(j => {
-                if (j !== -1 && i >= j) return;
-                if (!isValidConnection(world, connections, i, j, type)) return;
-                validConnections.push([i, j]);
-            });
+    const connections = World.connections(world.bots.map(bot => bot.pos));
+    const validConnections: [number, number][] = [];
+    connections.forEach((list, i) => {
+        list.forEach(j => {
+            if (j !== -1 && i >= j) return;
+            if (!isValidConnection(world, connections, i, j, type)) return;
+            validConnections.push([i, j]);
         });
+    });
+    const frac = 1;
+    for (let iter = 0; iter < iterations; ++iter) {
         validConnections.forEach(([i, j]) => {
             if (j === -1) {
                 world.bots[i].pos[1] += frac * (0.5 - world.bots[i].pos[1]);
@@ -215,16 +216,20 @@ const contract = (world: World.World, iterations: number, type: ContractionType)
             const dLength = Vec3.length(d);
             if (dLength < 1) return;
             const n = Vec3.multiplyScalar(d, frac * ((1 - dLength) / dLength / 2));
-            Vec3.subEq(world.bots[i].pos, n);
-            Vec3.addEq(world.bots[j].pos, n);
+            if (world.bots[j].fixed) Vec3.subEq(world.bots[i].pos, n);
+            else Vec3.addEq(world.bots[j].pos, n);
+            if (world.bots[i].fixed) Vec3.addEq(world.bots[j].pos, n);
+            else Vec3.subEq(world.bots[i].pos, n);
         });
     }
+    resolveOverlap(world.bots);
 };
 
 const minimizeAcceleration = (animation: World.World[], dt: number): void => {
     const frac = 0.5;
     for (let i = 2; i < animation.length - 2; ++i) {
         animation[i].bots.forEach((bot, j) => {
+            if (bot.fixed) return;
             const p = Bot.interpolate(
                 (i - 1) / (animation.length - 3),
                 dt,
@@ -236,6 +241,7 @@ const minimizeAcceleration = (animation: World.World[], dt: number): void => {
             bot.pos = Vec3.add(Vec3.multiplyScalar(bot.pos, 1 - frac), Vec3.multiplyScalar(p, frac));
         });
     }
+    animation.forEach(world => resolveOverlap(world.bots));
 };
 
 const maxAcc = (prev: World.World, now: World.World, next: World.World, dt: number): number => {
@@ -289,27 +295,22 @@ export const createAnimation = (
             result.push(resultPrev[i]);
         });
         console.log(iter, result.length);
-        const ro = result.map(world => resolveOverlap(world.bots));
-        for (let j = 0; j < config.contractIterations; ++j) {
-            for (let i = 2; i < result.length - 2; ++i) contract(result[i], 1, config.contractionType);
-            result.map((_, k) => ro[k]());
-        }
-        optimize(
-            config.offset,
-            config.slack,
-            config.friction,
-            config.overlapPenalty,
-            result,
-            config.dt,
-            config.gravity,
-            config.botMass,
-            config.optimizeIterations
-        );
+        for (let i = 2; i < result.length - 2; ++i)
+            contract(result[i], config.contractIterations, config.contractionType);
+        if (config.optimizeIterations > 0)
+            optimize(
+                config.offset,
+                config.slack,
+                config.friction,
+                config.overlapPenalty,
+                result,
+                config.dt,
+                config.gravity,
+                config.botMass,
+                config.optimizeIterations
+            );
         if (iter > 3)
-            for (let i = 0; i < config.minimizeAccelerationIterations; ++i) {
-                minimizeAcceleration(result, config.dt);
-                result.map((_, k) => ro[k]());
-            }
+            for (let i = 0; i < config.minimizeAccelerationIterations; ++i) minimizeAcceleration(result, config.dt);
         result.forEach(world =>
             world.bots.forEach((bot, i) => {
                 if (bot.fixed) bot.pos = Vec3.clone(before.bots[i].pos);

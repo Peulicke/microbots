@@ -16,7 +16,7 @@ type Props = {
 const screenshotWidth = 1920;
 const screenshotHeight = 1080;
 const screenshotRenderer = new WebGLRenderer({ antialias: true });
-screenshotRenderer.setClearColor("#87ceeb");
+screenshotRenderer.setClearColor("#ffffff");
 screenshotRenderer.setSize(screenshotWidth, screenshotHeight);
 screenshotRenderer.shadowMapEnabled = true;
 screenshotRenderer.shadowMapType = PCFSoftShadowMap;
@@ -57,7 +57,7 @@ const Canvas: FC<Props> = props => {
         setCamera(cam);
         // Renderer
         const ren = new WebGLRenderer({ antialias: true });
-        ren.setClearColor("#87ceeb");
+        ren.setClearColor("#ffffff");
         ren.setSize(width, height);
         ren.shadowMapEnabled = true;
         ren.shadowMapType = PCFSoftShadowMap;

@@ -8,6 +8,8 @@ import brachiation from "./brachiation";
 import crane from "./crane";
 import floorTransport from "./floorTransport";
 import frameTransport from "./frameTransport";
+import planeToBridge1000 from "./planeToBridge1000";
+import planeToBridge10000 from "./planeToBridge10000";
 import platform from "./platform";
 import platforms from "./platforms";
 import platformsTall from "./platformsTall";
@@ -30,6 +32,8 @@ export const examples = [
     crane,
     floorTransport,
     frameTransport,
+    planeToBridge1000,
+    planeToBridge10000,
     platform,
     platforms,
     platformsTall,
