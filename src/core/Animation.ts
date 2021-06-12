@@ -277,6 +277,7 @@ export const createAnimation = (
     afterAfter: World.World,
     config: Config
 ): World.World[] => {
+    const time = Date.now();
     let result = [World.clone(beforeBefore), World.clone(before), World.clone(after), World.clone(afterAfter)];
     const maxAccLimit = 0.2;
     const fixed = before.bots.filter(bot => bot.fixed);
@@ -294,7 +295,8 @@ export const createAnimation = (
             if (tf) result.push(average(grid, result[result.length - 1], resultPrev[i]));
             result.push(resultPrev[i]);
         });
-        console.log(iter, result.length);
+        console.log("Iteration:", iter);
+        console.log("Time slices:", result.length);
         for (let i = 2; i < result.length - 2; ++i)
             contract(result[i], config.contractIterations, config.contractionType);
         if (config.optimizeIterations > 0)
@@ -316,6 +318,7 @@ export const createAnimation = (
                 if (bot.fixed) bot.pos = Vec3.clone(before.bots[i].pos);
             })
         );
+        console.log("Time:", (Date.now() - time) / 1000, "seconds");
     }
     console.log("done");
     return result.slice(1, result.length - 1);

@@ -5,14 +5,15 @@ import bigArc from "./bigArc";
 import bigCube from "./bigCube";
 import box from "./box";
 import brachiation from "./brachiation";
+import bridgeToPyramid1000 from "./bridgeToPyramid1000";
 import crane from "./crane";
 import floorTransport from "./floorTransport";
 import frameTransport from "./frameTransport";
 import planeToBridge1000 from "./planeToBridge1000";
-import planeToBridge10000 from "./planeToBridge10000";
 import platform from "./platform";
 import platforms from "./platforms";
 import platformsTall from "./platformsTall";
+import pyramidToPlane1000 from "./pyramidToPlane1000";
 import rollingBox from "./rollingBox";
 import stack from "./stack";
 import towersShort from "./towersShort";
@@ -29,14 +30,15 @@ export const examples = [
     bigCube,
     box,
     brachiation,
+    bridgeToPyramid1000,
     crane,
     floorTransport,
     frameTransport,
     planeToBridge1000,
-    planeToBridge10000,
     platform,
     platforms,
     platformsTall,
+    pyramidToPlane1000,
     rollingBox,
     stack,
     towersShort,

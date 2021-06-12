@@ -116,6 +116,25 @@ const Canvas: FC<Props> = props => {
                 }}>
                 Center camera
             </Button>
+            <Button
+                variant="contained"
+                onClick={() => {
+                    if (controls === undefined) return;
+                    const input = window.prompt("0");
+                    if (input === null) return;
+                    const h = parseFloat(input);
+                    const dx = -controls.target.x;
+                    const dy = h - controls.target.y;
+                    const dz = -controls.target.z;
+                    controls.object.position.set(
+                        controls.object.position.x + dx,
+                        controls.object.position.y + dy,
+                        controls.object.position.z + dz
+                    );
+                    controls.target.set(0, h, 0);
+                }}>
+                Set camera height
+            </Button>
             <br />
             <TextField
                 type="number"

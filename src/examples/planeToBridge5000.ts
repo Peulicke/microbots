@@ -1,6 +1,29 @@
 import { Vec3 } from "../core";
 import { createExample } from "./utils";
 
+const pryramid = (n: number, pos: Vec3.Vec3): Vec3.Vec3[] => {
+    if (n === 0) return [Vec3.clone(pos)];
+    --n;
+    const a = 3 ** n;
+    const d1 = Vec3.multiplyScalar([1, 0, 0], a);
+    const d2 = Vec3.multiplyScalar([1 / 2, 0, Math.sqrt(3) / 2], a);
+    const d3 = Vec3.multiplyScalar([1 / 2, Math.sqrt(2 / 3), 1 / (2 * Math.sqrt(3))], a);
+    const c = Vec3.multiplyScalar(Vec3.add(d1, d2), 2 / 3);
+    const p = Vec3.sub(pos, c);
+    return [
+        ...pryramid(n, p),
+        ...pryramid(n, Vec3.add(p, d1)),
+        ...pryramid(n, Vec3.add(p, d2)),
+        ...pryramid(n, Vec3.add(p, d3)),
+        ...pryramid(n, Vec3.add(p, Vec3.add(d1, d1))),
+        ...pryramid(n, Vec3.add(p, Vec3.add(d1, d2))),
+        ...pryramid(n, Vec3.add(p, Vec3.add(d2, d2))),
+        ...pryramid(n, Vec3.add(p, Vec3.add(d1, d3))),
+        ...pryramid(n, Vec3.add(p, Vec3.add(d2, d3))),
+        ...pryramid(n, Vec3.add(p, Vec3.add(d3, d3)))
+    ];
+};
+
 const box = (pos: Vec3.Vec3, size: Vec3.Vec3): Vec3.Vec3[] =>
     [...Array(size[0])]
         .map((_, i) =>
@@ -20,12 +43,12 @@ const parabola = (from: Vec3.Vec3, to: Vec3.Vec3): Vec3.Vec3[] => {
 };
 
 const bridge = (): Vec3.Vec3[] => {
-    const h1 = 6;
-    const h2 = 13;
-    const r = 12;
-    const w = 7;
-    const xw = 2;
-    const zw = 1;
+    const h1 = 12;
+    const h2 = 27;
+    const r = 42;
+    const w = 12;
+    const xw = 3;
+    const zw = 2;
     return [
         ...box([-2 * r - xw * (3 / 2), 0.5, 0], [xw, h1, w]),
         ...box([-r - xw / 2, 0.5, 0], [xw, h1, w]),
@@ -55,7 +78,7 @@ const bridge = (): Vec3.Vec3[] => {
     ];
 };
 
-const s = box([0, 0.5, 0], [50, 1, 20]);
+const s = box([0, 0.5, 0], [50, 2, 50]);
 
 const e = bridge();
 
