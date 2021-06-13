@@ -1,18 +1,18 @@
 {
   "files": {
-    "main.js": "/microbots/static/js/main.8edc7f38.chunk.js",
-    "main.js.map": "/microbots/static/js/main.8edc7f38.chunk.js.map",
+    "main.js": "/microbots/static/js/main.65d8f11d.chunk.js",
+    "main.js.map": "/microbots/static/js/main.65d8f11d.chunk.js.map",
     "runtime-main.js": "/microbots/static/js/runtime-main.698d5b35.js",
     "runtime-main.js.map": "/microbots/static/js/runtime-main.698d5b35.js.map",
-    "static/js/2.389717ff.chunk.js": "/microbots/static/js/2.389717ff.chunk.js",
-    "static/js/2.389717ff.chunk.js.map": "/microbots/static/js/2.389717ff.chunk.js.map",
+    "static/js/2.ec06c186.chunk.js": "/microbots/static/js/2.ec06c186.chunk.js",
+    "static/js/2.ec06c186.chunk.js.map": "/microbots/static/js/2.ec06c186.chunk.js.map",
     "index.html": "/microbots/index.html",
-    "static/js/2.389717ff.chunk.js.LICENSE.txt": "/microbots/static/js/2.389717ff.chunk.js.LICENSE.txt",
+    "static/js/2.ec06c186.chunk.js.LICENSE.txt": "/microbots/static/js/2.ec06c186.chunk.js.LICENSE.txt",
     "static/media/grass.75422b3f.jpg": "/microbots/static/media/grass.75422b3f.jpg"
   },
   "entrypoints": [
     "static/js/runtime-main.698d5b35.js",
-    "static/js/2.389717ff.chunk.js",
-    "static/js/main.8edc7f38.chunk.js"
+    "static/js/2.ec06c186.chunk.js",
+    "static/js/main.65d8f11d.chunk.js"
   ]
 }
