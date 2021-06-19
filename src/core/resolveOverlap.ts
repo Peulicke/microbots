@@ -39,10 +39,10 @@ const createGrid = (bots: Bot[]): Grid => {
 };
 
 const addToGrid = (grid: Grid, pos: Vec3, i: number): void => {
-    const [x, y, z] = round(pos);
-    for (let dx = -1; dx <= 1; ++dx) {
-        for (let dy = -1; dy <= 1; ++dy) {
-            for (let dz = -1; dz <= 1; ++dz) {
+    const [x, y, z] = round(sub(pos, [0.5, 0.5, 0.5]));
+    for (let dx = 0; dx <= 1; ++dx) {
+        for (let dy = 0; dy <= 1; ++dy) {
+            for (let dz = 0; dz <= 1; ++dz) {
                 const a = x + dx - grid.min[0];
                 const b = y + dy - grid.min[1];
                 const c = z + dz - grid.min[2];
@@ -63,7 +63,7 @@ const addToGrid = (grid: Grid, pos: Vec3, i: number): void => {
 };
 
 export default (bots: Bot[]): void => {
-    for (let iter = 0; iter < 5; ++iter) {
+    for (let iter = 0; iter < 1; ++iter) {
         const prevPos = bots.map(bot => clone(bot.pos));
         const grid = createGrid(bots);
         for (let i = 0; i < bots.length; ++i) {

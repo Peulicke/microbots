@@ -25,13 +25,7 @@ const Dynamic: FC<Props> = props => {
 
     const step = () => {
         if (props.world === undefined || props.worldPrev === undefined || props.worldEnd === undefined) return;
-        if (
-            path.length === 0 ||
-            props.world.bots
-                .map((bot, i) => Vec3.sub(bot.pos, path[0].bots[i].pos))
-                .map(v => Vec3.dot(v, v))
-                .reduce((sum, value) => sum + value, 0) > 0.00001
-        ) {
+        if (path.length === 0) {
             setPath(
                 Animation.createAnimation(props.worldPrev, props.world, props.worldEnd, props.worldEnd, props.config)
             );
@@ -82,6 +76,7 @@ const Dynamic: FC<Props> = props => {
                                 }
                             })
                         );
+                        setPath([]);
                     }}>
                     Disturb
                 </Button>

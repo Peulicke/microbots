@@ -22,6 +22,7 @@ import transformer from "./transformer";
 import transport from "./transport";
 import verticalTransport from "./verticalTransport";
 import wall from "./wall";
+import planeToBridge10000 from "./planeToBridge10000";
 export type Example = ExampleType;
 
 export const examples = [
@@ -46,7 +47,8 @@ export const examples = [
     transformer,
     transport,
     verticalTransport,
-    wall
+    wall,
+    planeToBridge10000
 ].sort((a, b) => {
     const d = a.start.bots.length - b.start.bots.length;
     if (d === 0) return a.title > b.title ? 1 : -1;

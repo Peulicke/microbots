@@ -8,6 +8,7 @@ import { SparseSymmetric, ldiv } from "./conjugateGradientSparse";
 import Prando from "prando";
 import delaunay from "./delaunay";
 import { outerProduct } from "./utils";
+import { minAcc } from "./utils";
 
 export type World = { bots: Bot.Bot[] };
 
@@ -193,14 +194,7 @@ export const gradient = (
         });
     }
     for (let i = 0; i < world.bots.length; ++i) {
-        const dest = Bot.interpolate(
-            t,
-            dt,
-            beforeBefore.bots[i].pos,
-            before.bots[i].pos,
-            after.bots[i].pos,
-            afterAfter.bots[i].pos
-        );
+        const dest = minAcc(beforeBefore.bots[i].pos, before.bots[i].pos, after.bots[i].pos, afterAfter.bots[i].pos);
         const d = Vec3.sub(dest, world.bots[i].pos);
         Vec3.addEq(result[i], Vec3.multiplyScalar(d, -0.1));
     }

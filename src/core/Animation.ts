@@ -4,12 +4,15 @@ import * as World from "./World";
 
 import aStar, { Grid, botsToGrid } from "./aStar";
 import resolveOverlap from "./resolveOverlap";
+import { minAcc } from "./utils";
+
+const anyObstacles = (world: World.World): boolean => world.bots.some(bot => bot.fixed);
 
 const average = (grid: Grid, start: World.World, end: World.World): World.World => {
-    const anyObstacles = start.bots.some(bot => bot.fixed);
+    const ao = anyObstacles(start);
     const avg = (a: Bot.Bot, b: Bot.Bot): Bot.Bot => {
         const result = Bot.clone(a);
-        if (anyObstacles) result.pos = aStar(grid, a.pos, b.pos);
+        if (ao) result.pos = aStar(grid, a.pos, b.pos);
         else result.pos = Vec3.multiplyScalar(Vec3.add(a.pos, b.pos), 0.5);
         return result;
     };
@@ -165,15 +168,19 @@ const isValidConnection = (
     }
     if (j === -1) {
         const a = world.bots[i];
-        return !world.bots.some((b, k) => {
-            if (i === k) return false;
+        return !connections[i].some(k => {
+            if (k === -1) return false;
+            const b = world.bots[k];
             return (
                 Vec3.dist(b.pos, [a.pos[0], -0.5, b.pos[2]]) < a.pos[1] + 0.5 &&
                 Vec3.dist(a.pos, b.pos) < a.pos[1] + 0.5
             );
         });
     }
-    for (let k = 0; k < world.bots.length; ++k) {
+    for (let c = 0; c < connections[i].length; ++c) {
+        const k = connections[i][c];
+        if (!connections[j].includes(k)) continue;
+        if (k === -1) continue;
         if (k === i) continue;
         if (k === j) continue;
         if (
@@ -230,9 +237,7 @@ const minimizeAcceleration = (animation: World.World[], dt: number): void => {
     for (let i = 2; i < animation.length - 2; ++i) {
         animation[i].bots.forEach((bot, j) => {
             if (bot.fixed) return;
-            const p = Bot.interpolate(
-                (i - 1) / (animation.length - 3),
-                dt,
+            const p = minAcc(
                 animation[i - 2].bots[j].pos,
                 animation[i - 1].bots[j].pos,
                 animation[i + 1].bots[j].pos,
@@ -277,6 +282,10 @@ export const createAnimation = (
     afterAfter: World.World,
     config: Config
 ): World.World[] => {
+    const ao = anyObstacles(before);
+    let t1 = 0;
+    let t2 = 0;
+    let t3 = 0;
     const time = Date.now();
     let result = [World.clone(beforeBefore), World.clone(before), World.clone(after), World.clone(afterAfter)];
     const maxAccLimit = 0.2;
@@ -297,8 +306,11 @@ export const createAnimation = (
         });
         console.log("Iteration:", iter);
         console.log("Time slices:", result.length);
+        let t = Date.now();
         for (let i = 2; i < result.length - 2; ++i)
             contract(result[i], config.contractIterations, config.contractionType);
+        t1 += Date.now() - t;
+        t = Date.now();
         if (config.optimizeIterations > 0)
             optimize(
                 config.offset,
@@ -311,8 +323,15 @@ export const createAnimation = (
                 config.botMass,
                 config.optimizeIterations
             );
-        if (iter > 3)
-            for (let i = 0; i < config.minimizeAccelerationIterations; ++i) minimizeAcceleration(result, config.dt);
+        t2 += Date.now() - t;
+        t = Date.now();
+        if (iter > 3) {
+            for (let i = 0; i < config.minimizeAccelerationIterations; ++i) {
+                minimizeAcceleration(result, config.dt);
+            }
+        }
+        t3 += Date.now() - t;
+        console.log(t1 / 1000, t2 / 1000, t3 / 1000);
         result.forEach(world =>
             world.bots.forEach((bot, i) => {
                 if (bot.fixed) bot.pos = Vec3.clone(before.bots[i].pos);
